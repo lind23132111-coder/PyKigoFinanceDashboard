@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>季報更新 - RuiPYKigo</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; background-color: #f0f2f5; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .mobile-container { width: 100%; max-width: 420px; height: 844px; background-color: #fff; position: relative; overflow-y: auto; overflow-x: hidden; border-radius: 40px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); border: 8px solid #333; }
+        .mobile-container::-webkit-scrollbar { display: none; }
+        
+        /* 頂部 Header */
+        .header { background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%); padding: 40px 24px 20px 24px; color: white; border-radius: 0 0 24px 24px; position: sticky; top: 0; z-index: 10; }
+        .header h2 { margin: 0 0 5px 0; font-size: 24px; }
+        .header p { margin: 0; font-size: 14px; opacity: 0.8; }
+        
+        /* 更新區塊 */
+        .update-section { padding: 24px; }
+        .section-title { font-size: 16px; font-weight: 700; color: #2c3e50; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+        .section-title span { background: #e8f8f5; color: #00b894; font-size: 12px; padding: 4px 8px; border-radius: 12px; font-weight: 600; }
+
+        /* 項目卡片 */
+        .item-card { background: #fff; border: 1px solid #e1e8ed; border-radius: 16px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
+        .item-header { display: flex; justify-content: space-between; margin-bottom: 12px; }
+        .item-title { font-weight: 600; color: #2c3e50; font-size: 15px; }
+        .item-owner { font-size: 11px; padding: 3px 6px; border-radius: 6px; font-weight: 600; }
+        .owner-py { background: #e8f8f5; color: #00b894; }
+        .owner-kigo { background: #fff9e6; color: #fdcb6e; }
+        .owner-both { background: #f0eaff; color: #6c5ce7; }
+
+        /* 自動計算區 (股票) */
+        .auto-calc-box { background: #f8f9fa; border-radius: 12px; padding: 12px; display: flex; justify-content: space-between; align-items: center; }
+        .auto-price { font-size: 13px; color: #7f8c8d; }
+        .auto-value { font-size: 16px; font-weight: 700; color: #2980b9; }
+
+        /* 手動輸入區 (現金) */
+        .input-group { display: flex; align-items: center; background: #f8f9fa; border-radius: 12px; padding: 4px 12px; border: 1px solid #dfe6e9; focus-within: border-color: #3498db; }
+        .currency-label { font-size: 16px; color: #7f8c8d; font-weight: 600; width: 45px; }
+        .balance-input { border: none; background: transparent; font-size: 20px; font-weight: 600; color: #2c3e50; width: 100%; padding: 10px 0; outline: none; text-align: right; }
+        
+        .diff-tag { font-size: 12px; margin-top: 8px; text-align: right; color: #b2bec3; }
+
+        /* 底部完成按鈕 */
+        .bottom-action { padding: 20px 24px 40px 24px; background: #fff; border-top: 1px solid #eee; position: sticky; bottom: 0; }
+        .btn-finish { width: 100%; background: #2c3e50; color: white; border: none; padding: 16px; border-radius: 16px; font-size: 16px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(44,62,80,0.2); }
+    </style>
+</head>
+<body>
+
+<div class="mobile-container">
+    <div class="header">
+        <h2>📝 2026 年 Q1 資產結算</h2>
+        <p>上一次結算：2025 年 Q4 (相隔 3 個月)</p>
+    </div>
+
+    <div class="update-section">
+        <div class="section-title">
+            1. 投資部位 <span>系統已自動更新市值</span>
+        </div>
+        
+        <div class="item-card">
+            <div class="item-header">
+                <div class="item-title">MU (Micron) RSU</div>
+                <div class="item-owner owner-py">PY</div>
+            </div>
+            <div class="auto-calc-box">
+                <div class="auto-price">
+                    持股: 480 股<br>
+                    現價: $115.20 (即時)
+                </div>
+                <div style="text-align: right;">
+                    <div class="auto-value">USD 55,296</div>
+                    <div style="font-size:11px; color:#2ecc71; margin-top:4px;">▲ 較上季增值 $9,600</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="item-card">
+            <div class="item-header">
+                <div class="item-title">GOOG (Alphabet) RSU</div>
+                <div class="item-owner owner-kigo">Kigo</div>
+            </div>
+            <div class="auto-calc-box">
+                <div class="auto-price">
+                    持股: 360 股<br>
+                    現價: $145.50 (即時)
+                </div>
+                <div style="text-align: right;">
+                    <div class="auto-value">USD 52,380</div>
+                    <div style="font-size:11px; color:#2ecc71; margin-top:4px;">▲ 較上季增值 $2,670</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="update-section" style="padding-top: 0;">
+        <div class="section-title">
+            2. 更新銀行餘額 <span>請填入今日網銀餘額</span>
+        </div>
+
+        <div class="item-card">
+            <div class="item-header">
+                <div class="item-title">Richart 美金活存</div>
+                <div class="item-owner owner-py">PY</div>
+            </div>
+            <div class="input-group">
+                <span class="currency-label">USD</span>
+                <input type="number" class="balance-input" value="12500" placeholder="0">
+            </div>
+            <div class="diff-tag">上季餘額：USD 11,875</div>
+        </div>
+
+        <div class="item-card">
+            <div class="item-header">
+                <div class="item-title">大戶活存 (共同家用)</div>
+                <div class="item-owner owner-both">Both</div>
+            </div>
+            <div class="input-group">
+                <span class="currency-label">TWD</span>
+                <input type="number" class="balance-input" value="150000" placeholder="0">
+            </div>
+            <div class="diff-tag">上季餘額：TWD 120,500</div>
+        </div>
+        
+        <div class="item-card">
+            <div class="item-header">
+                <div class="item-title">台新台幣定存</div>
+                <div class="item-owner owner-kigo">Kigo</div>
+            </div>
+            <div class="input-group">
+                <span class="currency-label">TWD</span>
+                <input type="number" class="balance-input" value="308003" placeholder="0">
+            </div>
+            <div class="diff-tag">上季餘額：TWD 308,003</div>
+        </div>
+    </div>
+
+    <div class="bottom-action">
+        <button class="btn-finish">✨ 儲存 Q1 結算並查看增長報告</button>
+    </div>
+</div>
+
+</body>
+</html>

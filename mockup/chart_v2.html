@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RuiPYKigo 資產分析圖表 (含幣別)</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; color: #333; }
+        .dashboard { max-width: 1200px; margin: 0 auto; display: grid; gap: 24px; }
+        .header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 10px; }
+        .header h1 { margin: 0; font-size: 28px; color: #2c3e50; }
+        
+        /* 圖表區塊網格改為 2x2 */
+        .charts-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+        .chart-card { background: #fff; padding: 24px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .chart-title { font-size: 16px; font-weight: 600; color: #7f8c8d; margin-bottom: 20px; text-align: center; }
+        
+        /* 1. 柱狀圖 (趨勢) */
+        .bar-chart-container { display: flex; align-items: flex-end; justify-content: space-around; height: 160px; padding-bottom: 10px; border-bottom: 2px solid #eee; }
+        .bar-group { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 30%; }
+        .bar { width: 100%; border-radius: 6px 6px 0 0; display: flex; justify-content: center; align-items: flex-start; padding-top: 8px; font-size: 12px; color: white; font-weight: bold; transition: height 0.5s; }
+        .bar.prev { height: 55%; background: #95a5a6; } 
+        .bar.curr { height: 100%; background: #2ecc71; } 
+        .bar-label { font-size: 14px; color: #2c3e50; font-weight: 500; }
+        
+        /* 圓餅圖通用設定 */
+        .pie-chart { width: 160px; height: 160px; border-radius: 50%; margin: 0 auto; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        
+        /* 2. 資產類別 */
+        .pie-chart-type { background: conic-gradient(#3498db 0% 52.3%, #9b59b6 52.3% 98.9%, #f1c40f 98.9% 100%); }
+        
+        /* 3. 歸屬人 */
+        .pie-chart-pic { background: conic-gradient(#00b894 0% 55.9%, #fdcb6e 55.9% 82.6%, #6c5ce7 82.6% 100%); }
+
+        /* 4. 幣別比例 (新增) - 模擬 USD 大宗的情境 */
+        .pie-chart-currency { background: conic-gradient(#e74c3c 0% 68%, #2980b9 68% 28%, #2980b9 28% 95%, #f39c12 95% 100%); }
+        
+        /* 圖例 */
+        .legend { margin-top: 20px; display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; font-size: 13px; color: #555; }
+        .legend-item { display: flex; align-items: center; gap: 6px; }
+        .dot { width: 12px; height: 12px; border-radius: 50%; }
+
+        /* 分析報告區塊 */
+        .analysis-section { background: #fff; padding: 30px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .analysis-section h2 { margin-top: 0; color: #2c3e50; font-size: 20px; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; }
+        .insight-box { display: flex; gap: 16px; margin-top: 20px; }
+        .insight-icon { font-size: 24px; }
+        .insight-text h4 { margin: 0 0 6px 0; color: #2c3e50; }
+        .insight-text p { margin: 0; color: #666; line-height: 1.6; font-size: 15px; }
+    </style>
+</head>
+<body>
+
+<div class="dashboard">
+    <div class="header">
+        <div>
+            <h1>📊 家庭財務戰情室 (Financial Dashboard)</h1>
+            <div style="color: #7f8c8d; margin-top: 8px;">包含自動化財務洞察與多維度資產解析</div>
+        </div>
+    </div>
+
+    <div class="charts-grid">
+        <div class="chart-card">
+            <div class="chart-title">📈 總資產成長趨勢 (等值 NTD)</div>
+            <div class="bar-chart-container">
+                <div class="bar-group">
+                    <div class="bar prev">1,519萬</div>
+                    <div class="bar-label">2025 / 05</div>
+                </div>
+                <div class="bar-group">
+                    <div class="bar curr">2,749萬</div>
+                    <div class="bar-label">2026 / 02</div>
+                </div>
+            </div>
+            <div style="text-align: center; margin-top: 15px; color: #2ecc71; font-weight: bold;">▲ +80.9%</div>
+        </div>
+
+        <div class="chart-card">
+            <div class="chart-title">💱 幣別比例 (Currency Exposure)</div>
+            <div class="pie-chart pie-chart-currency"></div>
+            <div class="legend">
+                <div class="legend-item"><div class="dot" style="background: #e74c3c;"></div>USD 美元 (68%)</div>
+                <div class="legend-item"><div class="dot" style="background: #2980b9;"></div>TWD 台幣 (27%)</div>
+                <div class="legend-item"><div class="dot" style="background: #f39c12;"></div>JPY 日圓 (5%)</div>
+            </div>
+        </div>
+
+        <div class="chart-card">
+            <div class="chart-title">💼 資產配置 (Asset Class)</div>
+            <div class="pie-chart pie-chart-type"></div>
+            <div class="legend">
+                <div class="legend-item"><div class="dot" style="background: #3498db;"></div>活存 (52.3%)</div>
+                <div class="legend-item"><div class="dot" style="background: #9b59b6;"></div>股票 (46.6%)</div>
+                <div class="legend-item"><div class="dot" style="background: #f1c40f;"></div>定存 (1.1%)</div>
+            </div>
+        </div>
+
+        <div class="chart-card">
+            <div class="chart-title">🧑‍🤝‍🧑 成員佔比 (Ownership)</div>
+            <div class="pie-chart pie-chart-pic"></div>
+            <div class="legend">
+                <div class="legend-item"><div class="dot" style="background: #00b894;"></div>PY (55.9%)</div>
+                <div class="legend-item"><div class="dot" style="background: #fdcb6e;"></div>Kigo (26.7%)</div>
+                <div class="legend-item"><div class="dot" style="background: #6c5ce7;"></div>Both (17.4%)</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="analysis-section">
+        <h2>💡 財務現況洞察與建議</h2>
+        
+        <div class="insight-box">
+            <div class="insight-icon">💱</div>
+            <div class="insight-text">
+                <h4>高度美元資產曝險 (Currency Risk)</h4>
+                <p>從「幣別比例」圖表可見，目前美元資產（包含 RSU 股票與外幣活存）佔據了家庭總資產的 68% 以上。這意味著總淨值對匯率波動極度敏感。建議在規畫台灣本地的大筆支出（如房屋尾款或裝潢）時，可趁匯率高點分批換回台幣，鎖定購買力。</p>
+            </div>
+        </div>
+        
+        <div class="insight-box">
+            <div class="insight-icon">💧</div>
+            <div class="insight-text">
+                <h4>活存水位偏高，具備強大防禦力</h4>
+                <p>目前超過一半的資產停泊在活存帳戶中。雖然短期內可能有資金閒置的機會成本，但也為即將到來的家庭大筆開支（如迎接二寶的相關費用、新家收尾、家族旅遊等）提供了極佳的現金流彈性與防護網。</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
