@@ -1,4 +1,4 @@
-# PyKigo Finance Dashboard Project Work Log
+# Pypykao Finance Dashboard Project Work Log
 
 本誌錄記載了本專案從開發初期至今的關鍵里程碑、實作內容及開發心得。
 

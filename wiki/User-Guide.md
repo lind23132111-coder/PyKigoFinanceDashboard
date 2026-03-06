@@ -1,4 +1,4 @@
-# PyKigo Finance Dashboard - 使用者操作指南
+# Pypykao Finance Dashboard - 使用者操作指南
 
 歡迎使用您的專屬財務戰情室！本指南將協助您快速上手各項核心功能。
 
