@@ -15,7 +15,11 @@
   - 整合台股、美股、日股與匯率即時更新。
 - **目標追蹤 (Financial Goals)**：
   - 設定財務目標並關聯特定資產，即時追蹤存錢與獲利進度。
+  - **完整管理 (CRUD)**：支援由 UI 直接新增、編輯與刪除目標及關聯資產。
   - 支援「近期大筆開銷」與「長期理財規劃」兩種目標分類。
+- **站點安全保護 (Site Protection)**：
+  - 正式版具備自定義密碼保護頁面，確保真實財務數據不外洩。
+  - 使用 Next.js Middleware 與加密 Cookie 實現安全存取。
 
 ## 🛠 技術棧
 
@@ -39,11 +43,15 @@ NEXT_PUBLIC_DEMO_MODE=true
 
 在 Vercel 上從同一個 repo 建立兩個 Project，分別設定環境變數：
 
-| | 真實版 | Demo 版 |
+| 環境變數 | 真實版 (Real) | 演示版 (Demo) |
 |---|---|---|
-| `NEXT_PUBLIC_DEMO_MODE` | `false`（或不設定）| `true` |
+| `NEXT_PUBLIC_DEMO_MODE` | `false` | `true` |
+| `SITE_PASSWORD` | ✅ 填入 (存取密碼) | ❌ 不需要 |
+| `NEXT_PUBLIC_SUPABASE_URL` | ✅ 填入 | ❌ 不需要 |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | ✅ 填入 | ❌ 不需要 |
+| `GEMINI_API_KEY` | ✅ 填入 | ❌ 不需要 |
 
-兩個 Project 共用同一份程式碼，push 一次即同步更新。
+兩個 Project 共用同一份程式碼，GitHub Push 一次即同步完成兩端部署。注意 Demo 版會自動跳過密碼驗證頁面，方便公開分享。
 
 ## 🚀 快速開始
 
@@ -58,7 +66,10 @@ NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 GEMINI_API_KEY=your_gemini_api_key
 
-# 可選：開啟 Demo 模式（使用假資料）
+# 站點存取密碼 (非 Demo 模式下必須)
+SITE_PASSWORD=pydash2026
+
+# 可選：開啟 Demo 模式（使用假資料，會自動跳過密碼頁面）
 # NEXT_PUBLIC_DEMO_MODE=true
 ```
 
