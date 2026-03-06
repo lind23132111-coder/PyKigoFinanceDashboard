@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, X, PiggyBank, Target } from "lucide-react";
-import { getGoalsWithProgress, createGoal, getActiveAssets } from "@/app/actions/goals";
+import { Plus, X, PiggyBank, Target, Trash2 } from "lucide-react";
+import { getGoalsWithProgress, createGoal, getActiveAssets, deleteGoal } from "@/app/actions/goals";
 
 export default function GoalTracker() {
     const [goals, setGoals] = useState<any[]>([]);
@@ -69,6 +69,17 @@ export default function GoalTracker() {
         }
     };
 
+    const handleDeleteGoal = async (goalId: string, goalName: string) => {
+        if (!confirm(`確定要刪除目標「${goalName}」嗎？此操作無法復原。`)) return;
+        try {
+            await deleteGoal(goalId);
+            await fetchGoalsAndAssets();
+        } catch (error) {
+            console.error(error);
+            alert("刪除失敗，請稍後再試！");
+        }
+    };
+
     const toggleAssetSelection = (assetId: string) => {
         setFormData(prev => {
             const currentSelection = new Set(prev.asset_ids);
@@ -105,9 +116,18 @@ export default function GoalTracker() {
                     <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
                         <span className="text-xl">🎯</span> {goal.name}
                     </h3>
-                    <span className="text-xs font-semibold text-slate-400 bg-slate-100 px-3 py-1 rounded-md">
-                        目標日: {goal.target_date || '未設定'}
-                    </span>
+                    <div className="flex items-center gap-2">
+                        <span className="text-xs font-semibold text-slate-400 bg-slate-100 px-3 py-1 rounded-md">
+                            目標日: {goal.target_date || '未設定'}
+                        </span>
+                        <button
+                            onClick={() => handleDeleteGoal(goal.id, goal.name)}
+                            className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                            title="刪除目標"
+                        >
+                            <Trash2 className="w-4 h-4" />
+                        </button>
+                    </div>
                 </div>
 
                 {/* Progress Bar */}

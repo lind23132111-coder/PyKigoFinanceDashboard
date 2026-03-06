@@ -104,3 +104,15 @@ export async function addNewAsset(payload: { title: string, owner: string, asset
     if (error) throw error;
     return data;
 }
+
+export async function deleteGoal(goalId: string) {
+    if (process.env.NEXT_PUBLIC_DEMO_MODE === "true") return true;
+
+    // Delete asset mappings first (foreign key constraint)
+    await supabase.from('goal_asset_mapping').delete().eq('goal_id', goalId);
+
+    // Then delete the goal itself
+    const { error } = await supabase.from('goals').delete().eq('id', goalId);
+    if (error) throw error;
+    return true;
+}
