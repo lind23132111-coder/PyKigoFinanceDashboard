@@ -116,3 +116,36 @@ export async function deleteGoal(goalId: string) {
     if (error) throw error;
     return true;
 }
+
+export async function updateGoal(goalId: string, payload: { name: string, target_amount: number, category: string, target_date: string | null, asset_ids?: string[] }) {
+    if (process.env.NEXT_PUBLIC_DEMO_MODE === "true") return { id: goalId };
+
+    // 1. Update Goal basic info
+    const { error: goalError } = await supabase
+        .from('goals')
+        .update({
+            name: payload.name,
+            target_amount: payload.target_amount,
+            category: payload.category,
+            target_date: payload.target_date || null
+        })
+        .eq('id', goalId);
+
+    if (goalError) throw goalError;
+
+    // 2. Refresh Asset Mapping
+    // Delete existing
+    await supabase.from('goal_asset_mapping').delete().eq('goal_id', goalId);
+
+    // Insert new
+    if (payload.asset_ids && payload.asset_ids.length > 0) {
+        const mappings = payload.asset_ids.map(asset_id => ({
+            goal_id: goalId,
+            asset_id: asset_id
+        }));
+        const { error: mappingError } = await supabase.from('goal_asset_mapping').insert(mappings);
+        if (mappingError) throw mappingError;
+    }
+
+    return { id: goalId };
+}

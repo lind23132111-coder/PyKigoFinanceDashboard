@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, X, PiggyBank, Target, Trash2 } from "lucide-react";
-import { getGoalsWithProgress, createGoal, getActiveAssets, deleteGoal } from "@/app/actions/goals";
+import { Plus, X, PiggyBank, Target, Trash2, Pencil } from "lucide-react";
+import { getGoalsWithProgress, createGoal, getActiveAssets, deleteGoal, updateGoal } from "@/app/actions/goals";
 
 export default function GoalTracker() {
     const [goals, setGoals] = useState<any[]>([]);
@@ -12,6 +12,7 @@ export default function GoalTracker() {
     // Form Modal State
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [editingGoalId, setEditingGoalId] = useState<string | null>(null);
 
     // Support Category and Asset IDs
     const [formData, setFormData] = useState({
@@ -46,16 +47,27 @@ export default function GoalTracker() {
                 return;
             }
 
-            await createGoal({
-                name: formData.name,
-                target_amount: amount,
-                category: formData.category,
-                target_date: formData.target_date || null,
-                asset_ids: formData.asset_ids
-            });
+            if (editingGoalId) {
+                await updateGoal(editingGoalId, {
+                    name: formData.name,
+                    target_amount: amount,
+                    category: formData.category,
+                    target_date: formData.target_date || null,
+                    asset_ids: formData.asset_ids
+                });
+            } else {
+                await createGoal({
+                    name: formData.name,
+                    target_amount: amount,
+                    category: formData.category,
+                    target_date: formData.target_date || null,
+                    asset_ids: formData.asset_ids
+                });
+            }
 
             // Reset form and close modal
             setFormData({ name: "", target_amount: "", target_date: "", category: "upcoming_expense", asset_ids: [] });
+            setEditingGoalId(null);
             setIsModalOpen(false);
 
             // Refresh list
@@ -78,6 +90,18 @@ export default function GoalTracker() {
             console.error(error);
             alert("刪除失敗，請稍後再試！");
         }
+    };
+
+    const handleEditClick = (goal: any) => {
+        setEditingGoalId(goal.id);
+        setFormData({
+            name: goal.name,
+            target_amount: goal.target_amount.toString(),
+            target_date: goal.target_date || "",
+            category: goal.category || "upcoming_expense",
+            asset_ids: goal.goal_asset_mapping?.map((m: any) => m.asset_id) || []
+        });
+        setIsModalOpen(true);
     };
 
     const toggleAssetSelection = (assetId: string) => {
@@ -120,6 +144,13 @@ export default function GoalTracker() {
                         <span className="text-xs font-semibold text-slate-400 bg-slate-100 px-3 py-1 rounded-md">
                             目標日: {goal.target_date || '未設定'}
                         </span>
+                        <button
+                            onClick={() => handleEditClick(goal)}
+                            className="p-1.5 text-slate-300 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
+                            title="編輯目標"
+                        >
+                            <Pencil className="w-4 h-4" />
+                        </button>
                         <button
                             onClick={() => handleDeleteGoal(goal.id, goal.name)}
                             className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
@@ -166,7 +197,11 @@ export default function GoalTracker() {
 
             <div className="flex justify-end">
                 <button
-                    onClick={() => setIsModalOpen(true)}
+                    onClick={() => {
+                        setEditingGoalId(null);
+                        setFormData({ name: "", target_amount: "", target_date: "", category: "upcoming_expense", asset_ids: [] });
+                        setIsModalOpen(true);
+                    }}
                     className="flex items-center gap-1.5 px-5 py-2.5 bg-teal-500 hover:bg-teal-600 text-white rounded-xl font-bold transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5">
                     <Plus className="w-4 h-4" />
                     新增目標
@@ -216,9 +251,14 @@ export default function GoalTracker() {
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm transition-opacity">
                     <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-y-auto max-h-[90vh] animate-in zoom-in-95 duration-200">
                         <div className="sticky top-0 bg-white flex justify-between items-center p-6 border-b border-slate-100 z-10">
-                            <h3 className="text-lg font-bold text-slate-800">新增財務目標</h3>
+                            <h3 className="text-lg font-bold text-slate-800">
+                                {editingGoalId ? '編輯財務目標' : '新增財務目標'}
+                            </h3>
                             <button
-                                onClick={() => setIsModalOpen(false)}
+                                onClick={() => {
+                                    setIsModalOpen(false);
+                                    setEditingGoalId(null);
+                                }}
                                 className="text-slate-400 hover:text-slate-600 transition-colors p-1"
                             >
                                 <X className="w-5 h-5" />
@@ -348,7 +388,10 @@ export default function GoalTracker() {
                             <div className="pt-6 mt-4 flex justify-end gap-3 sticky bottom-0 bg-white border-t border-slate-100">
                                 <button
                                     type="button"
-                                    onClick={() => setIsModalOpen(false)}
+                                    onClick={() => {
+                                        setIsModalOpen(false);
+                                        setEditingGoalId(null);
+                                    }}
                                     className="px-4 py-2 text-slate-600 font-medium hover:bg-slate-100 rounded-lg transition-colors"
                                     disabled={isSubmitting}
                                 >
@@ -362,7 +405,7 @@ export default function GoalTracker() {
                                     {isSubmitting ? (
                                         <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                                     ) : (
-                                        "建立目標"
+                                        editingGoalId ? "儲存修改" : "建立目標"
                                     )}
                                 </button>
                             </div>
