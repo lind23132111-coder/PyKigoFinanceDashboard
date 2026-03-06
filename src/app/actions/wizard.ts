@@ -1,6 +1,7 @@
 "use server";
 
 import { supabase } from "@/utils/supabase/client";
+import { revalidatePath } from "next/cache";
 
 // DTO for cash input from wizard
 export type CashInputDTO = {
@@ -139,6 +140,10 @@ export async function submitQuarterlySnapshot(cashInputs: CashInputDTO[], period
     const { error: insertError } = await supabase.from('snapshot_records').insert(recordsToInsert);
     if (insertError) throw insertError;
 
+    revalidatePath('/');
+    revalidatePath('/report');
+    revalidatePath('/planning');
+
     return { success: true, snapshot_id: newSnapshot.id };
 }
 
@@ -176,6 +181,10 @@ export async function deleteSnapshot(snapshotId: string) {
         .eq('id', snapshotId);
 
     if (snapError) throw snapError;
+
+    revalidatePath('/');
+    revalidatePath('/report');
+    revalidatePath('/planning');
 
     return { success: true };
 }
