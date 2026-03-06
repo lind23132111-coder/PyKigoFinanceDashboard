@@ -59,3 +59,15 @@ export interface DashboardData {
     snapshotDetails: Record<string, SnapshotDetail>;
     rawRecords: SnapshotRecord[];
 }
+
+export interface StrategyTarget {
+    category: string;
+    target_percentage: number;
+    current_percentage?: number;
+    color: string;
+}
+
+export interface ProjectedDividend {
+    year: number;
+    amount: number;
+}

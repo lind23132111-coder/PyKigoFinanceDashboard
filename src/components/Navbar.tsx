@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Home, PlusCircle, Target, Wallet, FileText } from 'lucide-react';
+import { Home, PlusCircle, Target, Wallet, FileText, TrendingUp } from 'lucide-react';
 
 export default function Navbar() {
     return (
@@ -21,6 +21,7 @@ export default function Navbar() {
                         <NavLink href="/report" icon={<FileText className="w-4 h-4" />} label="Report" />
                         <NavLink href="/wizard" icon={<PlusCircle className="w-4 h-4" />} label="Update" />
                         <NavLink href="/goals" icon={<Target className="w-4 h-4" />} label="Goals" />
+                        <NavLink href="/planning" icon={<TrendingUp className="w-4 h-4" />} label="Strategy" />
 
                         {/* Docs Dropdown */}
                         <div className="relative group/docs">
