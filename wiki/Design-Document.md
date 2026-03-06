@@ -6,7 +6,7 @@
 
 專案採用現代化、非同步且數據驅動的架構，旨在處理多幣別資產與繁瑣的市場數據。
 
-![Dashboard Ultra](/Users/kigochen/.gemini/antigravity/brain/49dd8b2d-2a73-45e6-9932-d52a61c7b6f5/dashboard_ultra.png)
+![Dashboard Ultra](images/dashboard_ultra.png)
 _註：本圖為實際 UI 介面展示 (使用模擬數據)。_
 
 ### 技術棧 (Tech Stack)

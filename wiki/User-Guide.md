@@ -2,7 +2,7 @@
 
 歡迎使用您的專屬財務戰情室！本指南將協助您快速上手各項核心功能。
 
-![Dashboard](/Users/kigochen/.gemini/antigravity/brain/49dd8b2d-2a73-45e6-9932-d52a61c7b6f5/dashboard_ultra.png)
+![Dashboard](images/dashboard_ultra.png)
 
 ## 0. 安全存取 (Site Security)
 為了保護您的真實財務隱私，正式版設有密碼保護層。
@@ -22,9 +22,9 @@
 ## 2. 定期資產結算 (Quarterly Wizard)
 每次結算時（如：季度或月份），請前往此頁面。
 
-![Wizard](/Users/kigochen/.gemini/antigravity/brain/49dd8b2d-2a73-45e6-9932-d52a61c7b6f5/wizard_ultra.png)
+![Wizard](images/wizard_ultra.png)
 
-![Wizard input detailed](/Users/kigochen/.gemini/antigravity/brain/49dd8b2d-2a73-45e6-9932-d52a61c7b6f5/wizard_detailed_ultra.png)
+![Wizard input detailed](images/wizard_detailed_ultra.png)
 
 - **確認投資股數**: 系統會自動帶入上一次的結算數量，並比對最新市場報價，您只需確認是否有買進/賣出即可。
 - **更新銀行餘額**: 填入各家網銀今日的實際餘額。
@@ -33,9 +33,9 @@
 ## 3. 財務目標追蹤 (Goal Tracker)
 讓您的存款與投資賦予目標感。
 
-![Goals](/Users/kigochen/.gemini/antigravity/brain/49dd8b2d-2a73-45e6-9932-d52a61c7b6f5/goal_ultra.png)
+![Goals](images/goal_ultra.png)
 
-![Goals input detail](/Users/kigochen/.gemini/antigravity/brain/49dd8b2d-2a73-45e6-9932-d52a61c7b6f5/goal_detailed_ultra.png)
+![Goals input detail](images/goal_detailed_ultra.png)
 
 - **設定目標**: 您可以建立「近期大筆開銷」（如：國內旅遊）或「長期理財規劃」（如：退休金）。
 - **完整管理**: 
@@ -45,7 +45,7 @@
 
 ## 4. 歷史結算報告 (Report)
 本頁面列出所有過往的結算細節，適合在報稅或年度回顧時使用，可以查看特定時間點所有帳戶的餘額快照。
-![Report](/Users/kigochen/.gemini/antigravity/brain/49dd8b2d-2a73-45e6-9932-d52a61c7b6f5/report_ultra.png)
+![Report](images/report_ultra.png)
 
 ---
 **Happy Financial Planning!**
