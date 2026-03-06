@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { CheckCircle2, TrendingUp, Wallet, Sparkles, Trash2, Plus, X, ArchiveRestore, RefreshCcw } from "lucide-react";
 import { supabase } from "@/utils/supabase/client";
-import { toggleAssetActive, addNewAsset, getWizardInitData } from "@/app/actions";
+import { getWizardInitData } from "@/app/actions/wizard";
+import { toggleAssetActive, addNewAsset } from "@/app/actions/goals";
 
 type Asset = {
     id: string;
@@ -105,12 +106,17 @@ export default function QuarterlyWizard() {
     const handleAddAssetSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const added = await addNewAsset(newAsset);
-            const mapped: MappedAsset = {
+            const added = await addNewAsset(newAsset) as any;
+            const mapped: any = {
                 ...added,
-                ownerColor: getOwnerColor(added.owner),
-                shares: added.asset_type === 'stock' ? 0 : undefined,
-                price: added.asset_type === 'stock' ? 100 : undefined,
+                title: newAsset.title,
+                owner: newAsset.owner,
+                asset_type: newAsset.asset_type,
+                currency: newAsset.currency,
+                ticker_symbol: newAsset.ticker_symbol,
+                ownerColor: getOwnerColor(added.owner || newAsset.owner),
+                shares: newAsset.asset_type === 'stock' ? 0 : undefined,
+                price: newAsset.asset_type === 'stock' ? 0 : undefined,
                 totalValue: 0,
                 growth: 0,
                 prevBalance: "0",
@@ -200,7 +206,7 @@ export default function QuarterlyWizard() {
 
             try {
                 const initData = await getWizardInitData();
-                const mappedData: MappedAsset[] = initData.mappedAssets.map(asset => ({
+                const mappedData: MappedAsset[] = initData.mappedAssets.map((asset: any) => ({
                     ...asset,
                     ownerColor: getOwnerColor(asset.owner)
                 }));

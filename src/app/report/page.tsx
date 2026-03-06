@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { RefreshCcw, Building, CheckCircle2 } from "lucide-react";
-import { getReportData } from "@/app/actions";
+import { getReportData } from "@/app/actions/dashboard";
 export default function ReportPage() {
     const [activeTab, setActiveTab] = useState("All");
     const [reportData, setReportData] = useState<any>(null);

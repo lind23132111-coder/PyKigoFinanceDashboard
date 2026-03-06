@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/utils/supabase/client';
 import { GoogleGenAI } from '@google/genai';
-import { submitQuarterlySnapshot, CashInputDTO } from '@/app/actions';
+import { submitQuarterlySnapshot, CashInputDTO } from '@/app/actions/wizard';
 
 export async function POST(request: Request) {
     try {

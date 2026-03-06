@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Plus, X, PiggyBank, Target } from "lucide-react";
-import { getGoalsWithProgress, createGoal, getActiveAssets } from "@/app/actions";
+import { getGoalsWithProgress, createGoal, getActiveAssets } from "@/app/actions/goals";
 
 export default function GoalTracker() {
     const [goals, setGoals] = useState<any[]>([]);
@@ -50,7 +50,7 @@ export default function GoalTracker() {
                 name: formData.name,
                 target_amount: amount,
                 category: formData.category,
-                target_date: formData.target_date || undefined,
+                target_date: formData.target_date || null,
                 asset_ids: formData.asset_ids
             });
 
@@ -305,8 +305,8 @@ export default function GoalTracker() {
 
                                                     <div className="flex items-center gap-1.5 shrink-0">
                                                         <span className={`text-[10px] px-2 py-0.5 rounded-md font-bold ${asset.owner === 'PY' ? 'bg-emerald-100 text-emerald-700' :
-                                                                asset.owner === 'Kigo' ? 'bg-amber-100 text-amber-700' :
-                                                                    'bg-indigo-100 text-indigo-700'
+                                                            asset.owner === 'Kigo' ? 'bg-amber-100 text-amber-700' :
+                                                                'bg-indigo-100 text-indigo-700'
                                                             }`}>
                                                             {asset.owner === 'Both' ? '共同' : asset.owner}
                                                         </span>
