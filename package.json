@@ -10,26 +10,27 @@
     "market:update": "node market_updater.mjs"
   },
   "dependencies": {
-    "@google/genai": "^0.1.2",
+    "@google/genai": "^1.44.0",
     "@radix-ui/react-icons": "^1.3.2",
     "@supabase/ssr": "^0.5.2",
-    "yahoo-finance2": "^2.13.3",
     "@supabase/supabase-js": "^2.48.1",
     "lucide-react": "^0.475.0",
-    "next": "15.1.7",
+    "next": "^16.1.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "recharts": "^2.15.1"
+    "recharts": "^2.15.1",
+    "yahoo-finance2": "^2.13.3"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4.2.1",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.1.7",
     "postcss": "^8",
-    "tailwindcss": "^3.4.1",
+    "tailwindcss": "^4.2.1",
     "typescript": "^5"
   }
 }
