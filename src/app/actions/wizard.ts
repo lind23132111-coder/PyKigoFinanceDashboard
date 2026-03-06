@@ -159,3 +159,23 @@ export async function addNewAsset(payload: { title: string, owner: string, asset
     if (error) throw error;
     return data;
 }
+export async function deleteSnapshot(snapshotId: string) {
+    if (process.env.NEXT_PUBLIC_DEMO_MODE === "true") return { success: true };
+
+    // Delete records first (though DB might have cascade, better to be explicit or safe)
+    const { error: recordsError } = await supabase
+        .from('snapshot_records')
+        .delete()
+        .eq('snapshot_id', snapshotId);
+
+    if (recordsError) throw recordsError;
+
+    const { error: snapError } = await supabase
+        .from('snapshots')
+        .delete()
+        .eq('id', snapshotId);
+
+    if (snapError) throw snapError;
+
+    return { success: true };
+}

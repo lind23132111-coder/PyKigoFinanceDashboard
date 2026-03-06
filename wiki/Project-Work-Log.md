@@ -71,3 +71,10 @@
 
 ---
 **本誌錄由 Antigravity (AI Architect) 與 pykao 共同編輯完成。**
+
+### 🔹 Phase 7: 長期股票管理規劃 (Investment Strategy) - [💡 WIP / Idea Stage]
+*   **實作亮點**:
+    *   **規劃頁面 (Strategy Page)**: 新增一個專為長期策略設計的 Dashboard，目前處於功能原型 (Prototype) 階段。
+    *   **資產再平衡 (Rebalancing)**: 實施目標資產配置比對邏輯，當實際比例偏離預設目標時提供警示。
+    *   **股息雪球預測 (Dividend Snowball)**: 根據當前持股，模擬未來 10 年的被動收入增長曲線。
+*   **Current Status**: 概念驗證 (POC) 階段，功能與數據結構正持續演進中。

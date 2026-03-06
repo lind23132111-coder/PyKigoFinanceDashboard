@@ -6,6 +6,9 @@
 
 專案採用現代化、非同步且數據驅動的架構，旨在處理多幣別資產與繁瑣的市場數據。
 
+![Architecture Concept](images/architecture_concept_visual_1772792969606.png)
+_架構概念圖：核心星狀結構與資料流。_
+
 ![Dashboard Ultra](images/dashboard_ultra.png)
 _註：本圖為實際 UI 介面展示 (使用模擬數據)。_
 
@@ -17,6 +20,8 @@ _註：本圖為實際 UI 介面展示 (使用模擬數據)。_
 - **Security**: Next.js Middleware 實作全站密碼保護頁面；Supabase RLS 提供資料庫層級權限控管。
 - **Database**: Supabase (Postgres) 提供即時數據存儲。
 - **AI Engine**: Google Gemini 2.5 Flash (via `@google/genai`)。
+    - **Goals**: Maps assets to specific financial targets via `goal_assets` junction table.
+    - **Strategy (Beta)**: Conceptual rebalancing logic comparing `snapshot_records` to `stock_targets`.
 
 ---
 
