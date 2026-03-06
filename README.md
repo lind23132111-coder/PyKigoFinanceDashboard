@@ -29,7 +29,7 @@
 
 ## 🎭 Demo 模式
 
-本專案支援 Demo 模式，使用假資料展示完整功能，不需要連接真實資料庫。
+本專案支援 Demo 模式，使用假資料展示完整功能。您可以在此預覽：[Demo 展示版](https://py-kigo-finance-dashboard-demo.vercel.app/)。
 
 ### 本機開啟 Demo 模式
 
