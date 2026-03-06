@@ -41,11 +41,14 @@ export default function PlanningPage() {
             {/* Header */}
             <div className="flex justify-between items-center">
                 <div>
-                    <h1 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2">
-                        <TrendingUp className="w-6 h-6 text-brand-600" />
-                        長期投資規劃 (Investment Planning)
-                    </h1>
-                    <p className="text-slate-500 mt-1 text-sm font-medium">制定理想資產配置策略與被動收入預測</p>
+                    <div className="flex items-center gap-3">
+                        <h1 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2">
+                            <TrendingUp className="w-6 h-6 text-brand-600" />
+                            長期投資規劃 (Investment Planning)
+                        </h1>
+                        <span className="bg-amber-100 text-amber-700 text-[10px] font-black px-2 py-0.5 rounded-full tracking-widest uppercase">Idea Phase / Beta</span>
+                    </div>
+                    <p className="text-slate-500 mt-1 text-sm font-medium">制定理想資產配置策略與被動收入預測 (目前為構想 Prototype 階段)</p>
                 </div>
                 <div className="bg-emerald-50 border border-emerald-100 px-4 py-2 rounded-xl flex items-center gap-3">
                     <ShieldCheck className="w-5 h-5 text-emerald-500" />

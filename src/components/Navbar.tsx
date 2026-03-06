@@ -21,7 +21,7 @@ export default function Navbar() {
                         <NavLink href="/report" icon={<FileText className="w-4 h-4" />} label="Report" />
                         <NavLink href="/wizard" icon={<PlusCircle className="w-4 h-4" />} label="Update" />
                         <NavLink href="/goals" icon={<Target className="w-4 h-4" />} label="Goals" />
-                        <NavLink href="/planning" icon={<TrendingUp className="w-4 h-4" />} label="Strategy" />
+                        <NavLink href="/planning" icon={<TrendingUp className="w-4 h-4" />} label="Strategy (Beta)" />
 
                         {/* Docs Dropdown */}
                         <div className="relative group/docs">
