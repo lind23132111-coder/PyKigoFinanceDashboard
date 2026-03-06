@@ -21,6 +21,19 @@ export default function Navbar() {
                         <NavLink href="/report" icon={<FileText className="w-4 h-4" />} label="Report" />
                         <NavLink href="/wizard" icon={<PlusCircle className="w-4 h-4" />} label="Update" />
                         <NavLink href="/goals" icon={<Target className="w-4 h-4" />} label="Goals" />
+
+                        {/* Docs Dropdown */}
+                        <div className="relative group/docs">
+                            <button className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-brand-600 hover:bg-brand-50 transition-all">
+                                <FileText className="w-4 h-4" />
+                                <span className="hidden sm:inline">Docs</span>
+                            </button>
+                            <div className="absolute right-0 mt-1 w-48 bg-white rounded-xl shadow-xl border border-slate-200 py-2 hidden group-hover/docs:block animate-in fade-in slide-in-from-top-2 duration-200">
+                                <a href="https://github.com/lind23132111-coder/PyKigoFinanceDashboard/wiki/User-Guide" target="_blank" rel="noopener noreferrer" className="block px-4 py-2 text-sm text-slate-600 hover:bg-brand-50 hover:text-brand-600">User Guide</a>
+                                <a href="https://github.com/lind23132111-coder/PyKigoFinanceDashboard/wiki/Design-Document" target="_blank" rel="noopener noreferrer" className="block px-4 py-2 text-sm text-slate-600 hover:bg-brand-50 hover:text-brand-600">Design Doc</a>
+                                <a href="https://github.com/lind23132111-coder/PyKigoFinanceDashboard/wiki/Project-Work-Log" target="_blank" rel="noopener noreferrer" className="block px-4 py-2 text-sm text-slate-600 hover:bg-brand-50 hover:text-brand-600">Project Work Log</a>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
