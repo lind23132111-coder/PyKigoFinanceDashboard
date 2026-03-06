@@ -45,10 +45,44 @@ const DEMO_DASHBOARD_DATA = {
                 { id: "r6", total_twd_value: 1968400, assets: { currency: "TWD", asset_type: "cash", owner: "Both" } }
             ]
         },
-        "snap-4": { period_name: "2025/5", rawRecords: [{ total_twd_value: 84000000, assets: { currency: "USD", asset_type: "stock", owner: "PY" } }] },
-        "snap-3": { period_name: "2024/8", rawRecords: [{ total_twd_value: 62000000, assets: { currency: "USD", asset_type: "stock", owner: "PY" } }] },
-        "snap-2": { period_name: "2024/5", rawRecords: [{ total_twd_value: 48500000, assets: { currency: "USD", asset_type: "stock", owner: "PY" } }] },
-        "snap-1": { period_name: "2024/4", rawRecords: [{ total_twd_value: 42000000, assets: { currency: "USD", asset_type: "stock", owner: "PY" } }] }
+        "snap-4": {
+            period_name: "2025/5",
+            totalNetWorth: 84000000,
+            rawRecords: [
+                { id: "s4-1", total_twd_value: 50000000, assets: { currency: "USD", asset_type: "stock", owner: "PY" } },
+                { id: "s4-2", total_twd_value: 10000000, assets: { currency: "TWD", asset_type: "cash", owner: "Both" } },
+                { id: "s4-3", total_twd_value: 15000000, assets: { currency: "USD", asset_type: "rsu", owner: "PY" } },
+                { id: "s4-4", total_twd_value: 9000000, assets: { currency: "USD", asset_type: "stock", owner: "Kigo" } }
+            ]
+        },
+        "snap-3": {
+            period_name: "2024/8",
+            totalNetWorth: 62000000,
+            rawRecords: [
+                { id: "s3-1", total_twd_value: 35000000, assets: { currency: "USD", asset_type: "stock", owner: "PY" } },
+                { id: "s3-2", total_twd_value: 12000000, assets: { currency: "TWD", asset_type: "cash", owner: "Both" } },
+                { id: "s3-3", total_twd_value: 10000000, assets: { currency: "USD", asset_type: "rsu", owner: "PY" } },
+                { id: "s3-4", total_twd_value: 5000000, assets: { currency: "JPY", asset_type: "fixed_deposit", owner: "Kigo" } }
+            ]
+        },
+        "snap-2": {
+            period_name: "2024/5",
+            totalNetWorth: 48500000,
+            rawRecords: [
+                { id: "s2-1", total_twd_value: 28000000, assets: { currency: "USD", asset_type: "stock", owner: "PY" } },
+                { id: "s2-2", total_twd_value: 10500000, assets: { currency: "TWD", asset_type: "cash", owner: "Both" } },
+                { id: "s2-3", total_twd_value: 10000000, assets: { currency: "USD", asset_type: "rsu", owner: "PY" } }
+            ]
+        },
+        "snap-1": {
+            period_name: "2024/4",
+            totalNetWorth: 42000000,
+            rawRecords: [
+                { id: "s1-1", total_twd_value: 25000000, assets: { currency: "USD", asset_type: "stock", owner: "PY" } },
+                { id: "s1-2", total_twd_value: 10000000, assets: { currency: "TWD", asset_type: "cash", owner: "Both" } },
+                { id: "s1-3", total_twd_value: 7000000, assets: { currency: "USD", asset_type: "rsu", owner: "PY" } }
+            ]
+        }
     },
     rawRecords: [
         { id: "r1", total_twd_value: 17715600, assets: { currency: "USD", asset_type: "rsu", owner: "PY" } },
