@@ -58,10 +58,12 @@ ${assetDetails}
         }
 
         // 3. Update the snapshot with the generated summary
-        await supabase
-            .from('snapshots')
-            .update({ ai_summary: aiSummaryText })
-            .eq('id', snapshot_id);
+        if (process.env.NEXT_PUBLIC_DEMO_MODE !== "true") {
+            await supabase
+                .from('snapshots')
+                .update({ ai_summary: aiSummaryText })
+                .eq('id', snapshot_id);
+        }
 
         return NextResponse.json({ success: true, snapshot_id: snapshot_id });
     } catch (error: any) {
