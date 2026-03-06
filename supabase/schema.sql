@@ -1,73 +1,150 @@
--- RuiPYKigo Family Finance App - Supabase Schema 
+-- ---------------------------------------------------------------------
+-- RuiPYKigo Family Finance App - Database Schema
+-- Run this in your Supabase SQL Editor
+-- ---------------------------------------------------------------------
 
--- 1. members
+-- Enable UUID extension if not already enabled
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- 1. Create Enums
+CREATE TYPE asset_type_enum AS ENUM ('cash', 'stock', 'fixed_deposit', 'rsu');
+CREATE TYPE owner_enum AS ENUM ('PY', 'Kigo', 'Both');
+CREATE TYPE goal_status_enum AS ENUM ('on_track', 'warning', 'achieved');
+
+-- ---------------------------------------------------------------------
+-- 2. Create Tables
+-- ---------------------------------------------------------------------
+
+-- Members (Optional, but good for normalisation if needed later)
 CREATE TABLE members (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(50) NOT NULL UNIQUE
+    id TEXT PRIMARY KEY, -- 'PY', 'Kigo', 'Both'
+    name TEXT NOT NULL,
+    color_theme TEXT
 );
 
--- Insert default members
-INSERT INTO members (name) VALUES ('PY'), ('Kigo'), ('Both');
-
--- 2. assets
+-- Assets (Master list of all accounts and trackable items)
 CREATE TABLE assets (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    member_id INT REFERENCES members(id) ON DELETE SET NULL,
-    name VARCHAR(255) NOT NULL,
-    asset_type VARCHAR(50) NOT NULL CHECK (asset_type IN ('cash', 'stock', 'fixed_deposit')),
-    currency VARCHAR(10) NOT NULL CHECK (currency IN ('USD', 'TWD', 'JPY')),
-    ticker_symbol VARCHAR(50), -- Only relevant for stocks, nullable
-    is_active BOOLEAN DEFAULT true,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc', now())
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    title TEXT NOT NULL,
+    owner owner_enum NOT NULL,
+    asset_type asset_type_enum NOT NULL,
+    currency TEXT NOT NULL DEFAULT 'TWD',
+    ticker_symbol TEXT, -- e.g., 'NASDAQ:MU', 'TPE:0050'. Null for cash.
+    is_active BOOLEAN NOT NULL DEFAULT true,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 3. snapshots
-CREATE TABLE snapshots (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    period_name VARCHAR(50) NOT NULL UNIQUE, -- e.g., '2026_Q1'
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc', now()),
-    notes TEXT
-);
-
--- 4. snapshot_records
-CREATE TABLE snapshot_records (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    snapshot_id UUID REFERENCES snapshots(id) ON DELETE CASCADE,
-    asset_id UUID REFERENCES assets(id) ON DELETE CASCADE,
-    quantity DECIMAL(15, 6) NOT NULL DEFAULT 0, -- shares or cash balance
-    unit_price DECIMAL(15, 6) NOT NULL DEFAULT 1, -- price per share, 1 for cash
-    fx_rate DECIMAL(15, 6) NOT NULL DEFAULT 1, -- exchange rate to TWD
-    twd_value DECIMAL(15, 2) NOT NULL DEFAULT 0, -- calculated quantity * unit_price * fx_rate
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc', now())
-);
-
--- 5. market_cache (for Python Pipeline to upsert)
+-- Market Cache (Latest pulled prices for stocks and FX rates)
 CREATE TABLE market_cache (
-    symbol VARCHAR(50) PRIMARY KEY, -- 'MU', 'GOOG', '0050.TW', 'USD/TWD', 'JPY/TWD'
-    price DECIMAL(15, 6) NOT NULL,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc', now())
+    symbol TEXT PRIMARY KEY, -- e.g., 'NASDAQ:MU', 'USD/TWD', 'JPY/TWD'
+    price NUMERIC NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Row Level Security (RLS) Setup
--- Note: Authentication is stubbed initially. In a production environment with Google OAuth,
--- you would restrict these based on auth.uid() matching a user mapping table.
--- For local development and initial testing with stubbed auth, we enable RLS but allow all anonymous/authenticated operations.
+-- Snapshots (A single quarterly/event update record)
+CREATE TABLE snapshots (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    period_name TEXT NOT NULL, -- e.g., '2026 年 Q1'
+    start_date DATE,
+    end_date DATE,
+    ai_summary TEXT, -- Filled by Gemini after calculation
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Snapshot Records (The Fact Table: Values of assets at a specific snapshot point)
+CREATE TABLE snapshot_records (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    snapshot_id UUID NOT NULL REFERENCES snapshots(id) ON DELETE CASCADE,
+    asset_id UUID NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
+    quantity NUMERIC NOT NULL DEFAULT 0, -- For stocks: shares. For cash: balance.
+    unit_price NUMERIC, -- Recorded price at that exact time
+    fx_rate NUMERIC DEFAULT 1, -- FX rate used to calculate TWD value
+    total_twd_value NUMERIC NOT NULL, -- The final calculated TWD equivalent at that time
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Goals (Master list of financial goals)
+CREATE TYPE goal_category_enum AS ENUM ('upcoming_expense', 'long_term');
+
+CREATE TABLE goals (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name TEXT NOT NULL, -- e.g., 'Japandi 新家軟裝'
+    category goal_category_enum DEFAULT 'long_term',
+    target_amount NUMERIC NOT NULL,
+    target_date DATE,
+    priority INTEGER DEFAULT 1,
+    status goal_status_enum DEFAULT 'on_track',
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Goal Asset Mapping (Junction table tracking which assets fund which goals)
+CREATE TABLE goal_asset_mapping (
+    goal_id UUID NOT NULL REFERENCES goals(id) ON DELETE CASCADE,
+    asset_id UUID NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    PRIMARY KEY (goal_id, asset_id)
+);
+
+-- ---------------------------------------------------------------------
+-- 3. Row Level Security (RLS) Policies
+-- ---------------------------------------------------------------------
+
+-- In a single-family system without Auth just yet, we can enable public access 
+-- to get the app MVP running quickly. Later, we attach this to Google OAuth roles.
 
 ALTER TABLE members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE assets ENABLE ROW LEVEL SECURITY;
+ALTER TABLE market_cache ENABLE ROW LEVEL SECURITY;
 ALTER TABLE snapshots ENABLE ROW LEVEL SECURITY;
 ALTER TABLE snapshot_records ENABLE ROW LEVEL SECURITY;
-ALTER TABLE market_cache ENABLE ROW LEVEL SECURITY;
 
--- Development policies (Open to all for stubbed auth phase)
-CREATE POLICY "Enable all operations for members" ON members FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Enable all operations for assets" ON assets FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Enable all operations for snapshots" ON snapshots FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Enable all operations for snapshot_records" ON snapshot_records FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Enable all operations for market_cache" ON market_cache FOR ALL USING (true) WITH CHECK (true);
+-- Allow anonymous read/write operations for MVP phase
+CREATE POLICY "Enable read access for all users" ON members FOR SELECT USING (true);
+CREATE POLICY "Enable insert access for all users" ON members FOR INSERT WITH CHECK (true);
+CREATE POLICY "Enable update access for all users" ON members FOR UPDATE USING (true);
 
--- Indexes for performance
-CREATE INDEX idx_assets_member_id ON assets(member_id);
-CREATE INDEX idx_assets_type_active ON assets(asset_type, is_active);
-CREATE INDEX idx_snapshot_records_snapshot_id ON snapshot_records(snapshot_id);
-CREATE INDEX idx_snapshot_records_asset_id ON snapshot_records(asset_id);
+CREATE POLICY "Enable read access for all users" ON assets FOR SELECT USING (true);
+CREATE POLICY "Enable insert access for all users" ON assets FOR INSERT WITH CHECK (true);
+CREATE POLICY "Enable update access for all users" ON assets FOR UPDATE USING (true);
+
+CREATE POLICY "Enable read access for all users" ON market_cache FOR SELECT USING (true);
+CREATE POLICY "Enable insert access for all users" ON market_cache FOR INSERT WITH CHECK (true);
+CREATE POLICY "Enable update access for all users" ON market_cache FOR UPDATE USING (true);
+
+CREATE POLICY "Enable read access for all users" ON snapshots FOR SELECT USING (true);
+CREATE POLICY "Enable insert access for all users" ON snapshots FOR INSERT WITH CHECK (true);
+CREATE POLICY "Enable update access for all users" ON snapshots FOR UPDATE USING (true);
+
+CREATE POLICY "Enable read access for all users" ON snapshot_records FOR SELECT USING (true);
+CREATE POLICY "Enable insert access for all users" ON snapshot_records FOR INSERT WITH CHECK (true);
+CREATE POLICY "Enable update access for all users" ON snapshot_records FOR UPDATE USING (true);
+
+ALTER TABLE goals ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Enable read access for all users" ON goals FOR SELECT USING (true);
+CREATE POLICY "Enable insert access for all users" ON goals FOR INSERT WITH CHECK (true);
+CREATE POLICY "Enable update access for all users" ON goals FOR UPDATE USING (true);
+
+ALTER TABLE goal_asset_mapping ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Enable read access for all users" ON goal_asset_mapping FOR SELECT USING (true);
+CREATE POLICY "Enable insert access for all users" ON goal_asset_mapping FOR INSERT WITH CHECK (true);
+CREATE POLICY "Enable update access for all users" ON goal_asset_mapping FOR UPDATE USING (true);
+
+-- ---------------------------------------------------------------------
+-- 4. Initial Seed Data
+-- ---------------------------------------------------------------------
+
+-- Seed Members
+INSERT INTO members (id, name, color_theme) VALUES 
+('PY', 'PY', 'emerald'),
+('Kigo', 'Kigo', 'amber'),
+('Both', '共同', 'indigo')
+ON CONFLICT (id) DO NOTHING;
+
+-- Base Market Cache
+INSERT INTO market_cache (symbol, price) VALUES
+('USD/TWD', 32.5),
+('JPY/TWD', 0.22)
+ON CONFLICT (symbol) DO NOTHING;

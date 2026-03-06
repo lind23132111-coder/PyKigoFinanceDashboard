@@ -169,6 +169,7 @@ export default function QuarterlyWizard() {
             const { data: latestSnap } = await supabase
                 .from('snapshots')
                 .select('*')
+                .not('period_name', 'like', 'ARCHIVE%')
                 .order('created_at', { ascending: false })
                 .limit(1)
                 .single();

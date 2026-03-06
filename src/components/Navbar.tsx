@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Home, PlusCircle, Target, Wallet } from 'lucide-react';
+import { Home, PlusCircle, Target, Wallet, FileText } from 'lucide-react';
 
 export default function Navbar() {
     return (
@@ -18,6 +18,7 @@ export default function Navbar() {
                     </div>
                     <div className="flex items-center space-x-1 sm:space-x-4">
                         <NavLink href="/" icon={<Home className="w-4 h-4" />} label="Dashboard" />
+                        <NavLink href="/report" icon={<FileText className="w-4 h-4" />} label="Report" />
                         <NavLink href="/wizard" icon={<PlusCircle className="w-4 h-4" />} label="Update" />
                         <NavLink href="/goals" icon={<Target className="w-4 h-4" />} label="Goals" />
                     </div>

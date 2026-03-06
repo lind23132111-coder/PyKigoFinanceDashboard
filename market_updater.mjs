@@ -47,16 +47,31 @@ async function main() {
     for (const ticker of tickers) {
         try {
             let yfTicker = ticker;
+            let alternateYfTicker = null;
             if (yfTicker.startsWith('TPE:')) {
                 yfTicker = yfTicker.replace('TPE:', '') + '.TW';
+                alternateYfTicker = ticker.replace('TPE:', '') + '.TWO';
             } else if (yfTicker.startsWith('NASDAQ:')) {
                 yfTicker = yfTicker.replace('NASDAQ:', '');
             } else if (yfTicker.startsWith('NYSE:')) {
                 yfTicker = yfTicker.replace('NYSE:', '');
+            } else if (yfTicker.startsWith('NYSEARCA:')) {
+                yfTicker = yfTicker.replace('NYSEARCA:', '');
             }
 
             console.log(`Fetching price for ${yfTicker}...`);
-            const price = await fetchYahooPrice(yfTicker);
+            let price;
+            try {
+                price = await fetchYahooPrice(yfTicker);
+            } catch (err) {
+                if (alternateYfTicker && err.message.includes('404')) {
+                    console.log(`Fetching price for alternate ${alternateYfTicker}...`);
+                    price = await fetchYahooPrice(alternateYfTicker);
+                    yfTicker = alternateYfTicker; // Update for logging
+                } else {
+                    throw err; // Re-throw if it wasn't a 404 or we have no alternate
+                }
+            }
 
             if (price !== undefined && price !== null) {
                 updates.push({

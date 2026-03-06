@@ -1,71 +1,170 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
-    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
-    PieChart, Pie, Cell, Legend
+    BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer,
+    PieChart, Pie, Cell, Tooltip as RechartsTooltip, Legend
 } from "recharts";
-import { TrendingUp, AlertCircle, Sparkles } from "lucide-react";
+import { BarChart3, Sparkles, Send, XCircle } from "lucide-react";
+import { getLatestDashboardData, generateLiveAISummary } from "@/app/actions";
 
-// Mock Data for UI Visualization
-const assetGrowthData = [
-    { name: "2025_Q1", assets: 15000000 },
-    { name: "2025_Q2", assets: 17500000 },
-    { name: "2025_Q3", assets: 18200000 },
-    { name: "2025_Q4", assets: 21000000 },
-    { name: "2026_Q1", assets: 24500000 },
-];
-
-const currencyData = [
-    { name: "TWD", value: 12000000, color: "#3b82f6" },
-    { name: "USD", value: 10000000, color: "#10b981" },
-    { name: "JPY", value: 2500000, color: "#f59e0b" },
-];
-
-const allocationData = [
-    { name: "Stock", value: 16000000, color: "#8b5cf6" },
-    { name: "Cash", value: 6500000, color: "#ec4899" },
-    { name: "Fixed Deposit", value: 2000000, color: "#06b6d4" },
-];
-
-const ownershipData = [
-    { name: "PY", value: 11000000, color: "#6366f1" },
-    { name: "Kigo", value: 9500000, color: "#14b8a6" },
-    { name: "Both", value: 4000000, color: "#f43f5e" },
-];
+// Custom Label for Pie Charts
+const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, index, name }: any) => {
+    return null; // The legends handle the percentages in this specific design
+};
 
 export default function Dashboard() {
     const [mounted, setMounted] = useState(false);
-    useEffect(() => setMounted(true), []);
+    const [latestSummary, setLatestSummary] = useState<string>("正在載入最新的財務數據中...");
+    const [dashboardData, setDashboardData] = useState<any>(null);
+    const [feedbackText, setFeedbackText] = useState("");
+    const [isRegenerating, setIsRegenerating] = useState(false);
+    const [activeSnapshotId, setActiveSnapshotId] = useState<string | null>(null);
+    const [activeFilters, setActiveFilters] = useState<{ currency?: string, type?: string, owner?: string }>({});
+
+    useEffect(() => {
+        setMounted(true);
+
+        const loadDashboard = async () => {
+            try {
+                const data = await getLatestDashboardData();
+                setDashboardData(data);
+                if (data.latestSnapshot) {
+                    setActiveSnapshotId(data.latestSnapshot.id);
+                }
+
+                setLatestSummary("✨ 正在為您產生即時 AI 財務洞察中...");
+                const liveSummary = await generateLiveAISummary(data);
+                setLatestSummary(liveSummary);
+            } catch (error) {
+                console.error("Failed to load dashboard data", error);
+                setLatestSummary("⚠️ 無法載入財務數據。");
+            }
+        };
+
+        loadDashboard();
+    }, []);
+
+    const handleRegenerate = async () => {
+        if (!dashboardData || !feedbackText.trim() || isRegenerating) return;
+
+        setIsRegenerating(true);
+        setLatestSummary("✨ 正在依據您的回饋重新產生洞察中...");
+
+        try {
+            const newSummary = await generateLiveAISummary(dashboardData, feedbackText.trim());
+            setLatestSummary(newSummary);
+            setFeedbackText(""); // Clear feedback after success
+        } catch (error) {
+            console.error("Failed to regenerate summary", error);
+            setLatestSummary("⚠️ 重新產生失敗，請稍後再試。");
+        } finally {
+            setIsRegenerating(false);
+        }
+    };
+
+    const toggleFilter = (key: 'currency' | 'type' | 'owner', value: string) => {
+        setActiveFilters(prev => {
+            const newFilters = { ...prev };
+            if (newFilters[key] === value) delete newFilters[key];
+            else newFilters[key] = value;
+            return newFilters;
+        });
+    };
+
+    const displayData = useMemo(() => {
+        if (!dashboardData || !activeSnapshotId) return dashboardData;
+
+        const snapshotDetail = dashboardData.snapshotDetails[activeSnapshotId];
+        if (!snapshotDetail || !snapshotDetail.rawRecords) return dashboardData;
+
+        // Start with raw records for this snapshot
+        let records = snapshotDetail.rawRecords;
+
+        // Apply active filters
+        if (activeFilters.currency) records = records.filter((r: any) => r.assets?.currency === activeFilters.currency);
+        if (activeFilters.type) records = records.filter((r: any) => r.assets?.asset_type === activeFilters.type);
+        if (activeFilters.owner) records = records.filter((r: any) => r.assets?.owner === activeFilters.owner);
+
+        // Calculate new maps
+        let totalNetWorth = 0;
+        const currencyMap: Record<string, number> = {};
+        const allocationMap: Record<string, number> = {};
+        const ownershipMap: Record<string, number> = {};
+
+        records.forEach((record: any) => {
+            const val = Number(record.total_twd_value) || 0;
+            totalNetWorth += val;
+
+            const asset = Array.isArray(record.assets) ? record.assets[0] : record.assets;
+            if (asset) {
+                currencyMap[asset.currency] = (currencyMap[asset.currency] || 0) + val;
+                allocationMap[asset.asset_type] = (allocationMap[asset.asset_type] || 0) + val;
+                ownershipMap[asset.owner] = (ownershipMap[asset.owner] || 0) + val;
+            }
+        });
+
+        // Helper to format pie data
+        const formatPieData = (map: Record<string, number>, colorMap: Record<string, string>) => {
+            return Object.entries(map).map(([name, value]) => ({
+                name,
+                value: totalNetWorth > 0 ? Number((value / totalNetWorth * 100).toFixed(1)) : 0,
+                raw_value: value,
+                color: colorMap[name] || "#CBD5E1",
+                originalKey: name
+            })).sort((a, b) => b.value - a.value);
+        };
+
+        // NEW: Calculate Trend Data based on filters
+        const trendData = Object.entries(dashboardData.snapshotDetails).map(([id, detail]: [string, any]) => {
+            const allSnapRecords = detail.rawRecords || [];
+            let filteredRecords = allSnapRecords;
+
+            if (activeFilters.currency) filteredRecords = filteredRecords.filter((r: any) => r.assets?.currency === activeFilters.currency);
+            if (activeFilters.type) filteredRecords = filteredRecords.filter((r: any) => r.assets?.asset_type === activeFilters.type);
+            if (activeFilters.owner) filteredRecords = filteredRecords.filter((r: any) => r.assets?.owner === activeFilters.owner);
+
+            const filteredValue = filteredRecords.reduce((sum: number, r: any) => sum + (Number(r.total_twd_value) || 0), 0);
+            const totalValue = allSnapRecords.reduce((sum: number, r: any) => sum + (Number(r.total_twd_value) || 0), 0);
+
+            return {
+                id,
+                name: detail.period_name,
+                fullAssets: Math.round(totalValue / 10000),
+                filteredAssets: Math.round(filteredValue / 10000),
+                color: id === activeSnapshotId ? "#22c55e" : "#94a3b8"
+            };
+        }).sort((a: any, b: any) => {
+            // We need to keep the original order from dashboardData.trendData if possible
+            const indexA = dashboardData.trendData.findIndex((t: any) => t.id === a.id);
+            const indexB = dashboardData.trendData.findIndex((t: any) => t.id === b.id);
+            return indexA - indexB;
+        });
+
+        return {
+            ...snapshotDetail,
+            totalNetWorth,
+            trendData, // Overriding trendData with filter-aware version
+            currencyData: formatPieData(currencyMap, { USD: "#f59e0b", TWD: "#3b82f6", JPY: "#ef4444" }),
+            allocationData: formatPieData(allocationMap, { cash: "#3b82f6", stock: "#8b5cf6", fixed_deposit: "#f59e0b", rsu: "#10b981" }),
+            ownershipData: formatPieData(ownershipMap, { PY: "#10b981", Kigo: "#fcd34d", Both: "#6366f1" })
+        };
+    }, [dashboardData, activeSnapshotId, activeFilters]);
 
     if (!mounted) return <div className="animate-pulse space-y-8 p-4"><div className="h-32 bg-slate-200 rounded-2xl w-full"></div></div>;
 
-    const currentNetWorth = assetGrowthData[assetGrowthData.length - 1].assets;
-    const previousNetWorth = assetGrowthData[assetGrowthData.length - 2].assets;
-    const growthRate = ((currentNetWorth - previousNetWorth) / previousNetWorth) * 100;
+    const hasFilters = Object.keys(activeFilters).length > 0;
 
     return (
-        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
 
-            {/* Header Metrics */}
-            <div className="flex flex-col md:flex-row gap-6 justify-between items-start md:items-center">
-                <div>
-                    <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Financial Overview</h1>
-                    <p className="text-slate-500 mt-1">Snapshot of your family's quarterly progress.</p>
-                </div>
-
-                <div className="glass px-8 py-5 rounded-3xl min-w-[280px]">
-                    <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-1">Total Net Worth</p>
-                    <div className="flex items-end gap-3">
-                        <h2 className="text-4xl font-black text-slate-900">
-                            ${(currentNetWorth / 10000).toFixed(0)}<span className="text-2xl text-slate-400">W</span>
-                        </h2>
-                        <div className="flex items-center gap-1 text-emerald-500 bg-emerald-50 px-2 py-1 rounded-lg text-sm font-bold mb-1">
-                            <TrendingUp className="w-4 h-4" />
-                            <span>+{growthRate.toFixed(1)}% YoY</span>
-                        </div>
-                    </div>
-                </div>
+            {/* Header */}
+            <div>
+                <h1 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2">
+                    <BarChart3 className="w-6 h-6 text-brand-600" />
+                    家庭財務戰情室 (Financial Dashboard)
+                </h1>
+                <p className="text-slate-500 mt-1 text-sm font-medium">包含自動化財務洞察與多維度資產解析</p>
             </div>
 
             {/* AI Insights */}
@@ -73,120 +172,275 @@ export default function Dashboard() {
                 <div className="bg-white p-2 rounded-xl shadow-sm text-brand-600 mt-1">
                     <Sparkles className="w-5 h-5" />
                 </div>
-                <div>
+                <div className="flex-1 w-full">
                     <h3 className="font-bold text-slate-800 flex items-center gap-2">
                         AI Summary Insight
                     </h3>
-                    <p className="text-slate-600 text-sm mt-1 leading-relaxed">
-                        Your US stock exposure has grown by 15% this quarter, largely driven by MU performance. You may want to rebalance if your USD allocation exceeds your risk tolerance. Your emergency cash reserves (TWD) represent 6 months of expenses, which is healthy.
+                    <p className="text-slate-600 text-sm mt-1 leading-relaxed whitespace-pre-line min-h-[40px]">
+                        {latestSummary}
                     </p>
+                    <div className="mt-3 flex gap-2 relative">
+                        <input
+                            type="text"
+                            placeholder="給 AI 一些建議，例如：請短一點、多關注股票..."
+                            className="text-xs px-3 py-1.5 rounded-lg border border-brand-200 bg-white shadow-sm flex-1 outline-none focus:ring-2 focus:ring-brand-500 transition-all text-slate-700"
+                            value={feedbackText}
+                            onChange={(e) => setFeedbackText(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleRegenerate()}
+                            disabled={isRegenerating || latestSummary.includes('正在為您產生') || latestSummary.includes('載入最新的財務數據')}
+                        />
+                        <button
+                            onClick={handleRegenerate}
+                            disabled={isRegenerating || !feedbackText.trim() || latestSummary.includes('正在為您產生') || latestSummary.includes('載入最新的財務數據')}
+                            className="bg-brand-600 hover:bg-brand-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {isRegenerating ? <span className="animate-pulse text-xs">生成中...</span> : <><Send className="w-3 h-3" /> 重新生成</>}
+                        </button>
+                    </div>
                 </div>
             </div>
 
             {/* 2x2 Grid Charts */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {hasFilters && (
+                <div className="flex items-center gap-3 bg-brand-50 text-brand-700 px-4 py-3 rounded-xl border border-brand-200 text-sm font-medium animate-in fade-in">
+                    <span className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-brand-500 animate-pulse"></span>
+                        依點擊互動篩選中：
+                    </span>
+                    <div className="flex gap-2">
+                        {activeFilters.currency && <span className="bg-white px-2 py-1 rounded shadow-sm">幣別: {activeFilters.currency}</span>}
+                        {activeFilters.type && <span className="bg-white px-2 py-1 rounded shadow-sm">資產: {activeFilters.type === 'fixed_deposit' ? '定存' : activeFilters.type}</span>}
+                        {activeFilters.owner && <span className="bg-white px-2 py-1 rounded shadow-sm">成員: {activeFilters.owner}</span>}
+                    </div>
+                    <button onClick={() => setActiveFilters({})} className="ml-auto flex items-center gap-1 bg-white hover:bg-slate-100 px-3 py-1 rounded shadow-sm text-slate-600 transition-colors">
+                        <XCircle className="w-4 h-4" /> 清除篩選
+                    </button>
+                </div>
+            )}
 
-                {/* Net Worth Trend */}
-                <div className="glass rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-col">
-                    <h3 className="text-lg font-bold text-slate-800 mb-6">Asset Growth Trend</h3>
-                    <div className="h-[300px] w-full flex-grow">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={assetGrowthData}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b' }} dy={10} />
-                                <YAxis
-                                    tickFormatter={(val) => `$${val / 10000}W`}
-                                    axisLine={false}
-                                    tickLine={false}
-                                    tick={{ fill: '#64748b' }}
-                                    dx={-10}
-                                />
-                                <RechartsTooltip
-                                    cursor={{ fill: '#f1f5f9' }}
-                                    contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                />
-                                <Bar dataKey="assets" fill="var(--color-brand-500)" radius={[4, 4, 0, 0]} />
-                            </BarChart>
-                        </ResponsiveContainer>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative">
+
+                {/* Net Worth Trend - Custom Bar Chart */}
+                <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-col">
+                    <h3 className="text-sm font-bold text-slate-600 mb-6 text-center flex items-center justify-center gap-2">
+                        📈 總資產成長趨勢 (等值 NTD)
+                    </h3>
+                    <div className="h-[250px] w-full flex flex-col items-center justify-end relative">
+                        {(() => {
+                            const trendData = displayData?.trendData || [];
+                            const maxAsset = trendData.reduce((max: number, current: any) => Math.max(max, current.fullAssets || current.assets || 0), 0);
+                            const chartMax = Math.max(maxAsset * 1.2, 100);
+
+                            return (
+                                <>
+                                    <div className="flex w-full justify-around items-end h-[150px] px-8 border-b border-slate-200 pb-0 gap-2">
+                                        {trendData.map((item: any, index: number) => {
+                                            const isSelected = activeSnapshotId === item.id;
+                                            const fullHeight = Math.max(((item.fullAssets || item.assets) / chartMax) * 100, 2);
+                                            const filteredHeight = Math.max(((item.filteredAssets ?? item.assets) / chartMax) * 100, 2);
+                                            const showStack = hasFilters && (item.filteredAssets !== undefined);
+
+                                            return (
+                                                <div
+                                                    key={index}
+                                                    className="flex flex-col items-center flex-1 group h-full justify-end cursor-pointer relative"
+                                                    onClick={() => setActiveSnapshotId(item.id)}
+                                                >
+                                                    <div className="absolute -top-8 flex flex-col items-center">
+                                                        {showStack && item.filteredAssets < item.fullAssets && (
+                                                            <span className="text-[10px] text-slate-400 font-bold leading-none mb-0.5">{item.fullAssets}萬</span>
+                                                        )}
+                                                        <span className={`text-xs font-black z-10 ${isSelected ? 'text-brand-600' : 'text-slate-600 opacity-60 group-hover:opacity-100 transition-all'}`}>
+                                                            {item.filteredAssets ?? item.assets}萬
+                                                        </span>
+                                                    </div>
+
+                                                    <div className="w-full relative h-full flex items-end justify-center">
+                                                        {/* Background Total Bar (Visible when filtering) */}
+                                                        {showStack && (
+                                                            <div
+                                                                className="absolute w-full bg-slate-100 rounded-t-lg transition-all"
+                                                                style={{ height: `${fullHeight}%` }}
+                                                            ></div>
+                                                        )}
+
+                                                        {/* Main/Filtered Bar */}
+                                                        <div
+                                                            className={`w-full rounded-t-lg transition-all border-b-0 border-white/20 border-x z-10 ${isSelected ? 'opacity-100 ring-2 ring-brand-400 ring-offset-2' : 'opacity-70 group-hover:opacity-100'}`}
+                                                            style={{
+                                                                height: `${filteredHeight}%`,
+                                                                backgroundColor: item.color
+                                                            }}
+                                                        ></div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                    <div className="flex w-full justify-around mt-3 px-8 gap-2">
+                                        {trendData.map((item: any, index: number) => (
+                                            <div
+                                                key={index}
+                                                className={`text-[10px] md:text-sm font-bold text-center flex-1 cursor-pointer transition-colors ${activeSnapshotId === item.id ? 'text-brand-600' : 'text-slate-400 hover:text-slate-600'}`}
+                                                onClick={() => setActiveSnapshotId(item.id)}
+                                            >
+                                                {item.name}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </>
+                            );
+                        })()}
+
+                        {/* Growth Indicator */}
+                        <div className="text-emerald-500 font-black text-lg mt-4 flex items-center gap-1">
+                            <span className="text-xs">▲</span> +80.9%
+                        </div>
                     </div>
                 </div>
 
                 {/* Currency Pie */}
-                <div className="glass rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-col">
-                    <h3 className="text-lg font-bold text-slate-800 mb-6">Currency Exposure</h3>
-                    <div className="h-[300px] w-full flex-grow relative">
+                <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-col">
+                    <h3 className="text-sm font-bold text-slate-600 text-center mb-2 flex items-center justify-center gap-2">
+                        💱 幣別比例 (Currency Exposure)
+                    </h3>
+                    <div className="h-[250px] w-full flex-grow relative">
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                                 <Pie
-                                    data={currencyData}
+                                    data={displayData?.currencyData || []}
                                     cx="50%"
                                     cy="50%"
-                                    innerRadius={80}
-                                    outerRadius={110}
-                                    paddingAngle={5}
+                                    outerRadius={90}
                                     dataKey="value"
                                     stroke="none"
                                 >
-                                    {currencyData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={entry.color} />
-                                    ))}
+                                    {(displayData?.currencyData || []).map((entry: any, index: number) => {
+                                        const isSelected = activeFilters.currency === entry.originalKey;
+                                        const isFaded = activeFilters.currency && !isSelected;
+                                        return (
+                                            <Cell
+                                                key={`cell-${index}`}
+                                                fill={entry.color}
+                                                className="cursor-pointer transition-all duration-300 hover:opacity-80 stroke-white stroke-2"
+                                                onClick={() => toggleFilter('currency', entry.originalKey)}
+                                                style={{ opacity: isFaded ? 0.3 : 1 }}
+                                            />
+                                        );
+                                    })}
                                 </Pie>
-                                <RechartsTooltip formatter={(val: any) => `$${(val / 10000).toFixed(1)}W`} />
-                                <Legend verticalAlign="bottom" height={36} iconType="circle" />
+                                <RechartsTooltip
+                                    formatter={(value: any, name: any, props: any) => [
+                                        `${value}% (NT$ ${props.payload.raw_value.toLocaleString(undefined, { maximumFractionDigits: 0 })})`,
+                                        name
+                                    ]}
+                                />
+                                <Legend
+                                    verticalAlign="bottom"
+                                    height={36}
+                                    iconType="circle"
+                                    formatter={(value, entry: any) => {
+                                        return <span className="text-xs text-slate-500 font-medium">{entry.payload?.name} ({entry.payload?.value}%)</span>;
+                                    }}
+                                />
                             </PieChart>
                         </ResponsiveContainer>
                     </div>
                 </div>
 
                 {/* Asset Allocation Pie */}
-                <div className="glass rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-col">
-                    <h3 className="text-lg font-bold text-slate-800 mb-6">Asset Allocation</h3>
-                    <div className="h-[300px] w-full flex-grow relative">
+                <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-col">
+                    <h3 className="text-sm font-bold text-slate-600 text-center mb-2 flex items-center justify-center gap-2">
+                        🏛️ 資產配置 (Asset Class)
+                    </h3>
+                    <div className="h-[250px] w-full flex-grow relative">
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                                 <Pie
-                                    data={allocationData}
+                                    data={displayData?.allocationData || []}
                                     cx="50%"
                                     cy="50%"
-                                    innerRadius={80}
-                                    outerRadius={110}
-                                    paddingAngle={5}
+                                    outerRadius={90}
                                     dataKey="value"
                                     stroke="none"
                                 >
-                                    {allocationData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={entry.color} />
-                                    ))}
+                                    {(displayData?.allocationData || []).map((entry: any, index: number) => {
+                                        const isSelected = activeFilters.type === entry.originalKey;
+                                        const isFaded = activeFilters.type && !isSelected;
+                                        return (
+                                            <Cell
+                                                key={`cell-${index}`}
+                                                fill={entry.color}
+                                                className="cursor-pointer transition-all duration-300 hover:opacity-80 stroke-white stroke-2"
+                                                onClick={() => toggleFilter('type', entry.originalKey)}
+                                                style={{ opacity: isFaded ? 0.3 : 1 }}
+                                            />
+                                        );
+                                    })}
                                 </Pie>
-                                <RechartsTooltip formatter={(val: any) => `$${(val / 10000).toFixed(1)}W`} />
-                                <Legend verticalAlign="bottom" height={36} iconType="circle" />
+                                <RechartsTooltip
+                                    formatter={(value: any, name: any, props: any) => [
+                                        `${value}% (NT$ ${props.payload.raw_value.toLocaleString(undefined, { maximumFractionDigits: 0 })})`,
+                                        name
+                                    ]}
+                                />
+                                <Legend
+                                    verticalAlign="bottom"
+                                    height={36}
+                                    iconType="circle"
+                                    formatter={(value, entry: any) => {
+                                        return <span className="text-xs text-slate-500 font-medium">{entry.payload?.name} ({entry.payload?.value}%)</span>;
+                                    }}
+                                />
                             </PieChart>
                         </ResponsiveContainer>
                     </div>
                 </div>
 
                 {/* Owner Allocation Pie */}
-                <div className="glass rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-col">
-                    <h3 className="text-lg font-bold text-slate-800 mb-6">Ownership Split</h3>
-                    <div className="h-[300px] w-full flex-grow relative">
+                <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-col">
+                    <h3 className="text-sm font-bold text-slate-600 text-center mb-2 flex items-center justify-center gap-2">
+                        🧑🏼‍🤝‍🧑🏻 成員佔比 (Ownership)
+                    </h3>
+                    <div className="h-[250px] w-full flex-grow relative">
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                                 <Pie
-                                    data={ownershipData}
+                                    data={displayData?.ownershipData || []}
                                     cx="50%"
                                     cy="50%"
-                                    innerRadius={80}
-                                    outerRadius={110}
-                                    paddingAngle={5}
+                                    outerRadius={90}
                                     dataKey="value"
                                     stroke="none"
                                 >
-                                    {ownershipData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={entry.color} />
-                                    ))}
+                                    {(displayData?.ownershipData || []).map((entry: any, index: number) => {
+                                        const isSelected = activeFilters.owner === entry.originalKey;
+                                        const isFaded = activeFilters.owner && !isSelected;
+                                        return (
+                                            <Cell
+                                                key={`cell-${index}`}
+                                                fill={entry.color}
+                                                className="cursor-pointer transition-all duration-300 hover:opacity-80 stroke-white stroke-2"
+                                                onClick={() => toggleFilter('owner', entry.originalKey)}
+                                                style={{ opacity: isFaded ? 0.3 : 1 }}
+                                            />
+                                        );
+                                    })}
                                 </Pie>
-                                <RechartsTooltip formatter={(val: any) => `$${(val / 10000).toFixed(1)}W`} />
-                                <Legend verticalAlign="bottom" height={36} iconType="circle" />
+                                <RechartsTooltip
+                                    formatter={(value: any, name: any, props: any) => [
+                                        `${value}% (NT$ ${props.payload.raw_value.toLocaleString(undefined, { maximumFractionDigits: 0 })})`,
+                                        name
+                                    ]}
+                                />
+                                <Legend
+                                    verticalAlign="bottom"
+                                    height={36}
+                                    iconType="circle"
+                                    formatter={(value, entry: any) => {
+                                        return <span className="text-xs text-slate-500 font-medium">{entry.payload?.name} ({entry.payload?.value}%)</span>;
+                                    }}
+                                />
                             </PieChart>
                         </ResponsiveContainer>
                     </div>

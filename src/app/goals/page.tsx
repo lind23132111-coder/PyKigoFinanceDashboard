@@ -1,133 +1,355 @@
 "use client";
 
-import { Target, Calendar, ArrowRight, Wallet, CheckCircle } from "lucide-react";
-
-const goals = [
-    {
-        id: 1,
-        title: "Japandi Home Furnishing",
-        targetAmount: 500000,
-        currentAmount: 320000,
-        currency: "TWD",
-        targetDate: "2026-06-01",
-        status: "On Track",
-        statusColor: "text-emerald-500 bg-emerald-50",
-        linkedAssets: ["Cathay TWD", "0050.TW"]
-    },
-    {
-        id: 2,
-        title: "Phuket Family Trip",
-        targetAmount: 150000,
-        currentAmount: 45000,
-        currency: "TWD",
-        targetDate: "2026-10-15",
-        status: "Warning",
-        statusColor: "text-amber-500 bg-amber-50",
-        linkedAssets: ["Richart USD"]
-    },
-    {
-        id: 3,
-        title: "Ah Fu Maternity & Baby Buffer",
-        targetAmount: 800000,
-        currentAmount: 800000,
-        currency: "TWD",
-        targetDate: "2026-12-01",
-        status: "Completed",
-        statusColor: "text-brand-500 bg-brand-50",
-        linkedAssets: ["Fixed Deposit TWD"]
-    }
-];
+import { useState, useEffect } from "react";
+import { Plus, X, PiggyBank, Target } from "lucide-react";
+import { getGoalsWithProgress, createGoal, getActiveAssets } from "@/app/actions";
 
 export default function GoalTracker() {
-    return (
-        <div className="max-w-5xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    const [goals, setGoals] = useState<any[]>([]);
+    const [activeAssets, setActiveAssets] = useState<any[]>([]);
+    const [mounted, setMounted] = useState(false);
 
-            <div className="flex justify-between items-end">
-                <div>
-                    <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Goals & Major Expenses</h1>
-                    <p className="text-slate-500 mt-1">Bind your assets to specific future goals.</p>
+    // Form Modal State
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Support Category and Asset IDs
+    const [formData, setFormData] = useState({
+        name: "",
+        target_amount: "",
+        target_date: "",
+        category: "upcoming_expense", // Default
+        asset_ids: [] as string[]
+    });
+
+    const fetchGoalsAndAssets = async () => {
+        const [goalsData, assetsData] = await Promise.all([
+            getGoalsWithProgress(),
+            getActiveAssets()
+        ]);
+        setGoals(goalsData);
+        setActiveAssets(assetsData);
+    };
+
+    useEffect(() => {
+        setMounted(true);
+        fetchGoalsAndAssets();
+    }, []);
+
+    const handleAddGoal = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            setIsSubmitting(true);
+            const amount = Number(formData.target_amount);
+            if (isNaN(amount) || amount <= 0) {
+                alert("請輸入有效的目標金額！");
+                return;
+            }
+
+            await createGoal({
+                name: formData.name,
+                target_amount: amount,
+                category: formData.category,
+                target_date: formData.target_date || undefined,
+                asset_ids: formData.asset_ids
+            });
+
+            // Reset form and close modal
+            setFormData({ name: "", target_amount: "", target_date: "", category: "upcoming_expense", asset_ids: [] });
+            setIsModalOpen(false);
+
+            // Refresh list
+            await fetchGoalsAndAssets();
+
+        } catch (error) {
+            console.error(error);
+            alert("新增失敗，請稍後再試！");
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const toggleAssetSelection = (assetId: string) => {
+        setFormData(prev => {
+            const currentSelection = new Set(prev.asset_ids);
+            if (currentSelection.has(assetId)) {
+                currentSelection.delete(assetId);
+            } else {
+                currentSelection.add(assetId);
+            }
+            return { ...prev, asset_ids: Array.from(currentSelection) };
+        });
+    };
+
+    if (!mounted) return <div className="animate-pulse space-y-8 p-4"><div className="h-32 bg-slate-200 rounded-2xl w-full"></div></div>;
+
+    // Split goals into categories
+    const upcomingExpenses = goals.filter(g => g.category === 'upcoming_expense');
+    const longTermGoals = goals.filter(g => g.category === 'long_term' || !g.category);
+
+    const formatTWD = (val: number) => {
+        return new Intl.NumberFormat('zh-TW', { maximumFractionDigits: 0 }).format(val);
+    };
+
+    const getStatusStyle = (status: string) => {
+        if (status === 'achieved') return { text: "達標", color: "text-emerald-500", dot: "bg-emerald-500", progress: "bg-teal-500" };
+        if (status === 'warning') return { text: "落後/警示", color: "text-amber-500", dot: "bg-amber-400", progress: "bg-amber-400" };
+        return { text: "穩定累積中", color: "text-blue-600", dot: "bg-blue-600", progress: "bg-blue-500" };
+    };
+
+    const renderGoalCard = (goal: any) => {
+        const style = getStatusStyle(goal.status);
+        return (
+            <div key={goal.id} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                <div className="flex justify-between items-start mb-6">
+                    <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                        <span className="text-xl">🎯</span> {goal.name}
+                    </h3>
+                    <span className="text-xs font-semibold text-slate-400 bg-slate-100 px-3 py-1 rounded-md">
+                        目標日: {goal.target_date || '未設定'}
+                    </span>
                 </div>
-                <button className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg font-medium hover:bg-slate-800 transition-colors">
-                    <Target className="w-4 h-4" />
-                    <span>New Goal</span>
+
+                {/* Progress Bar */}
+                <div className="mb-4">
+                    <div className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                        <div
+                            className={`h-full rounded-full transition-all duration-1000 ${style.progress}`}
+                            style={{ width: `${goal.progress}%` }}
+                        />
+                    </div>
+                </div>
+
+                {/* Metrics */}
+                <div className="flex justify-between items-end mb-4">
+                    <p className="text-sm font-medium text-slate-600">
+                        已分配: {formatTWD(goal.current_funding)} / 目標: {formatTWD(goal.target_amount)} TWD
+                    </p>
+                    <div className={`flex items-center gap-1.5 text-sm font-bold ${style.color}`}>
+                        {style.text} ({goal.progress.toFixed(1)}%)
+                        <div className={`w-2.5 h-2.5 rounded-full ${style.dot}`} />
+                    </div>
+                </div>
+
+                {/* Source info */}
+                <p className="text-xs font-medium text-slate-400">
+                    {goal.goal_asset_mapping?.length > 0
+                        ? `已綁定 ${goal.goal_asset_mapping.length} 個資產帳戶來源`
+                        : '尚未綁定任何資產'}
+                </p>
+            </div>
+        );
+    };
+
+    return (
+        <div className="max-w-6xl mx-auto space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
+
+            <div className="flex justify-end">
+                <button
+                    onClick={() => setIsModalOpen(true)}
+                    className="flex items-center gap-1.5 px-5 py-2.5 bg-teal-500 hover:bg-teal-600 text-white rounded-xl font-bold transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5">
+                    <Plus className="w-4 h-4" />
+                    新增目標
                 </button>
             </div>
 
-            <div className="grid gap-6">
-                {goals.map(goal => {
-                    const progress = Math.min((goal.currentAmount / goal.targetAmount) * 100, 100);
-                    const isComplete = progress >= 100;
+            {/* Upcoming Expenses Section */}
+            <section className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden border-t-4 border-t-amber-400 relative">
+                <div className="p-6 md:px-8 border-b border-slate-100 flex items-center gap-3 bg-white z-10">
+                    <div className="p-2 bg-amber-50 text-amber-500 rounded-lg">
+                        <PiggyBank className="w-5 h-5" />
+                    </div>
+                    <div>
+                        <h2 className="text-xl font-bold text-slate-800">即將到來的大筆開銷</h2>
+                        <p className="text-sm text-slate-500">1-3年內的短期目標，如旅遊、買車、婚禮等。</p>
+                    </div>
+                </div>
 
-                    return (
-                        <div key={goal.id} className="glass p-6 rounded-3xl border border-slate-100 hover:shadow-md transition-shadow">
-                            <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-6">
+                <div className="p-6 md:px-8 grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50/50">
+                    {upcomingExpenses.length === 0 ? (
+                        <div className="col-span-full py-8 text-center text-slate-400 text-sm">尚未建立任何近期開銷目標。</div>
+                    ) : upcomingExpenses.map(renderGoalCard)}
+                </div>
+            </section>
 
-                                <div className="flex items-center gap-4">
-                                    <div className={`p-3 rounded-2xl ${isComplete ? 'bg-brand-100 text-brand-600' : 'bg-slate-100 text-slate-600'
-                                        }`}>
-                                        {isComplete ? <CheckCircle className="w-6 h-6" /> : <Target className="w-6 h-6" />}
-                                    </div>
-                                    <div>
-                                        <h3 className="text-xl font-bold text-slate-800">{goal.title}</h3>
-                                        <div className="flex items-center gap-3 mt-1">
-                                            <span className={`text-xs font-bold px-2 py-1 rounded-md ${goal.statusColor}`}>
-                                                {goal.status}
-                                            </span>
-                                            <span className="text-sm font-medium text-slate-500 flex items-center gap-1">
-                                                <Calendar className="w-3.5 h-3.5" />
-                                                {new Date(goal.targetDate).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
+            {/* Long Term Goals Section */}
+            <section className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden border-t-4 border-t-indigo-500 relative">
+                <div className="p-6 md:px-8 border-b border-slate-100 flex items-center gap-3 bg-white z-10">
+                    <div className="p-2 bg-indigo-50 text-indigo-500 rounded-lg">
+                        <Target className="w-5 h-5" />
+                    </div>
+                    <div>
+                        <h2 className="text-xl font-bold text-slate-800">長期理財規劃</h2>
+                        <p className="text-sm text-slate-500">3年以上的長遠規劃，如退休金、買房頭期款等。</p>
+                    </div>
+                </div>
 
-                                <div className="text-right">
-                                    <p className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-1">Target Amount</p>
-                                    <p className="text-2xl font-black text-slate-900">
-                                        ${(goal.targetAmount / 10000).toFixed(1)}W <span className="text-base text-slate-400 font-medium">{goal.currency}</span>
-                                    </p>
+                <div className="p-6 md:px-8 grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50/50">
+                    {longTermGoals.length === 0 ? (
+                        <div className="col-span-full py-8 text-center text-slate-400 text-sm">尚未建立任何長期理財目標。</div>
+                    ) : longTermGoals.map(renderGoalCard)}
+                </div>
+            </section>
+
+            {/* Modal Overlay */}
+            {isModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm transition-opacity">
+                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-y-auto max-h-[90vh] animate-in zoom-in-95 duration-200">
+                        <div className="sticky top-0 bg-white flex justify-between items-center p-6 border-b border-slate-100 z-10">
+                            <h3 className="text-lg font-bold text-slate-800">新增財務目標</h3>
+                            <button
+                                onClick={() => setIsModalOpen(false)}
+                                className="text-slate-400 hover:text-slate-600 transition-colors p-1"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleAddGoal} className="p-6 space-y-6">
+
+                            {/* Category Selection */}
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-3">目標類型 <span className="text-red-500">*</span></label>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <label className={`
+                                        cursor-pointer flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all
+                                        ${formData.category === 'upcoming_expense' ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-slate-100 bg-white text-slate-500 hover:border-slate-200'}
+                                    `}>
+                                        <input type="radio" name="category" value="upcoming_expense" className="sr-only"
+                                            checked={formData.category === 'upcoming_expense'}
+                                            onChange={() => setFormData({ ...formData, category: 'upcoming_expense' })}
+                                        />
+                                        <PiggyBank className="w-6 h-6 mb-2" />
+                                        <span className="font-bold text-sm">大筆開銷 (短期)</span>
+                                    </label>
+
+                                    <label className={`
+                                        cursor-pointer flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all
+                                        ${formData.category === 'long_term' ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-slate-100 bg-white text-slate-500 hover:border-slate-200'}
+                                    `}>
+                                        <input type="radio" name="category" value="long_term" className="sr-only"
+                                            checked={formData.category === 'long_term'}
+                                            onChange={() => setFormData({ ...formData, category: 'long_term' })}
+                                        />
+                                        <Target className="w-6 h-6 mb-2" />
+                                        <span className="font-bold text-sm">理財規劃 (長期)</span>
+                                    </label>
                                 </div>
                             </div>
 
-                            {/* Progress Bar */}
-                            <div className="space-y-2 mb-6">
-                                <div className="flex justify-between text-sm font-medium text-slate-600">
-                                    <span>${(goal.currentAmount / 10000).toFixed(1)}W saved</span>
-                                    <span>{progress.toFixed(0)}%</span>
-                                </div>
-                                <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden">
-                                    <div
-                                        className={`h-full rounded-full transition-all duration-1000 ${isComplete ? 'bg-brand-500' : 'bg-slate-800'
-                                            }`}
-                                        style={{ width: `${progress}%` }}
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">目標名稱 <span className="text-red-500">*</span></label>
+                                    <input
+                                        type="text"
+                                        required
+                                        className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-teal-400 focus:border-teal-400 outline-none transition-all placeholder:text-slate-400"
+                                        placeholder="例如：Japandi 新家裝潢、退休金"
+                                        value={formData.name}
+                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                     />
                                 </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">目標金額 (TWD) <span className="text-red-500">*</span></label>
+                                        <input
+                                            type="number"
+                                            required
+                                            min="1"
+                                            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-teal-400 focus:border-teal-400 outline-none transition-all placeholder:text-slate-400"
+                                            placeholder="例如：500000"
+                                            value={formData.target_amount}
+                                            onChange={(e) => setFormData({ ...formData, target_amount: e.target.value })}
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">預計達成日期 (選填)</label>
+                                        <input
+                                            type="date"
+                                            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-teal-400 focus:border-teal-400 outline-none transition-all text-slate-700"
+                                            value={formData.target_date}
+                                            onChange={(e) => setFormData({ ...formData, target_date: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
                             </div>
 
-                            {/* Linked Assets */}
-                            <div className="bg-slate-50 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                                <div className="flex items-center gap-2 text-sm font-bold text-slate-700 whitespace-nowrap">
-                                    <Wallet className="w-4 h-4 text-slate-400" />
-                                    Linked Assets:
+                            {/* Asset Selection */}
+                            <div className="pt-2 border-t border-slate-100">
+                                <label className="block text-sm font-medium text-slate-700 mb-2">綁定資產帳戶以追蹤進度 (選填)</label>
+                                <p className="text-xs text-slate-500 mb-3">可以靈活選擇多個股票或現金帳戶，這些帳戶的現值總和將視為該目標的當前進度。</p>
+
+                                <div className="max-h-40 overflow-y-auto border border-slate-200 rounded-lg bg-slate-50 p-2 space-y-1">
+                                    {activeAssets.length === 0 ? (
+                                        <div className="text-xs text-slate-400 text-center py-4">無可用資產。</div>
+                                    ) : (
+                                        activeAssets.map(asset => {
+                                            const isSelected = formData.asset_ids.includes(asset.id);
+                                            return (
+                                                <label
+                                                    key={asset.id}
+                                                    className={`
+                                                        flex items-center gap-3 p-2.5 rounded-lg cursor-pointer transition-colors text-sm
+                                                        ${isSelected ? 'bg-teal-50 border border-teal-200 shadow-sm' : 'bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50'}
+                                                    `}
+                                                >
+                                                    <input
+                                                        type="checkbox"
+                                                        className="w-4 h-4 text-teal-500 rounded border-slate-300 focus:ring-teal-500"
+                                                        checked={isSelected}
+                                                        onChange={() => toggleAssetSelection(asset.id)}
+                                                    />
+                                                    <div className="flex-1 font-medium text-slate-700 truncate">{asset.title}</div>
+
+                                                    <div className="flex items-center gap-1.5 shrink-0">
+                                                        <span className={`text-[10px] px-2 py-0.5 rounded-md font-bold ${asset.owner === 'PY' ? 'bg-emerald-100 text-emerald-700' :
+                                                                asset.owner === 'Kigo' ? 'bg-amber-100 text-amber-700' :
+                                                                    'bg-indigo-100 text-indigo-700'
+                                                            }`}>
+                                                            {asset.owner === 'Both' ? '共同' : asset.owner}
+                                                        </span>
+                                                        <span className="text-[10px] px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded-md font-bold">
+                                                            {asset.currency}
+                                                        </span>
+                                                        <span className="text-[10px] px-1.5 py-0.5 text-slate-400 bg-slate-50 border border-slate-100 rounded-md">
+                                                            {asset.asset_type === 'stock' || asset.asset_type === 'rsu' ? '股票' : '現金'}
+                                                        </span>
+                                                    </div>
+                                                </label>
+                                            );
+                                        })
+                                    )}
                                 </div>
-                                <div className="flex flex-wrap gap-2">
-                                    {goal.linkedAssets.map(asset => (
-                                        <span key={asset} className="px-3 py-1 bg-white border border-slate-200 text-slate-600 text-xs font-bold rounded-lg shadow-sm">
-                                            {asset}
-                                        </span>
-                                    ))}
-                                </div>
-                                {!isComplete && (
-                                    <button className="ml-auto flex items-center gap-1 text-sm font-bold text-brand-600 hover:text-brand-500 transition-colors">
-                                        Manage Funding <ArrowRight className="w-4 h-4" />
-                                    </button>
-                                )}
                             </div>
 
-                        </div>
-                    );
-                })}
-            </div>
+                            {/* Submit */}
+                            <div className="pt-6 mt-4 flex justify-end gap-3 sticky bottom-0 bg-white border-t border-slate-100">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsModalOpen(false)}
+                                    className="px-4 py-2 text-slate-600 font-medium hover:bg-slate-100 rounded-lg transition-colors"
+                                    disabled={isSubmitting}
+                                >
+                                    取消
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="px-6 py-2 bg-teal-500 hover:bg-teal-600 text-white font-bold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-w-[100px]"
+                                    disabled={isSubmitting}
+                                >
+                                    {isSubmitting ? (
+                                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                    ) : (
+                                        "建立目標"
+                                    )}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
 
         </div>
     );
