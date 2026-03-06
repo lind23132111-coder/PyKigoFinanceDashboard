@@ -97,4 +97,4 @@ node market_updater.mjs
 - `scripts/legacy/`: 舊版的測試與資料導入腳本
 
 ---
-Created by **pykao** & **kigochen**.
+Created by **pykao**.

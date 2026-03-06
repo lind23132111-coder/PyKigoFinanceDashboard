@@ -40,7 +40,7 @@
 
 ### 🔹 Phase 4: 邁向維運 (Go-Live)
 *   **實作亮點**:
-    *   協助 PY 與 Kigo 將真實資產清單導入資料庫。
+    *   協助 PY 與 pykao 將真實資產清單導入資料庫。
     *   驗證了多幣別（USD, TWD, JPY）在不同月份結算點的匯率轉換準確性。
 
 ### 🔹 Phase 5: AI 戰情室與架構重構 (Current)
@@ -70,4 +70,4 @@
 - [ ] 手機版 UI 進一步優化。
 
 ---
-**本誌錄由 Antigravity (AI Architect) 與 PY/Kigo 共同編輯完成。**
+**本誌錄由 Antigravity (AI Architect) 與 pykao 共同編輯完成。**
