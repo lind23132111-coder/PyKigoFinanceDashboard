@@ -188,3 +188,63 @@ export async function deleteSnapshot(snapshotId: string) {
 
     return { success: true };
 }
+
+// ─────────────────────────────────────────────────────────────────
+// TICKER AUTOCOMPLETE & VALIDATION
+// ─────────────────────────────────────────────────────────────────
+
+export type TickerSuggestion = {
+    symbol: string;
+    name: string;
+    exchange: string;
+};
+
+/** Search Yahoo Finance for ticker suggestions (used for autocomplete) */
+export async function searchTicker(query: string): Promise<TickerSuggestion[]> {
+    if (!query || query.trim().length < 1) return [];
+
+    // Demo mode: return mock suggestions
+    if (process.env.NEXT_PUBLIC_DEMO_MODE === "true") {
+        const DEMO: TickerSuggestion[] = [
+            { symbol: "AAPL", name: "Apple Inc.", exchange: "NASDAQ" },
+            { symbol: "AMZN", name: "Amazon.com Inc.", exchange: "NASDAQ" },
+            { symbol: "MSFT", name: "Microsoft Corporation", exchange: "NASDAQ" },
+            { symbol: "NVDA", name: "Nvidia Corporation", exchange: "NASDAQ" },
+            { symbol: "MU", name: "Micron Technology Inc.", exchange: "NASDAQ" },
+        ];
+        return DEMO.filter(s =>
+            s.symbol.toUpperCase().startsWith(query.toUpperCase()) ||
+            s.name.toLowerCase().includes(query.toLowerCase())
+        ).slice(0, 6);
+    }
+
+    try {
+        // yahoo-finance2 uses a module-level search function accessible via the main module
+        const yf = await import('yahoo-finance2');
+        const yahooFinance = yf.default ?? yf;
+        const results = await (yahooFinance as any).search(query, undefined, { validateResult: false });
+        return ((results as any).quotes || [])
+            .filter((q: any) => q.quoteType === 'EQUITY' || q.quoteType === 'ETF')
+            .slice(0, 6)
+            .map((q: any) => ({
+                symbol: q.symbol,
+                name: q.shortname || q.longname || q.symbol,
+                exchange: q.exchange || '',
+            }));
+    } catch {
+        return [];
+    }
+}
+
+/** Check if a ticker already exists for this owner in the assets table */
+export async function checkDuplicateTicker(ticker: string, owner: string): Promise<boolean> {
+    if (process.env.NEXT_PUBLIC_DEMO_MODE === "true") return false;
+    const { data } = await supabase
+        .from('assets')
+        .select('id')
+        .eq('ticker_symbol', ticker.toUpperCase())
+        .eq('owner', owner)
+        .eq('is_active', true)
+        .limit(1);
+    return !!(data && data.length > 0);
+}
