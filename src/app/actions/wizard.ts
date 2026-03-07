@@ -219,10 +219,22 @@ export async function searchTicker(query: string): Promise<TickerSuggestion[]> {
     }
 
     try {
-        // yahoo-finance2 uses a module-level search function accessible via the main module
-        const yf = await import('yahoo-finance2');
-        const yahooFinance = yf.default ?? yf;
-        const results = await (yahooFinance as any).search(query);
+        const yfModule = await import('yahoo-finance2');
+        const YahooFinanceConstructor = (yfModule as any).default || yfModule;
+
+        let yahooFinance: any;
+        if (typeof YahooFinanceConstructor === 'function') {
+            yahooFinance = new YahooFinanceConstructor();
+        } else {
+            yahooFinance = YahooFinanceConstructor;
+        }
+
+        if (typeof yahooFinance.search !== 'function') {
+            console.error("searchTicker: No search function found", { type: typeof yahooFinance });
+            return [];
+        }
+
+        const results = await yahooFinance.search(query);
         const quotes = results.quotes || [];
 
         return quotes
@@ -232,10 +244,20 @@ export async function searchTicker(query: string): Promise<TickerSuggestion[]> {
                 name: q.shortname || q.longname || q.symbol,
                 exchange: q.exchange || '',
             }));
-    } catch (err) {
-        console.error("searchTicker error:", err);
-        // Fail-safe for debugging: return a special item so user knows it was called
-        return [{ symbol: "ERROR", name: "搜尋 API 出錯，請檢查後端日誌", exchange: "ERROR" }];
+    } catch (err: any) {
+        console.error("searchTicker error:", err.message);
+
+        // Handle rate limiting or crumb errors by showing common suggestions in DEV
+        if (err.message?.includes('429') || err.message?.includes('crumb')) {
+            return [
+                { symbol: "AAPL", name: "Apple Inc. (限流模式)", exchange: "NASDAQ" },
+                { symbol: "0050.TW", name: "元大台灣50 (限流模式)", exchange: "TPE" },
+                { symbol: "NVDA", name: "NVIDIA Corp (限流模式)", exchange: "NASDAQ" },
+                { symbol: "2330.TW", name: "台積電 (限流模式)", exchange: "TPE" }
+            ];
+        }
+
+        return [{ symbol: "ERROR", name: "搜尋 API 出錯: " + (err.message || "Unknown"), exchange: "ERROR" }];
     }
 }
 
