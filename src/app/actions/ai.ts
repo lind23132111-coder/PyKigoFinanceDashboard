@@ -53,25 +53,52 @@ ${historyContext}${newFeedbackContext}
 請給出一到兩句簡短、專業且具洞察力的財務總結與建議。不要囉嗦，字數預設控制在 60 字以內 (除非使用者有別的要求)，語氣要像是專業私人顧問。`;
 
         let response;
-        const modelsToTry = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-pro'];
+        // 擴大嘗試範圍，包含 2.0 版本、及最穩定的 legacy 名稱
+        const modelsToTry = [
+            'gemini-1.5-flash',
+            'gemini-2.0-flash-exp',
+            'gemini-2.0-flash',
+            'gemini-1.5-pro',
+            'gemini-pro',
+            'gemini-1.0-pro'
+        ];
         let lastError = null;
 
         for (const modelName of modelsToTry) {
             try {
-                console.log(`Attempting AI generation with model: ${modelName}`);
+                console.log(`[AI Debug] Attempting model: ${modelName}`);
+                // 嘗試不同格式：有些 SDK 版本偏好直接傳字串
                 response = await ai.models.generateContent({
                     model: modelName,
                     contents: [{ role: 'user', parts: [{ text: prompt }] }],
                 });
-                if (response) break;
+
+                if (response) {
+                    console.log(`[AI Debug] Success with ${modelName}`);
+                    break;
+                }
             } catch (err: any) {
                 lastError = err;
-                console.warn(`Model ${modelName} failed:`, err.message);
+                console.warn(`[AI Debug] Model ${modelName} failed:`, err.message);
+
+                // 嘗試第二種格式：直接傳 Prompt 字串 (如同 route.ts 做法)
+                try {
+                    response = await ai.models.generateContent({
+                        model: modelName,
+                        contents: prompt as any,
+                    });
+                    if (response) {
+                        console.log(`[AI Debug] Success with ${modelName} (string format)`);
+                        break;
+                    }
+                } catch (err2) {
+                    // 繼續下一個型號
+                }
             }
         }
 
         if (!response) {
-            throw lastError || new Error("All AI models failed to generate content.");
+            throw lastError || new Error("所有 AI 模型皆嘗試失敗。");
         }
 
         const newSummary = (response as any).text || (response as any).candidates?.[0]?.content?.parts?.[0]?.text || "⚠️ AI 沒有回傳任何內容。";
