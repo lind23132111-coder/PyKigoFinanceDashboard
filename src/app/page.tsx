@@ -29,6 +29,12 @@ export default function Dashboard() {
                 setDashboardData(data);
                 if (data.latestSnapshot) {
                     setActiveSnapshotId(data.latestSnapshot.id);
+
+                    // If summary exists in snapshot, use it immediately (UX optimization)
+                    if (data.latestSnapshot.ai_summary) {
+                        setLatestSummary(data.latestSnapshot.ai_summary);
+                        return;
+                    }
                 }
 
                 setLatestSummary("✨ 正在為您產生即時 AI 財務洞察中...");
