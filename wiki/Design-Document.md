@@ -82,6 +82,7 @@ _註：本圖為實際 UI 介面展示 (使用模擬數據)。_
 ## 4. 安全性與擴充性
 
 - **RLS (Row Level Security)**：資料庫層級的權限控管。
+- **Wiki Sync SOP**：由於 GitHub Wiki 是獨立倉庫，修改主專案 `wiki/` 後必須執行 `node scripts/sync-wiki.mjs` 來同步至外部 Wiki 頁面。
 - **模組化 UI**：Dashboard 拆分為 `AIInsightSection`, `TrendChart`, `AggregationPieCharts` 等，方便未來擴充圖表類型（如：散佈圖、熱點圖）。
 
 ---
