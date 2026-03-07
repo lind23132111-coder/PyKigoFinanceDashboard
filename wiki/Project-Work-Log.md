@@ -1,4 +1,4 @@
-# Pypykao Finance Dashboard Project Work Log
+# PyKigo Finance Dashboard Project Work Log
 
 本誌錄記載了本專案從開發初期至今的關鍵里程碑、實作內容及開發心得。
 
@@ -40,7 +40,7 @@
 
 ### 🔹 Phase 4: 邁向維運 (Go-Live)
 *   **實作亮點**:
-    *   協助 PY 與 pykao 將真實資產清單導入資料庫。
+    *   協助 PY 與 Kigo 將真實資產清單導入資料庫。
     *   驗證了多幣別（USD, TWD, JPY）在不同月份結算點的匯率轉換準確性。
 
 ### 🔹 Phase 5: AI 戰情室與架構重構 (Current)
@@ -55,7 +55,9 @@
     *   **雙版本部署策略**: 透過環境變數 `NEXT_PUBLIC_DEMO_MODE`，讓同一個 Repo 能同時支援「真實版」與「公開分享 Demo 版」。
     *   **全站密碼防護**: 實作 Middleware 攔截機制與 Premium 登入頁面，使用 `httpOnly` Cookie 提供為期 30 天的安全存取。
     *   **目標 CRUD 完整化**: 完成目標的編輯與刪除功能，包含資料庫聯動清理邏輯，讓資料維護不再依賴 SQL Script。
-*   **Lesson Learnt**: 在專案發布前建立好「Demo 模式」非常重要，這能讓你在不洩漏真實隱私的前提下，向他人展示開發成果。
+    *   **數據安全大排查**: 徹底抹除 Git 歷史中的敏感數據 (CSV/SQL)，並重寫 Commit 歷史以確保隱私。
+    *   **CI/CD 自動化復原**: 修復 GitHub Actions 與 Secrets 設定，恢復市場報價與匯率的 6 小時自動更新。
+*   **Lesson Learnt**: 在專案發布前建立好「Demo 模式」與「安全保險箱 (Secrets)」非常重要，這能讓你在不洩漏真實隱私的前提下，維持長期的自動化維運。
 
 ---
 
@@ -70,11 +72,11 @@
 - [ ] 手機版 UI 進一步優化。
 
 ---
-**本誌錄由 Antigravity (AI Architect) 與 pykao 共同編輯完成。**
-
-### 🔹 Phase 7: 長期股票管理規劃 (Investment Strategy) - [💡 WIP / Idea Stage]
-*   **實作亮點**:
-    *   **規劃頁面 (Strategy Page)**: 新增一個專為長期策略設計的 Dashboard，目前處於功能原型 (Prototype) 階段。
-    *   **資產再平衡 (Rebalancing)**: 實施目標資產配置比對邏輯，當實際比例偏離預設目標時提供警示。
-    *   **股息雪球預測 (Dividend Snowball)**: 根據當前持股，模擬未來 10 年的被動收入增長曲線。
-*   **Current Status**: 概念驗證 (POC) 階段，功能與數據結構正持續演進中。
+**本誌錄由 Antigravity (AI Architect) 與 PY/Kigo 共同編輯完成。**
+### Phase 7: Long-term Stock Planning (Investment Strategy)
+- **Goal**: Transition from current snapshot tracking to future financial strategy.
+- **Achievements**:
+  - Implemented `/planning` route with "Strategy" dashboard.
+  - Added **Portfolio Rebalancing** module (Target vs. Actual).
+  - Added **Dividend Snowball** projection chart (10-year passive income forecast).
+  - Integrated with Navbar for easy access.

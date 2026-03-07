@@ -1,15 +1,15 @@
-# Pypykao Finance Dashboard - 使用者操作指南
+# PyKigo Finance Dashboard - 使用者操作指南
 
 歡迎使用您的專屬財務戰情室！本指南將協助您快速上手各項核心功能。
 
-![Dashboard](images/dashboard_ultra.png)
+![Dashboard](/Users/kigochen/.gemini/antigravity/brain/49dd8b2d-2a73-45e6-9932-d52a61c7b6f5/dashboard_ultra.png)
 
 ## 0. 安全存取 (Site Security)
 為了保護您的真實財務隱私，正式版設有密碼保護層。
 - **登入頁面**：進入網頁後會自動跳轉至登入頁面。
 - **輸入密碼**：請輸入由系統管理者（您自己）在 Vercel 環境變數 `SITE_PASSWORD` 設定的密碼。
 - **記住身分**：登入成功後，瀏覽器會記住您的身分 30 天，期間內不需重複登入。
-- **Demo 版免登入**：如果您分享的是 [Demo 展示版](https://py-kigo-finance-dashboard-demo.vercel.app/)，系統會自動跳過此步驟，方便觀看模擬數據。
+- **Demo 版免登入**：如果您分享的是 Demo 版本，系統會自動跳過此步驟，方便觀看模擬數據。
 
 ## 1. 財務戰情室 (Financial Dashboard)
 儀表板提供全方位的資產視角。
@@ -22,9 +22,9 @@
 ## 2. 定期資產結算 (Quarterly Wizard)
 每次結算時（如：季度或月份），請前往此頁面。
 
-![Wizard](images/wizard_ultra.png)
+![Wizard](/Users/kigochen/.gemini/antigravity/brain/49dd8b2d-2a73-45e6-9932-d52a61c7b6f5/wizard_ultra.png)
 
-![Wizard input detailed](images/wizard_detailed_ultra.png)
+![Wizard input detailed](/Users/kigochen/.gemini/antigravity/brain/49dd8b2d-2a73-45e6-9932-d52a61c7b6f5/wizard_detailed_ultra.png)
 
 - **確認投資股數**: 系統會自動帶入上一次的結算數量，並比對最新市場報價，您只需確認是否有買進/賣出即可。
 - **更新銀行餘額**: 填入各家網銀今日的實際餘額。
@@ -33,9 +33,9 @@
 ## 3. 財務目標追蹤 (Goal Tracker)
 讓您的存款與投資賦予目標感。
 
-![Goals](images/goal_ultra.png)
+![Goals](/Users/kigochen/.gemini/antigravity/brain/49dd8b2d-2a73-45e6-9932-d52a61c7b6f5/goal_ultra.png)
 
-![Goals input detail](images/goal_detailed_ultra.png)
+![Goals input detail](/Users/kigochen/.gemini/antigravity/brain/49dd8b2d-2a73-45e6-9932-d52a61c7b6f5/goal_detailed_ultra.png)
 
 - **設定目標**: 您可以建立「近期大筆開銷」（如：國內旅遊）或「長期理財規劃」（如：退休金）。
 - **完整管理**: 
@@ -45,11 +45,10 @@
 
 ## 4. 歷史結算報告 (Report)
 本頁面列出所有過往的結算細節，適合在報稅或年度回顧時使用，可以查看特定時間點所有帳戶的餘額快照。
-![Report](images/report_ultra.png)
+![Report](/Users/kigochen/.gemini/antigravity/brain/49dd8b2d-2a73-45e6-9932-d52a61c7b6f5/report_ultra.png)
 
 ---
 **Happy Financial Planning!**
-
 ### 📉 投資策略與規劃 (Strategy & Planning) - [💡 構想階段 / WIP]
 > [!NOTE]
 > 此頁面目前處於 **構想實作 (Idea Phase)**，數據與功能僅供 Prototype 參考。

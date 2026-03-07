@@ -1,15 +1,15 @@
-# Pypykao Finance Dashboard - Design Document
+# PyKigo Finance Dashboard - Design Document
 
-本文件詳細說明了 Pypykao Finance Dashboard 的系統架構、技術設計決策與資料模型。
+本文件詳細說明了 PyKigo Finance Dashboard 的系統架構、技術設計決策與資料模型。
 
 ## 1. 系統架構概念
 
 專案採用現代化、非同步且數據驅動的架構，旨在處理多幣別資產與繁瑣的市場數據。
 
-![Architecture Concept](images/architecture_concept_visual_1772792969606.png)
+![Architecture Concept](/Users/kigochen/.gemini/antigravity/brain/49dd8b2d-2a73-45e6-9932-d52a61c7b6f5/architecture_concept_visual_1772792969606.png)
 _架構概念圖：核心星狀結構與資料流。_
 
-![Dashboard Ultra](images/dashboard_ultra.png)
+![Dashboard Ultra](/Users/kigochen/.gemini/antigravity/brain/49dd8b2d-2a73-45e6-9932-d52a61c7b6f5/dashboard_ultra.png)
 _註：本圖為實際 UI 介面展示 (使用模擬數據)。_
 
 ### 技術棧 (Tech Stack)
@@ -20,10 +20,13 @@ _註：本圖為實際 UI 介面展示 (使用模擬數據)。_
 - **Security**: Next.js Middleware 實作全站密碼保護頁面；Supabase RLS 提供資料庫層級權限控管。
 - **Database**: Supabase (Postgres) 提供即時數據存儲。
 - **AI Engine**: Google Gemini 2.5 Flash (via `@google/genai`)。
-    - **Goals**: Maps assets to specific financial targets via `goal_assets` junction table.
-    - **Strategy (Beta)**: Conceptual rebalancing logic comparing `snapshot_records` to `stock_targets`.
 
 ---
+
+### 4. Data Security & CI/CD
+*   **History Sanitization**: Sensitive files (`data.csv`, certain SQL seeds) are purged from Git history using `filter-branch` to prevent accidental exposure via public repositories.
+*   **Secret Management**: Production credentials (Supabase URL/Key) are managed via GitHub Actions Secrets, ensuring they are never hard-coded in the source code or `.env` files tracked by Git.
+*   **Gemini AI Security**: All AI interactions use server-side actions with direct SDK calls, keeping API keys protected on the backend.
 
 ## 2. 資料模型設計 (Data Model)
 
