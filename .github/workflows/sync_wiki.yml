@@ -1,0 +1,35 @@
+name: Sync Wiki on Merge
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'wiki/**'
+
+jobs:
+  sync-wiki:
+    runs-on: ubuntu-latest
+    name: Sync wiki/ to GitHub Wiki
+
+    steps:
+      - name: Checkout main repo
+        uses: actions/checkout@v4
+
+      - name: Clone GitHub Wiki repo
+        run: |
+          git clone https://${{ secrets.WIKI_SYNC_TOKEN }}@github.com/${{ github.repository }}.wiki.git /tmp/wiki-sync
+        env:
+          WIKI_SYNC_TOKEN: ${{ secrets.WIKI_SYNC_TOKEN }}
+
+      - name: Copy wiki files
+        run: cp -r wiki/. /tmp/wiki-sync/
+
+      - name: Commit and Push to Wiki
+        run: |
+          cd /tmp/wiki-sync
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git diff-index --quiet HEAD || git commit -m "docs: auto-sync from main repo [github-actions]"
+          git push origin master
