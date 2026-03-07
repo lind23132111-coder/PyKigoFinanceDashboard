@@ -52,10 +52,20 @@ export async function generateLiveAISummary(dashboardData: any, userFeedback?: s
 ${historyContext}${newFeedbackContext}
 請給出一到兩句簡短、專業且具洞察力的財務總結與建議。不要囉嗦，字數預設控制在 60 字以內 (除非使用者有別的要求)，語氣要像是專業私人顧問。`;
 
-        const response = await ai.models.generateContent({
-            model: 'gemini-1.5-flash',
-            contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        });
+        let response;
+        try {
+            response = await ai.models.generateContent({
+                model: 'gemini-1.5-flash',
+                contents: [{ role: 'user', parts: [{ text: prompt }] }],
+            });
+        } catch (flashErr: any) {
+            console.warn("Gemini 1.5 Flash failed, falling back to Pro:", flashErr.message);
+            // Fallback to Pro if Flash is not found or fails
+            response = await ai.models.generateContent({
+                model: 'gemini-1.5-pro',
+                contents: [{ role: 'user', parts: [{ text: prompt }] }],
+            });
+        }
 
         const newSummary = (response as any).text || (response as any).candidates?.[0]?.content?.parts?.[0]?.text || "⚠️ AI 沒有回傳任何內容。";
 
