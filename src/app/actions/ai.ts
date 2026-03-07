@@ -54,10 +54,10 @@ ${historyContext}${newFeedbackContext}
 
         const response = await ai.models.generateContent({
             model: 'gemini-1.5-flash',
-            contents: prompt,
+            contents: [{ role: 'user', parts: [{ text: prompt }] }],
         });
 
-        const newSummary = response.text || "⚠️ AI 沒有回傳任何訊息。";
+        const newSummary = (response as any).text || (response as any).candidates?.[0]?.content?.parts?.[0]?.text || "⚠️ AI 沒有回傳任何內容。";
 
         // 2. Save result back to snapshot as the primary summary (Cache update)
         if (newSummary && !newSummary.startsWith("⚠️") && dashboardData.latestSnapshot?.id) {
@@ -77,8 +77,9 @@ ${historyContext}${newFeedbackContext}
         }
 
         return newSummary;
-    } catch (err) {
+    } catch (err: any) {
         console.error("AI generation failed:", err);
-        return "⚠️ AI 洞察產生失敗，請稍後再試。";
+        const errorMsg = err.message || JSON.stringify(err);
+        return `⚠️ AI 洞察失敗: ${errorMsg.slice(0, 100)}`;
     }
 }
