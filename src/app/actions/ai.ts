@@ -25,7 +25,7 @@ export async function generateLiveAISummary(dashboardData: any, userFeedback?: s
             return "⚠️ Gemini API Key 未設定，無法產生即時 AI 洞察。請在 .env 中設定 GEMINI_API_KEY。";
         }
 
-        const genAI = new GoogleGenAI(process.env.GEMINI_API_KEY);
+        const genAI = new GoogleGenAI(process.env.GEMINI_API_KEY || "");
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
         const result = await model.generateContent(prompt);
         const response = await result.response;
