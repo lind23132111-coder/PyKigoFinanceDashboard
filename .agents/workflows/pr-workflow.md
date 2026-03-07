@@ -46,6 +46,7 @@ npm run dev
 ```bash
 node scripts/take-screenshots.mjs
 ```
+> ⚠️ **隱私規定**：截圖腳本預設連線 **Demo 版網址（mock data）**，不會截到真實資產資料。若要自行指定網址，請確保已設定 `NEXT_PUBLIC_DEMO_MODE=true`。
 12. 確認功能運作正常、無 Console Error 、截圖符合預期
 
 ### Phase 5 — 更新文件

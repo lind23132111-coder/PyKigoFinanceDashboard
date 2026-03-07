@@ -28,6 +28,9 @@
 
 ## 📱 截圖 / 錄影驗證
 
+> ⚠️ **隱私規定**：所有截圖必須來自 **Demo 版（Mock Data）**，禁止在 PR 中放入包含真實資產數字的截圖。
+> 執行 `node scripts/take-screenshots.mjs` 會自動連線 Demo 站。
+
 | 頁面 | Mobile (390px) | Desktop (1280px) |
 |------|----------------|-----------------|
 | Dashboard | 待補 | 待補 |
