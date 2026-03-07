@@ -102,7 +102,7 @@ export default function QuarterlyWizard() {
                 defaultValue: "0"
             };
 
-            if (mapped.asset_type === 'stock') {
+            if (mapped.asset_type === 'stock' || mapped.asset_type === 'rsu') {
                 setStockAssets(prev => [...prev, mapped]);
             } else {
                 setCashAccounts(prev => [...prev, mapped]);
@@ -175,7 +175,7 @@ export default function QuarterlyWizard() {
                 prevBalance: "0",
                 defaultValue: "0"
             };
-            if (mapped.asset_type === 'stock') {
+            if (mapped.asset_type === 'stock' || mapped.asset_type === 'rsu') {
                 setStockAssets(prev => [...prev, mapped]);
             } else {
                 setCashAccounts(prev => [...prev, mapped]);
@@ -604,7 +604,7 @@ export default function QuarterlyWizard() {
                                                             setTickerError('');
                                                             if (!e.target.value) setNewAsset(prev => ({ ...prev, ticker_symbol: '' }));
                                                         }}
-                                                        onFocus={() => tickerSuggestions.length > 0 && setTickerDropdownOpen(true)}
+                                                        onFocus={() => setTickerDropdownOpen(true)}
                                                         className={`w-full rounded-xl border shadow-sm bg-white px-4 py-2.5 outline-none transition-all pr-8 ${tickerError ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-500/20 focus:ring-2' :
                                                             'border-slate-200 focus:border-brand-500 focus:ring-brand-500/20 focus:ring-2'
                                                             }`}
@@ -627,20 +627,33 @@ export default function QuarterlyWizard() {
                                                 </div>
 
                                                 {/* Dropdown suggestions */}
-                                                {tickerDropdownOpen && tickerSuggestions.length > 0 && (
-                                                    <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden">
-                                                        {tickerSuggestions.map(s => (
-                                                            <button
-                                                                key={s.symbol}
-                                                                type="button"
-                                                                onClick={() => handleTickerSelect(s)}
-                                                                className="w-full text-left px-4 py-2.5 hover:bg-brand-50 flex items-center justify-between gap-2 transition-colors border-b border-slate-50 last:border-0"
-                                                            >
-                                                                <span className="font-black text-slate-800 text-sm">{s.symbol}</span>
-                                                                <span className="text-slate-400 text-xs truncate">{s.name}</span>
-                                                                <span className="text-[10px] font-bold text-slate-300 flex-shrink-0">{s.exchange}</span>
-                                                            </button>
-                                                        ))}
+                                                {tickerDropdownOpen && (tickerSearching || tickerSuggestions.length > 0 || (tickerQuery.trim().length > 0 && !tickerSearching)) && (
+                                                    <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden max-h-60 overflow-y-auto">
+                                                        {tickerSearching ? (
+                                                            <div className="px-4 py-3 text-sm text-slate-500 flex items-center gap-2">
+                                                                <div className="w-3 h-3 border-2 border-brand-400 border-t-transparent rounded-full animate-spin" />
+                                                                搜尋中...
+                                                            </div>
+                                                        ) : tickerSuggestions.length > 0 ? (
+                                                            tickerSuggestions.map(s => (
+                                                                <button
+                                                                    key={s.symbol}
+                                                                    type="button"
+                                                                    onClick={() => handleTickerSelect(s)}
+                                                                    className="w-full text-left px-4 py-2.5 hover:bg-brand-50 flex items-center justify-between gap-2 transition-colors border-b border-slate-50 last:border-0"
+                                                                >
+                                                                    <div className="flex flex-col">
+                                                                        <span className="font-bold text-slate-800 text-sm">{s.symbol}</span>
+                                                                        <span className="text-slate-400 text-[10px] leading-tight truncate max-w-[150px]">{s.name}</span>
+                                                                    </div>
+                                                                    <span className="text-slate-300 text-[10px] font-medium px-1.5 py-0.5 bg-slate-50 rounded border border-slate-100 uppercase">{s.exchange}</span>
+                                                                </button>
+                                                            ))
+                                                        ) : (tickerQuery.trim().length > 0 && !tickerSearching) && (
+                                                            <div className="px-4 py-3 text-sm text-slate-400 italic">
+                                                                無符合結果 (請嘗試輸入代號如 AAPL)
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 )}
 

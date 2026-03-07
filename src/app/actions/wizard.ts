@@ -222,17 +222,20 @@ export async function searchTicker(query: string): Promise<TickerSuggestion[]> {
         // yahoo-finance2 uses a module-level search function accessible via the main module
         const yf = await import('yahoo-finance2');
         const yahooFinance = yf.default ?? yf;
-        const results = await (yahooFinance as any).search(query, undefined, { validateResult: false });
-        return ((results as any).quotes || [])
-            .filter((q: any) => q.quoteType === 'EQUITY' || q.quoteType === 'ETF')
-            .slice(0, 6)
+        const results = await (yahooFinance as any).search(query);
+        const quotes = results.quotes || [];
+
+        return quotes
+            .slice(0, 8)
             .map((q: any) => ({
                 symbol: q.symbol,
                 name: q.shortname || q.longname || q.symbol,
                 exchange: q.exchange || '',
             }));
-    } catch {
-        return [];
+    } catch (err) {
+        console.error("searchTicker error:", err);
+        // Fail-safe for debugging: return a special item so user knows it was called
+        return [{ symbol: "ERROR", name: "搜尋 API 出錯，請檢查後端日誌", exchange: "ERROR" }];
     }
 }
 
