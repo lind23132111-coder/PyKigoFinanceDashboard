@@ -1,32 +1,33 @@
 /**
  * PyKigo Finance Dashboard - Automated Screenshot Tool
  * 
+ * ⚠️ PRIVACY POLICY:
+ *   Screenshots MUST use DEMO MODE (mock data) to prevent accidental
+ *   exposure of real asset data in PR documentation.
+ * 
+ * HOW IT WORKS:
+ *   This script starts a local dev server with NEXT_PUBLIC_DEMO_MODE=true,
+ *   takes screenshots of the new UI (your local code), then shuts the server down.
+ *   The UI reflects the LATEST code, the data is always MOCK.
+ * 
  * Usage:
  *   node scripts/take-screenshots.mjs
  * 
- * ⚠️ Privacy Policy: This script ALWAYS uses the Demo deployment (mock data).
- * It will NEVER connect to the real data environment to prevent accidental
- * exposure of real asset information in PR screenshots or documentation.
- *
- * Demo URL: https://py-kigo-finance-dashboard-demo.vercel.app/
- * To override locally: SCREENSHOT_URL=http://localhost:3000 node scripts/take-screenshots.mjs
- * (Only do this if you have set NEXT_PUBLIC_DEMO_MODE=true in .env.local)
+ * Requirements:
+ *   - npm packages installed (npm install)
+ *   - playwright installed (npm install --save-dev playwright)
+ *   - npx playwright install chromium
  */
 
 import { chromium } from 'playwright';
 import { existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
+import { spawn } from 'child_process';
 
-// Always default to Demo deployment — never real data
-const DEMO_URL = 'https://py-kigo-finance-dashboard-demo.vercel.app';
-const BASE_URL = process.env.SCREENSHOT_URL || DEMO_URL;
 const OUTPUT_DIR = join(process.cwd(), 'screenshots');
-
-if (BASE_URL !== DEMO_URL) {
-    console.warn('⚠️  WARNING: Using custom URL instead of Demo deployment.');
-    console.warn('   Make sure NEXT_PUBLIC_DEMO_MODE=true is set to avoid capturing real data!');
-    console.warn('');
-}
+const LOCAL_URL = 'http://localhost:3001'; // Use 3001 to avoid conflict with main dev server
+const DEMO_ENV = { ...process.env, NEXT_PUBLIC_DEMO_MODE: 'true', PORT: '3001' };
+const STARTUP_WAIT_MS = 8000;
 
 const VIEWPORTS = {
     mobile: { width: 390, height: 844, label: 'mobile_390' },
@@ -41,53 +42,86 @@ const PAGES = [
     { path: '/planning', label: 'planning' },
 ];
 
-async function login(page) {
-    const loginPath = `${BASE_URL}/login`;
-    await page.goto(loginPath, { waitUntil: 'networkidle' });
+/**
+ * Start a demo dev server on port 3001
+ */
+function startDemoServer() {
+    console.log('🚀 Starting local Demo server (NEXT_PUBLIC_DEMO_MODE=true) on port 3001...');
+    const server = spawn('npm', ['run', 'dev'], {
+        env: DEMO_ENV,
+        stdio: ['ignore', 'pipe', 'pipe'],
+        shell: true,
+    });
 
-    const passwordInput = page.locator('input[type="password"]');
-    if (await passwordInput.isVisible()) {
-        await passwordInput.fill(PASSWORD);
-        await page.click('button[type="submit"]');
-        await page.waitForURL(`${BASE_URL}/`, { timeout: 5000 }).catch(() => { });
+    server.stderr.on('data', (data) => {
+        const msg = data.toString();
+        if (msg.includes('error') || msg.includes('Error')) {
+            console.warn('Server stderr:', msg.trim());
+        }
+    });
+
+    return server;
+}
+
+/**
+ * Wait for the local server to be ready
+ */
+async function waitForServer(url, maxWaitMs = 30000) {
+    const { default: fetch } = await import('node-fetch').catch(() => ({ default: global.fetch }));
+    const start = Date.now();
+    while (Date.now() - start < maxWaitMs) {
+        try {
+            const res = await fetch(url, { signal: AbortSignal.timeout(2000) });
+            if (res.ok || res.status < 500) return true;
+        } catch (_) { /* still starting */ }
+        await new Promise(r => setTimeout(r, 1000));
     }
+    throw new Error(`Server did not respond at ${url} within ${maxWaitMs}ms`);
 }
 
 async function captureAll() {
-    console.log('📸 Starting Screenshot Capture (Demo Data Only)...');
-    console.log(`   Using: ${BASE_URL}\n`);
+    console.log('📸 Screenshot Capture — using DEMO MODE (Mock Data)\n');
 
     if (!existsSync(OUTPUT_DIR)) {
         mkdirSync(OUTPUT_DIR, { recursive: true });
     }
 
-    const browser = await chromium.launch();
+    // Start the demo dev server
+    const server = startDemoServer();
+    try {
+        await waitForServer(LOCAL_URL);
+        console.log('✅ Demo server ready!\n');
 
-    for (const [viewportKey, viewport] of Object.entries(VIEWPORTS)) {
-        console.log(`📱 Capturing ${viewportKey} viewport (${viewport.width}x${viewport.height})...`);
-        const context = await browser.newContext({ viewport });
-        const page = await context.newPage();
+        const browser = await chromium.launch();
 
-        for (const { path, label } of PAGES) {
-            try {
-                await page.goto(`${BASE_URL}${path}`, { waitUntil: 'networkidle', timeout: 20000 });
-                await page.waitForTimeout(1500); // allow lazy-loaded content
+        for (const [viewportKey, viewport] of Object.entries(VIEWPORTS)) {
+            console.log(`📱 Capturing ${viewportKey} (${viewport.width}x${viewport.height})...`);
+            const context = await browser.newContext({ viewport });
+            const page = await context.newPage();
 
-                const filename = `${label}_${viewport.label}.png`;
-                const filepath = join(OUTPUT_DIR, filename);
-                await page.screenshot({ path: filepath, fullPage: false });
-                console.log(`   ✅ ${filename}`);
-            } catch (err) {
-                console.warn(`   ⚠️  Failed to capture ${label}: ${err.message}`);
+            for (const { path, label } of PAGES) {
+                try {
+                    await page.goto(`${LOCAL_URL}${path}`, { waitUntil: 'networkidle', timeout: 20000 });
+                    await page.waitForTimeout(1500);
+
+                    const filename = `${label}_${viewport.label}.png`;
+                    await page.screenshot({ path: join(OUTPUT_DIR, filename), fullPage: false });
+                    console.log(`   ✅ ${filename}`);
+                } catch (err) {
+                    console.warn(`   ⚠️  Failed: ${label} — ${err.message}`);
+                }
             }
+
+            await context.close();
         }
 
-        await context.close();
+        await browser.close();
+        console.log(`\n✨ Done! All screenshots use mock data and are safe for PRs.`);
+        console.log(`   Saved to: ${OUTPUT_DIR}/`);
+    } finally {
+        server.kill();
+        console.log('🛑 Demo server stopped.');
     }
-
-    await browser.close();
-    console.log(`\n✨ Done! Screenshots saved to: ${OUTPUT_DIR}/`);
-    console.log('   These screenshots contain MOCK DATA only and are safe to include in PRs.');
 }
 
 captureAll().catch((err) => {

@@ -42,12 +42,13 @@ git checkout -b <feature|fix|docs>/<short-description>
 ```bash
 npm run dev
 ```
-11. 執行 Playwright 自動截圖（一次截全部頁面）
+11. 執行 Playwright 自動截圖
 ```bash
 node scripts/take-screenshots.mjs
 ```
-> ⚠️ **隱私規定**：截圖腳本預設連線 **Demo 版網址（mock data）**，不會截到真實資產資料。若要自行指定網址，請確保已設定 `NEXT_PUBLIC_DEMO_MODE=true`。
-12. 確認功能運作正常、無 Console Error 、截圖符合預期
+> ⚠️ **陰私規定**：腳本會自動在 port 3001 啟動一個 **`NEXT_PUBLIC_DEMO_MODE=true`** 的 dev server。  
+> 截圖用的是「最新的本地 UI」但資料是 **Mock Data**。完全不會挖到真實資產。
+12. 確認截圖符合預期、無 Console Error
 
 ### Phase 5 — 更新文件
 13. **README.md**：若有新功能，補充「主要功能」清單
