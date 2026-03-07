@@ -53,21 +53,19 @@ ${historyContext}${newFeedbackContext}
 請給出一到兩句簡短、專業且具洞察力的財務總結與建議。不要囉嗦，字數預設控制在 60 字以內 (除非使用者有別的要求)，語氣要像是專業私人顧問。`;
 
         let response;
-        // 擴大嘗試範圍，包含 2.0 版本、及最穩定的 legacy 名稱
+        // 根據剛才列出的模型，2.5 系列是目前最新的穩定版
         const modelsToTry = [
-            'gemini-1.5-flash',
-            'gemini-2.0-flash-exp',
+            'gemini-2.5-flash',
             'gemini-2.0-flash',
-            'gemini-1.5-pro',
-            'gemini-pro',
-            'gemini-1.0-pro'
+            'gemini-2.5-pro',
+            'gemini-pro'
         ];
         let lastError = null;
 
         for (const modelName of modelsToTry) {
             try {
                 console.log(`[AI Debug] Attempting model: ${modelName}`);
-                // 嘗試不同格式：有些 SDK 版本偏好直接傳字串
+                // 先嘗試標準物件格式
                 response = await ai.models.generateContent({
                     model: modelName,
                     contents: [{ role: 'user', parts: [{ text: prompt }] }],
@@ -79,9 +77,9 @@ ${historyContext}${newFeedbackContext}
                 }
             } catch (err: any) {
                 lastError = err;
-                console.warn(`[AI Debug] Model ${modelName} failed:`, err.message);
+                console.warn(`[AI Debug] Model ${modelName} (object format) failed:`, err.message);
 
-                // 嘗試第二種格式：直接傳 Prompt 字串 (如同 route.ts 做法)
+                // 嘗試簡化格式 (直接傳字串)，這在某些 SDK 版本更穩定
                 try {
                     response = await ai.models.generateContent({
                         model: modelName,
@@ -92,13 +90,13 @@ ${historyContext}${newFeedbackContext}
                         break;
                     }
                 } catch (err2) {
-                    // 繼續下一個型號
+                    console.warn(`[AI Debug] Model ${modelName} (string format) failed too.`);
                 }
             }
         }
 
         if (!response) {
-            throw lastError || new Error("所有 AI 模型皆嘗試失敗。");
+            throw lastError || new Error("所有 AI 模型嘗試皆失敗（404 或無權限）。");
         }
 
         const newSummary = (response as any).text || (response as any).candidates?.[0]?.content?.parts?.[0]?.text || "⚠️ AI 沒有回傳任何內容。";
