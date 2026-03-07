@@ -11,6 +11,7 @@ export interface Snapshot {
     id: string;
     period_name: string;
     created_at: string;
+    ai_summary?: string;
 }
 
 export interface SnapshotRecord {
