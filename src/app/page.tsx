@@ -176,21 +176,23 @@ export default function Dashboard() {
 
             {/* Filter Banner */}
             {hasFilters && (
-                <div className="flex items-center gap-3 bg-brand-50 text-brand-700 px-4 py-3 rounded-xl border border-brand-200 text-sm font-medium animate-in fade-in">
+                <div className="sticky top-16 z-30 flex items-center gap-3 bg-brand-50/95 backdrop-blur-sm text-brand-700 px-4 py-3 rounded-xl border border-brand-200 text-sm font-medium animate-in fade-in shadow-sm md:static md:z-auto md:bg-brand-50 md:backdrop-none">
                     <span className="flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-brand-500 animate-pulse"></span>
-                        依點擊互動篩選中：
+                        <span className="hidden xs:inline">依點擊互動篩選中：</span>
+                        <span className="xs:hidden">篩選中:</span>
                     </span>
-                    <div className="flex gap-2">
-                        {activeFilters.currency && <span className="bg-white px-2 py-1 rounded shadow-sm">幣別: {activeFilters.currency}</span>}
-                        {activeFilters.type && <span className="bg-white px-2 py-1 rounded shadow-sm">資產: {activeFilters.type === 'fixed_deposit' ? '定存' : activeFilters.type}</span>}
-                        {activeFilters.owner && <span className="bg-white px-2 py-1 rounded shadow-sm">成員: {activeFilters.owner}</span>}
+                    <div className="flex gap-2 overflow-x-auto no-scrollbar">
+                        {activeFilters.currency && <span className="bg-white px-2 py-1 rounded shadow-sm whitespace-nowrap">幣別: {activeFilters.currency}</span>}
+                        {activeFilters.type && <span className="bg-white px-2 py-1 rounded shadow-sm whitespace-nowrap">資產: {activeFilters.type === 'fixed_deposit' ? '定存' : activeFilters.type}</span>}
+                        {activeFilters.owner && <span className="bg-white px-2 py-1 rounded shadow-sm whitespace-nowrap">成員: {activeFilters.owner}</span>}
                     </div>
-                    <button onClick={() => setActiveFilters({})} className="ml-auto flex items-center gap-1 bg-white hover:bg-slate-100 px-3 py-1 rounded shadow-sm text-slate-600 transition-colors">
-                        <XCircle className="w-4 h-4" /> 清除篩選
+                    <button onClick={() => setActiveFilters({})} className="ml-auto flex items-center gap-1 bg-white hover:bg-slate-100 px-3 py-1 rounded shadow-sm text-slate-600 transition-colors shrink-0">
+                        <XCircle className="w-4 h-4" /> 清除
                     </button>
                 </div>
             )}
+
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative">
                 {/* Trend Chart */}

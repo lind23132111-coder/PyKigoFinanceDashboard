@@ -23,18 +23,18 @@ const renderPie = (
     icon: string
 ) => {
     return (
-        <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-col">
-            <h3 className="text-sm font-bold text-slate-600 text-center mb-2 flex items-center justify-center gap-2">
+        <div className="bg-white rounded-2xl md:rounded-3xl p-4 md:p-6 shadow-sm border border-slate-100 flex flex-col">
+            <h3 className="text-xs md:text-sm font-bold text-slate-600 text-center mb-2 flex items-center justify-center gap-2">
                 {icon} {title}
             </h3>
-            <div className="h-[250px] w-full flex-grow relative">
+            <div className="h-[200px] md:h-[250px] w-full flex-grow relative">
                 <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                         <Pie
                             data={data}
                             cx="50%"
                             cy="50%"
-                            outerRadius={90}
+                            outerRadius={70}
                             dataKey="value"
                             stroke="none"
                         >
@@ -63,7 +63,7 @@ const renderPie = (
                             height={36}
                             iconType="circle"
                             formatter={(value: any, entry: any) => {
-                                return <span className="text-xs text-slate-500 font-medium">{entry.payload?.name} ({entry.payload?.value}%)</span>;
+                                return <span className="text-[10px] md:text-xs text-slate-500 font-medium">{entry.payload?.name} ({entry.payload?.value}%)</span>;
                             }}
                         />
                     </PieChart>
@@ -72,6 +72,7 @@ const renderPie = (
         </div>
     );
 };
+
 
 export const AggregationPieCharts: React.FC<AggregationPieChartsProps> = ({
     currencyData,
