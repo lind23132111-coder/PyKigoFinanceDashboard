@@ -14,6 +14,7 @@
 | **Phase 4** | **真實數據導入** | 從測試數據切換至真實資產資訊 | 1h |
 | **Phase 5** | **AI 互動與架構優化** | 雙向 AI 回饋、互動式濾鏡圖表、程式碼全模組化 | 4h |
 | **Phase 6** | **安全分享與完整管理** | 雙版本部署、全站密碼保護、目標管理 CRUD 化 | 3h |
+| **Phase 8** | **行動版介面優化** | 底部導覽、置頂篩選、觸控友善 Wizard | 2h |
 
 ---
 
@@ -69,7 +70,7 @@
 - [x] 正式版與 Demo 版雙向部署完成。
 - [ ] 增加支出分類與記帳功能連動。
 - [ ] AI 預測模型：預估退休金達成率。
-- [ ] 手機版 UI 進一步優化。
+- [x] 手機版 UI 進一步優化。
 
 ---
 **本誌錄由 Antigravity (AI Architect) 與 PY/Kigo 共同編輯完成。**
@@ -80,3 +81,12 @@
   - Added **Portfolio Rebalancing** module (Target vs. Actual).
   - Added **Dividend Snowball** projection chart (10-year passive income forecast).
   - Integrated with Navbar for easy access.
+
+### Phase 8: Mobile Experience & UI Polish (Current)
+- **Goal**: Transform the dashboard from "Desktop-Only" to a truly responsive mobile app experience.
+- **Achievements**:
+  - Implemented a **Persistent Bottom Navigation** with Cantonese-Chinese labels for localized clarity.
+  - Developed a **Sticky Interaction Banner** on the Dashboard for convenient filter clearing while scrolling.
+  - Refactor **Wizard Page** components for mobile (larger tap targets, responsive header).
+  - Optimized chart containers and padding for narrow aspect ratios.
+- **Lesson Learnt**: Mobile logic isn't just about "shrinking" elements, but about re-designing interaction points (from top-hover to bottom-tap).

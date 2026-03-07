@@ -18,6 +18,7 @@ _註：本圖為實際 UI 介面展示 (使用模擬數據)。_
 - **Charts**: Recharts 用於多維度金融數據視覺化。
 - **Backend/Service**: Next.js Server Actions 模組化處理業務邏輯。
 - **Security**: Next.js Middleware 實作全站密碼保護頁面；Supabase RLS 提供資料庫層級權限控管。
+- **Mobile-First Design**: 採用底部導覽與置頂橫幅優化小螢幕操作體驗。
 - **Database**: Supabase (Postgres) 提供即時數據存儲。
 - **AI Engine**: Google Gemini 2.5 Flash (via `@google/genai`)。
 
@@ -67,6 +68,14 @@ _註：本圖為實際 UI 介面展示 (使用模擬數據)。_
 從單純的「顯示」進化為「管理」：
 - **雙向編輯**：支援從 UI 修改目標細節與重新勾選關聯資產。
 - **級聯刪除 (Cascading Cleanup)**：刪除目標時，系統自動清理映射表，確保資料庫一致性。
+
+### F. 行動版介面優化 (Mobile-First Optimization)
+針對手機使用者進行了操作路徑與視覺佈局的深度重構：
+- **底部固定導覽 (Bottom Nav)**：將主要操作（首頁、目標、結算、報告、策略）移至螢幕底部，符合行動裝置單手使用的「大拇指熱區」。
+- **置頂篩選橫幅 (Sticky Filter Banner)**：透過 `sticky top-16` 與 `backdrop-blur` 實作。當使用者在 Dashboard 下滑查看圖表時，篩選條件與清除按鈕會持續固定在視窗頂部，提供即時的互動回饋。
+- **響應式組件重構**：
+  - **AIInsightSection**：在手機版改用 `flex-col` 佈局並縮減內距，節省垂直空間。
+  - **AggregationPieCharts**：動態調整圖表高度與圖例 (Legend) 字級，確保在窄螢幕下仍具備可讀性。
 
 ---
 
