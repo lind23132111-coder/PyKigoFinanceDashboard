@@ -261,12 +261,12 @@ export default function QuarterlyWizard() {
         <div className="max-w-5xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
 
             {/* Header */}
-            <div className="bg-gradient-to-br from-slate-800 to-brand-600 rounded-3xl p-8 text-white shadow-lg relative overflow-hidden">
+            <div className="bg-gradient-to-br from-slate-800 to-brand-600 rounded-2xl md:rounded-3xl p-6 md:p-8 text-white shadow-lg relative overflow-hidden">
                 <div className="relative z-10">
-                    <h1 className="text-3xl font-black tracking-tight mb-2 flex items-center gap-3">
-                        <span className="text-4xl">📝</span> {currentPeriod} 資產結算
+                    <h1 className="text-2xl md:text-3xl font-black tracking-tight mb-2 flex items-center gap-2 md:gap-3">
+                        <span className="text-3xl md:text-4xl">📝</span> {currentPeriod} 資產結算
                     </h1>
-                    <p className="text-brand-100 font-medium opacity-90">
+                    <p className="text-brand-100 font-medium opacity-90 text-sm md:text-base">
                         上一次結算：{lastPeriod} {monthsSinceLast !== null ? `(相隔 ${monthsSinceLast} 個月)` : ''}
                     </p>
                 </div>
@@ -276,6 +276,7 @@ export default function QuarterlyWizard() {
                 <div className="absolute bottom-0 left-0 w-48 h-48 bg-brand-400 opacity-20 rounded-full translate-y-1/2 -translate-x-1/4 blur-xl"></div>
             </div>
 
+
             {loading ? (
                 <div className="flex flex-col items-center justify-center p-20 opacity-60">
                     <div className="w-10 h-10 border-4 border-slate-200 border-t-brand-600 rounded-full animate-spin mb-4"></div>
@@ -284,12 +285,12 @@ export default function QuarterlyWizard() {
             ) : (
                 <>
                     {/* Owner Filter Tabs */}
-                    <div className="flex flex-wrap items-center gap-2 bg-white p-2 rounded-2xl border border-slate-200 shadow-sm w-fit mx-auto">
+                    <div className="flex flex-wrap items-center justify-center gap-2 bg-white p-1.5 md:p-2 rounded-2xl border border-slate-200 shadow-sm w-full sm:w-fit mx-auto">
                         {['All', 'PY', 'Kigo', 'Both'].map((tab) => (
                             <button
                                 key={tab}
                                 onClick={() => setActiveTab(tab)}
-                                className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === tab
+                                className={`flex-1 sm:flex-none px-4 md:px-6 py-2.5 md:py-2 rounded-xl text-xs md:text-sm font-bold transition-all ${activeTab === tab
                                     ? "bg-slate-800 text-white shadow-md"
                                     : "text-slate-500 hover:bg-slate-100 hover:text-slate-800"
                                     }`}
@@ -309,17 +310,17 @@ export default function QuarterlyWizard() {
                                     可隨時新增或移除資產
                                 </span>
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto pb-2 sm:pb-0">
                                 <button
                                     onClick={handleOpenRestoreModal}
-                                    className="flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-bold text-sm transition-colors"
+                                    className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 md:px-4 py-2.5 md:py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-bold text-xs md:text-sm transition-colors whitespace-nowrap"
                                 >
                                     <ArchiveRestore className="w-4 h-4" />
-                                    <span className="hidden sm:inline">還原已隱藏資產</span>
+                                    <span>還原隱藏</span>
                                 </button>
                                 <button
                                     onClick={() => setIsAddModalOpen(true)}
-                                    className="flex items-center gap-1.5 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg font-bold text-sm transition-colors shadow-sm"
+                                    className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 md:px-4 py-2.5 md:py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg font-bold text-xs md:text-sm transition-colors shadow-sm whitespace-nowrap"
                                 >
                                     <Plus className="w-4 h-4" />
                                     新增帳戶
