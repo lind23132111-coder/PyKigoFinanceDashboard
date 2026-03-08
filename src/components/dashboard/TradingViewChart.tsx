@@ -11,23 +11,29 @@ export default function TradingViewChart({ symbol }: TradingViewChartProps) {
 
     useEffect(() => {
         // Map symbol for TradingView
-        // e.g., 2330.TW -> TWSE:2330, 006208.TWO -> TPEX:006208
-        let tvSymbol = symbol.toUpperCase();
+        // e.g., 2330.TW -> TWSE:2330, 006208.TWO -> TPEX:006208, TPE:0050 -> TWSE:0050
+        let tvSymbol = symbol.toUpperCase().trim();
 
+        // 1. Handle Known Suffixes (Yahoo Finance style)
         if (tvSymbol.endsWith('.TW')) {
             tvSymbol = `TWSE:${tvSymbol.replace('.TW', '')}`;
         } else if (tvSymbol.endsWith('.TWO')) {
             tvSymbol = `TPEX:${tvSymbol.replace('.TWO', '')}`;
-        } else if (tvSymbol.startsWith('TPE:')) {
-            // Some systems use TPE: for listed stocks, map to TWSE
+        }
+        // 2. Handle Known Prefixes (Sometimes used in DB)
+        else if (tvSymbol.startsWith('TPE:')) {
+            // TPE: usually refers to Listed (TWSE) in many local datasets
             tvSymbol = `TWSE:${tvSymbol.replace('TPE:', '')}`;
         } else if (tvSymbol.startsWith('TWO:') || tvSymbol.startsWith('TPEX:')) {
-            tvSymbol = `TPEX:${tvSymbol.split(':')[1]}`;
-        } else if (!tvSymbol.includes(':')) {
-            // Default to common US exchanges if not specified
-            // For common stocks without suffix, it works. 
-            // For Taiwan users without suffix, we might want a fallback, 
-            // but usually Yahoo format (.TW) is our standard.
+            tvSymbol = `TPEX:${tvSymbol.includes(':') ? tvSymbol.split(':')[1] : tvSymbol}`;
+        }
+        // 3. Pass through with standardized casing if prefix already exists
+        else if (tvSymbol.includes(':')) {
+            // e.g., NASDAQ:AAPL -> NASDAQ:AAPL
+            tvSymbol = tvSymbol;
+        }
+        // 4. Default to raw if no pattern matches
+        else {
             tvSymbol = tvSymbol;
         }
 
