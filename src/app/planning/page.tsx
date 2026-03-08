@@ -111,19 +111,30 @@ export default function PlanningPage() {
                 </div>
 
                 {/* 2. TradingView Analysis (Col 6) */}
-                <div className="col-span-12 lg:col-span-6 glass rounded-3xl border border-slate-200/60 shadow-2xl overflow-hidden relative">
-                    <div className="absolute top-4 right-4 z-10 bg-slate-900/40 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/10 flex items-center gap-2">
-                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
-                        <span className="text-[10px] font-black text-white/80 uppercase tracking-widest">Live: {selectedStock}</span>
-                    </div>
-                    {selectedStock ? (
-                        <TradingViewChart symbol={selectedStock} />
-                    ) : (
-                        <div className="h-full flex flex-col items-center justify-center text-slate-400 space-y-4">
-                            <Target className="w-12 h-12 opacity-20" />
-                            <p className="font-bold">請從左側選擇標的開始分析</p>
+                <div className="col-span-12 lg:col-span-6 glass rounded-3xl border border-slate-200/60 shadow-2xl overflow-hidden flex flex-col">
+                    <div className="px-6 py-2.5 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                        <div className="flex items-center gap-2">
+                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                即時行情分析 <span className="text-brand-600 ml-1">{selectedStock}</span>
+                            </span>
                         </div>
-                    )}
+                        <div className="flex gap-1.5">
+                            <div className="w-1 h-1 rounded-full bg-slate-200"></div>
+                            <div className="w-1 h-1 rounded-full bg-slate-200"></div>
+                            <div className="w-1 h-1 rounded-full bg-slate-200"></div>
+                        </div>
+                    </div>
+                    <div className="flex-1 relative">
+                        {selectedStock ? (
+                            <TradingViewChart symbol={selectedStock} />
+                        ) : (
+                            <div className="h-full flex flex-col items-center justify-center text-slate-400 space-y-4 text-center">
+                                <Target className="w-12 h-12 opacity-20" />
+                                <p className="font-bold">請從左側選擇標的開始分析</p>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 {/* 3. Strategy Notes (Col 3) */}
