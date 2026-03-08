@@ -49,13 +49,12 @@ export default function TradingViewChart({ symbol }: TradingViewChartProps) {
             "locale": "zh_TW",
             "enable_publishing": false,
             "allow_symbol_change": true,
-            "hide_side_toolbar": true,
+            "hide_side_toolbar": false,
             "hide_top_toolbar": false,
             "calendar": false,
             "support_host": "https://www.tradingview.com"
         });
 
-        // ... existing symbol mapping ...
         if (container.current) {
             container.current.innerHTML = "";
             container.current.appendChild(script);

@@ -54,7 +54,7 @@ export default function StockPlanningNotes({ symbol }: StockPlanningNotesProps) 
     };
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-4">
             <div className="flex items-center justify-between">
                 <h3 className="text-sm font-bold text-slate-400 border-l-4 border-brand-500 pl-3 uppercase tracking-wider">
                     交易策略 (Trading Strategy)
@@ -66,8 +66,8 @@ export default function StockPlanningNotes({ symbol }: StockPlanningNotesProps) 
                 )}
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1">
                     <label className="text-[10px] font-black text-slate-400 uppercase">目標買入價</label>
                     <input
                         type="number"
@@ -77,7 +77,7 @@ export default function StockPlanningNotes({ symbol }: StockPlanningNotesProps) 
                         placeholder="$ 0.00"
                     />
                 </div>
-                <div className="space-y-1.5">
+                <div className="space-y-1">
                     <label className="text-[10px] font-black text-slate-400 uppercase">目標賣出價</label>
                     <input
                         type="number"
@@ -89,7 +89,7 @@ export default function StockPlanningNotes({ symbol }: StockPlanningNotesProps) 
                 </div>
             </div>
 
-            <div className="space-y-1.5">
+            <div className="space-y-1">
                 <label className="text-[10px] font-black text-slate-400 uppercase">持股信心 (1-5)</label>
                 <div className="flex gap-2">
                     {[1, 2, 3, 4, 5].map((level) => (
@@ -97,8 +97,8 @@ export default function StockPlanningNotes({ symbol }: StockPlanningNotesProps) 
                             key={level}
                             onClick={() => setConfidence(level)}
                             className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all border ${confidence === level
-                                    ? 'bg-brand-500 border-brand-600 text-white shadow-lg shadow-brand-200'
-                                    : 'bg-white/50 border-slate-200 text-slate-400 hover:border-slate-300'
+                                ? 'bg-brand-500 border-brand-600 text-white shadow-lg shadow-brand-200'
+                                : 'bg-white/50 border-slate-200 text-slate-400 hover:border-slate-300'
                                 }`}
                         >
                             {level}
@@ -107,10 +107,10 @@ export default function StockPlanningNotes({ symbol }: StockPlanningNotesProps) 
                 </div>
             </div>
 
-            <div className="space-y-1.5">
+            <div className="space-y-1">
                 <label className="text-[10px] font-black text-slate-400 uppercase">戰術筆記 (Notes)</label>
                 <textarea
-                    rows={4}
+                    rows={3}
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     className="w-full bg-white/50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-brand-500 outline-none transition-all resize-none"

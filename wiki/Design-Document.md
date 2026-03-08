@@ -74,8 +74,10 @@ _註：本圖為實際 UI 介面展示 (使用模擬數據)。_
 - **底部固定導覽 (Bottom Nav)**：將主要操作（首頁、目標、結算、報告、策略）移至螢幕底部，符合行動裝置單手使用的「大拇指熱區」。
 - **置頂篩選橫幅 (Sticky Filter Banner)**：透過 `sticky top-16` 與 `backdrop-blur` 實作。當使用者在 Dashboard 下滑查看圖表時，篩選條件與清除按鈕會持續固定在視窗頂部，提供即時的互動回饋。
 - **響應式組件重構**：
-  - **AIInsightSection**：在手機版改用 `flex-col` 佈局並縮減內距，節省垂直空間。
   - **AggregationPieCharts**：動態調整圖表高度與圖例 (Legend) 字級，確保在窄螢幕下仍具備可讀性。
+  - **Hybrid Responsive Layout (Planning Page)**：
+    *   **Desktop**：維持 3 欄式固定佈局（清單-圖表-筆記），提供專業分析師直覺。
+    *   **Mobile**：移除側邊欄，改用導航式下拉選單選取資產；線圖高度固定為 `600px`；戰術筆記改為常置於底部，顯著提升行動端操作流暢度。
 
 ---
 

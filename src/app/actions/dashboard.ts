@@ -140,11 +140,11 @@ export async function getLatestDashboardData(): Promise<any> {
     // 2. Fetch records for all snapshots, joined with assets
     const { data: allRecords, error: recordsError } = await supabase
         .from('snapshot_records')
-        .select(`*, assets (title, owner, asset_type, currency, ticker_symbol)`)
+        .select(`*, assets (title, owner, asset_type, currency, ticker_symbol, strategy_category)`)
         .in('snapshot_id', snapshotIds);
 
     if (recordsError || !allRecords) {
-        return { totalNetWorth: 0, currencyData: [], allocationData: [], ownershipData: [], trendData: [], latestSnapshot };
+        return { totalNetWorth: 0, currencyData: [], allocationData: [], ownershipData: [], trendData: [], strategyAllocationData: [], latestSnapshot };
     }
 
     const snapshotDetails: Record<string, any> = {};
@@ -155,6 +155,7 @@ export async function getLatestDashboardData(): Promise<any> {
         const currencyMap: Record<string, number> = {};
         const allocationMap: Record<string, number> = {};
         const ownershipMap: Record<string, number> = {};
+        const strategyMap: Record<string, number> = {};
 
         records.forEach(record => {
             const val = Number(record.total_twd_value) || 0;
@@ -164,6 +165,9 @@ export async function getLatestDashboardData(): Promise<any> {
                 currencyMap[asset.currency] = (currencyMap[asset.currency] || 0) + val;
                 allocationMap[asset.asset_type] = (allocationMap[asset.asset_type] || 0) + val;
                 ownershipMap[asset.owner] = (ownershipMap[asset.owner] || 0) + val;
+
+                const cat = asset.strategy_category || '核心持股 (大型股)'; // Default fallback for now
+                strategyMap[cat] = (strategyMap[cat] || 0) + val;
             }
         });
 
@@ -178,7 +182,8 @@ export async function getLatestDashboardData(): Promise<any> {
             totalNetWorth, rawRecords: records,
             currencyData: formatPieData(currencyMap, { USD: "#f59e0b", TWD: "#3b82f6", JPY: "#ef4444" }),
             allocationData: formatPieData(allocationMap, { cash: "#3b82f6", stock: "#8b5cf6", fixed_deposit: "#f59e0b", rsu: "#10b981" }),
-            ownershipData: formatPieData(ownershipMap, { PY: "#10b981", Kigo: "#fcd34d", Both: "#6366f1" })
+            ownershipData: formatPieData(ownershipMap, { PY: "#10b981", Kigo: "#fcd34d", Both: "#6366f1" }),
+            strategyAllocationData: formatPieData(strategyMap, {})
         };
     });
 
@@ -198,6 +203,7 @@ export async function getLatestDashboardData(): Promise<any> {
         currencyData: latestDetails.currencyData || [],
         allocationData: latestDetails.allocationData || [],
         ownershipData: latestDetails.ownershipData || [],
+        strategyAllocationData: latestDetails.strategyAllocationData || [],
         trendData, latestSnapshot, snapshotDetails,
         rawRecords: allRecords.filter(r => r.snapshot_id === latestSnapshot.id)
     };

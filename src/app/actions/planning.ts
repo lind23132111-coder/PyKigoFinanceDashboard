@@ -7,10 +7,10 @@ import { StrategyTarget, ProjectedDividend } from "@/types/dashboard";
  * MOCK DATA for Planning Phase (Fallbacks while DB is being populated)
  */
 const MOCK_STRATEGY_TARGETS: StrategyTarget[] = [
-    { category: "Core (Blue Chips)", target_percentage: 45, color: "#10b981" },
-    { category: "Growth (Tech)", target_percentage: 30, color: "#6366f1" },
-    { category: "Dividend (Passive)", target_percentage: 15, color: "#f59e0b" },
-    { category: "Speculative/Cash", target_percentage: 10, color: "#94a3b8" }
+    { category: "核心持股 (大型股)", target_percentage: 45, color: "#10b981" },
+    { category: "成長動能 (科技股)", target_percentage: 30, color: "#6366f1" },
+    { category: "定存股 (領息資產)", target_percentage: 15, color: "#f59e0b" },
+    { category: "投機/現金資產", target_percentage: 10, color: "#94a3b8" }
 ];
 
 const MOCK_DIVIDEND_PROJECTIONS: ProjectedDividend[] = [
@@ -27,22 +27,73 @@ export async function getPlanningData() {
     // 1. Fetch active stocks for selection
     const { data: stocks, error: stockError } = await supabase
         .from('assets')
-        .select('ticker_symbol, title, owner, asset_type')
-        .eq('asset_type', 'stock')
-        .not('ticker_symbol', 'is', null);
+        .select('id, ticker_symbol, title, owner, asset_type, dividend_yield, strategy_category')
+        .in('asset_type', ['stock', 'rsu']);
 
-    // 2. We still use mocks for the high-level strategy for now 
-    // until the user populates stock_strategy_targets
+    // 2. Fetch real strategy targets from DB
+    const { data: dbTargets, error: targetError } = await supabase
+        .from('strategy_targets')
+        .select('*')
+        .order('category', { ascending: true });
+
+    // 3. Fetch user goals (Passive income target)
+    const { data: goals, error: goalError } = await supabase
+        .from('user_goals')
+        .select('*')
+        .eq('is_active', true)
+        .single();
+
+    // 4. Fetch latest snapshot records to get holding values for dividend calculation
+    const { data: latestSnap } = await supabase.from('snapshots').select('id').order('created_at', { ascending: false }).limit(1).single();
+    let currentAnnualDividend = 0;
+
+    if (latestSnap && stocks) {
+        const { data: records } = await supabase.from('snapshot_records').select('asset_id, total_twd_value').eq('snapshot_id', latestSnap.id);
+        if (records) {
+            currentAnnualDividend = stocks.reduce((sum, stock) => {
+                const record = records.find(r => r.asset_id === (stock as any).id); // Need ID in select
+                const value = record ? Number(record.total_twd_value) : 0;
+                const yieldPct = (stock.dividend_yield || 0) || (stock.asset_type === 'stock' ? 2 : 0); // 2% fallback for stocks
+                return sum + (value * yieldPct / 100);
+            }, 0);
+        }
+    }
+
+    // 5. Generate Projections based on real base (Assume 7% compounding + 5% annual dividend growth)
+    const baseAmount = currentAnnualDividend || 45000;
+    const dividendProjections = Array.from({ length: 7 }, (_, i) => ({
+        year: new Date().getFullYear() + i,
+        amount: Math.round(baseAmount * Math.pow(1.12, i)) // 12% total annual growth (reinvestment + equity growth)
+    }));
+
+    const finalTargets = (dbTargets && dbTargets.length > 0) ? dbTargets : MOCK_STRATEGY_TARGETS;
+
     return {
-        strategyTargets: MOCK_STRATEGY_TARGETS,
-        dividendProjections: MOCK_DIVIDEND_PROJECTIONS,
+        strategyTargets: finalTargets,
+        dividendProjections: dividendProjections,
         rebalancingThreshold: 5, // percentage
+        userGoal: goals || { goal_name: 'Financial Freedom', target_monthly_income: 50000 },
         availableStocks: (stocks || []).map((s: any) => ({
+            id: s.id, // Include ID
             symbol: s.ticker_symbol,
             name: s.title,
-            owner: s.owner
+            owner: s.owner,
+            currentCategory: s.strategy_category,
+            recommendedCategory: getRecommendedCategory(s)
         }))
     };
+}
+
+export async function updateStrategyTarget(category: string, target_percentage: number) {
+    const { data, error } = await supabase
+        .from('strategy_targets')
+        .upsert({ category, target_percentage }, { onConflict: 'category' });
+
+    if (error) {
+        console.error('Error updating strategy target:', error);
+        throw error;
+    }
+    return data;
 }
 
 export async function getStrategyNotes(tickerSymbol: string) {
@@ -72,4 +123,56 @@ export async function saveStrategyNote(tickerSymbol: string, updates: any) {
         throw error;
     }
     return data;
+}
+
+export async function updateAssetStrategy(assetId: string, category: string) {
+    const { data, error } = await supabase
+        .from('assets')
+        .update({ strategy_category: category })
+        .eq('id', assetId);
+
+    if (error) {
+        console.error('Error updating asset strategy:', error);
+        throw error;
+    }
+    return data;
+}
+
+function getRecommendedCategory(asset: any): string {
+    const symbol = asset.ticker_symbol?.toUpperCase() || "";
+    const name = asset.title || "";
+    const yieldPct = asset.dividend_yield || 0;
+
+    // 1. Dividend Logic: High yield focus
+    if (yieldPct > 4) return "定存股 (領息資產)";
+
+    // 2. Growth Logic: Tech-heavy or specific growth tickers
+    if (
+        symbol.includes("NVDA") ||
+        symbol.includes("TSLA") ||
+        symbol.includes("GOOG") ||
+        symbol.includes("TTD") ||
+        symbol.includes("NVDL") ||
+        symbol.includes("TSLL") ||
+        name.includes("成長") ||
+        name.includes("科技")
+    ) return "成長動能 (科技股)";
+
+    // 3. Core Logic: Broad indices or large blue chips
+    if (
+        symbol.includes("0050") ||
+        symbol.includes("006208") ||
+        symbol.includes("VOO") ||
+        symbol.includes("SPY") ||
+        name.includes("50") ||
+        name.includes("大型")
+    ) return "核心持股 (大型股)";
+
+    // 4. Speculative: Leveraged ETFs or specific volatile assets
+    if (symbol.endsWith("L") || symbol.includes("L") || name.includes("正2")) {
+        return "核心持股 (大型股)"; // User often considers 0050正2 as core, but technically speculative. 
+        // Keeping it flexible.
+    }
+
+    return "核心持股 (大型股)"; // Default fallback
 }
