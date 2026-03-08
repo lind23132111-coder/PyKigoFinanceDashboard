@@ -93,3 +93,15 @@
   - Refactor **Wizard Page** components for mobile (larger tap targets, responsive header).
   - Optimized chart containers and padding for narrow aspect ratios.
 - **Lesson Learnt**: Mobile logic isn't just about "shrinking" elements, but about re-designing interaction points (from top-hover to bottom-tap).
+
+### 🔹 Phase 9: Ticker Intelligence & Data Integrity (Current)
+- **Goal**: Ensure the "Add Asset" flow is robust, premium, and safe from accidental data pollution.
+- **Achievements**:
+  - **Ticker Logic Upgrade**: Bypassed unstable libraries with a direct Fetch-based Yahoo Search. Implemented automatic `.TW` suffixing for numeric codes and full-width character conversion.
+  - **Premium UI Polish**: Resolved the long-standing "Dropdown Clipping" bug in the Wizard modal by adjusting overflow constraints and increasing padding.
+  - **Strict Demo Guard**: Implemented a "No-Write" safety lock when `DEMO_MODE` is active. This ensures that automated visual tests or public users cannot contaminate the production database.
+  - **Test Data Purge**: Identified and recursively cleaned up all legacy/orphaned test records from the Supabase `assets` table.
+- **Lesson Learnt**: Protecting production data integrity is as important as the feature itself. Implementing "Demo Guards" early prevents hours of manual cleanup later.
+
+---
+**本誌錄由 Antigravity (AI Architect) 與 PY/Kigo 共同編輯完成。**
