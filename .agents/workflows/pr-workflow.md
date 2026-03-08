@@ -50,43 +50,46 @@ node scripts/take-screenshots.mjs
 > 截圖用的是「最新的本地 UI」但資料是 **Mock Data**。完全不會挖到真實資產。
 12. 確認截圖符合預期、無 Console Error
 
-### Phase 5 — 更新文件
-13. **README.md**：若有新功能，補充「主要功能」清單
-14. **wiki/User-Guide.md**：補充使用者操作描述
-15. **wiki/Design-Document.md**：補充架構/技術決策
-16. **wiki/Project-Work-Log.md**：新增開發日誌（Phase N），**使用實際淨開發工時**
+### Phase 5 — 文件與 Wiki 同步
+13. **README.md**：若有新功能，補充「主要功能」清單。
+14. **Wiki 全面更新**：
+    - `wiki/User-Guide.md`：更新操作流程與功能描述。
+    - `wiki/Design-Document.md`：更新資料表結構與架構決策。
+    - `wiki/Project-Work-Log.md`：更新開發日誌，併入對應的 Milestone 與實施工時。
+15. **手動視覺稽核**：
+    - 比對手機與電腦版佈局。
+    - 若自動截圖有遮擋或資料疑慮，應自行手動截取 Demo 數據畫面替換至 Wiki。
+16. **執行 Wiki 同步腳本 (關鍵)**：
+    // turbo
+    ```bash
+    node scripts/sync-wiki.mjs
+    ```
 
 ### Phase 6 — 建立 PR
-17. 批次提交所有程式碼與文件（一次 push）
-```bash
-git add .
-git commit -m "<type>: <description>"
-git push origin <branch-name>
-```
-18. 在 GitHub 建立 Pull Request
+17. **提交變更**：
+    ```bash
+    git add .
+    git commit -m "<type>: <description>"
+    git push origin <branch-name>
+    ```
+18. **建立 Pull Request**：
+    - 標題應包含版本號或功能名稱（如：`feat: Strategy Optimization V1.3`）。
+    - 內容應包含：**Key Changes**、**Visuals (Screenshots)** 以及 **關聯的支援單號 (Closes #X)**。
 
-### Phase 7 — 同步 Wiki
-// turbo
-19. **執行 Wiki 同步腳本（必做）**
-```bash
-node scripts/sync-wiki.mjs
-```
-20. 確認腳本輸出顯示 `✨ Wiki Synchronization Complete!`
-
-### Phase 8 — 回報使用者
-21. 彙整截圖、PR 連結、變更摘要
-22. 提供 PR 頁面給使用者 Review
+### Phase 7 — 回報與結案
+19. 提供 PR 連結給使用者進行最終 Review。
+20. 合併後確認 Vercel 自動部署成功。
 
 ---
 
-## ⚠️ 已知限制 & 注意事項
+## ⚠️ 核心準則 & 注意事項
 
-| 問題 | 說明 | 對策 |
-|---|---|---|
-| Vercel 部署配額 | Hobby 方案每日上限 100 次 Build | 批次提交，避免多次 Push |
-| **Wiki 是獨立倉庫** | `wiki/` 資料夾修改後需額外 sync | PR Merge 到 main 時 GitHub Actions 自動執行 —不需手動 |
-| **實際工時確認** | 工時應為實際 Coding + 驗證 + 文件的時間 | 完成後回頭推算，不要估計 |
-| **AI Insight 費用** | Gemini API 每次呼叫有費用 | 驗證時盡量用現有快取，避免重複觸發 |
+| 準則 | 說明 |
+|---|---|
+| **Wiki 優先** | 所有的文件修改應優先在 Local `wiki/` 目錄完成，再透過腳本 sync。 |
+| **連結 Issue** | 每個 PR 都必須明確連結到原始的 GitHub Issue 或 Milestone。 |
+| **Demo 隱私** | 對外展示的文件與截圖絕不允許出現真實財務數據。 |
+| **響應式思維** | 佈局優化需考量 Context，例如手機版應以單手操作與寬度釋放為首要。 |
 
 ---
 
