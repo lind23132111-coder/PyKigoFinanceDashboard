@@ -158,8 +158,32 @@ export default function QuarterlyWizard() {
             }
         }
 
+        // Strict Demo Mode Guard
+        const isDemo = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
+
+        // Keyword Check
+        const isTestName = /test|測試/i.test(newAsset.title);
+        if (isTestName && !isDemo) {
+            const confirmSave = window.confirm("偵測到名稱包含「Test/測試」，您確定要將測試資料存入正式資料庫嗎？");
+            if (!confirmSave) return;
+        }
+
         try {
-            const added = await addNewAsset(newAsset) as any;
+            let added: any;
+
+            if (isDemo) {
+                // In Demo mode, mock the DB response and DON'T call the server
+                console.log("[DemoMode] Blocking server write for:", newAsset.title);
+                added = {
+                    id: crypto.randomUUID(),
+                    owner: newAsset.owner,
+                    asset_type: newAsset.asset_type,
+                    currency: newAsset.currency
+                };
+                alert("【演示模式】資料僅存於本地，未寫入資料庫。");
+            } else {
+                added = await addNewAsset(newAsset) as any;
+            }
             const mapped: any = {
                 ...added,
                 title: newAsset.title,
