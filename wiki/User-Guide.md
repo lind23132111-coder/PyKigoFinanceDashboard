@@ -56,6 +56,12 @@
 ## 5. 投資策略與規劃 (Strategy & Planning)
 本頁面旨在協助您進行深度市場研究與投資紀律管理。
 
+![Strategy Desktop](images/strategy_desktop.png)
+*電腦版：專業三欄式佈局，清單、圖表、筆記一目瞭然。*
+
+![Strategy Mobile](images/strategy_mobile.png)
+*手機版：空間簡化術。下拉選單取標的，600px 大線圖配合常置式筆記。*
+
 - **快速切換標的**：
   - **電腦版**：透過左側側邊欄進行搜尋與點選。
   - **手機版**：圖表上方配有專屬下拉選單，點擊後即可快速切換您名下的所有持股。
