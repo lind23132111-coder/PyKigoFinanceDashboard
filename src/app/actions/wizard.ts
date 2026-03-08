@@ -224,6 +224,16 @@ export async function searchTicker(query: string): Promise<TickerSuggestion[]> {
 
     if (cleanQuery.length < 1) return [];
 
+    // Check if query contains non-alphanumeric characters (like Chinese)
+    // Yahoo Search API currently fails with 400 for Chinese characters in some contexts
+    const isStandardQuery = /^[a-zA-Z0-9.]+$/.test(cleanQuery);
+    if (!isStandardQuery) {
+        return [
+            { symbol: "TIPS", name: "中文字搜尋不穩定，請改輸入代號 (如 2330)", exchange: "HINT" },
+            { symbol: "TIPS", name: "或英文代號 (如 TSMC / AAPL)", exchange: "HINT" }
+        ];
+    }
+
     try {
         console.log(`[TickerSearch] Query: "${cleanQuery}" (original: "${query}")`);
 
