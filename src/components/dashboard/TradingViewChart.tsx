@@ -27,14 +27,10 @@ export default function TradingViewChart({ symbol }: TradingViewChartProps) {
         } else if (tvSymbol.startsWith('TWO:') || tvSymbol.startsWith('TPEX:')) {
             tvSymbol = `TPEX:${tvSymbol.includes(':') ? tvSymbol.split(':')[1] : tvSymbol}`;
         }
-        // 3. Pass through with standardized casing if prefix already exists
-        else if (tvSymbol.includes(':')) {
-            // e.g., NASDAQ:AAPL -> NASDAQ:AAPL
-            tvSymbol = tvSymbol;
-        }
-        // 4. Default to raw if no pattern matches
-        else {
-            tvSymbol = tvSymbol;
+        // 3. Special Case for ETFs or Numeric strings without prefix
+        else if (/^\d{4,6}[A-Z]{0,1}$/.test(tvSymbol)) {
+            // If it's pure numeric (00688L), default to TWSE as a guess for Taiwan users
+            tvSymbol = `TWSE:${tvSymbol}`;
         }
 
         const script = document.createElement("script");
@@ -51,6 +47,8 @@ export default function TradingViewChart({ symbol }: TradingViewChartProps) {
             "locale": "zh_TW",
             "enable_publishing": false,
             "allow_symbol_change": true,
+            "hide_side_toolbar": true,
+            "hide_top_toolbar": false,
             "calendar": false,
             "support_host": "https://www.tradingview.com"
         });
