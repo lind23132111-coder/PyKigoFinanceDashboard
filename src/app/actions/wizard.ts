@@ -219,45 +219,53 @@ export async function searchTicker(query: string): Promise<TickerSuggestion[]> {
     }
 
     try {
-        const yfModule = await import('yahoo-finance2');
-        const YahooFinanceConstructor = (yfModule as any).default || yfModule;
+        // Bypass the brittle yahoo-finance2 library and use the Yahoo Search API directly
+        const url = `https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(query)}&quotesCount=10&newsCount=0`;
 
-        let yahooFinance: any;
-        if (typeof YahooFinanceConstructor === 'function') {
-            yahooFinance = new YahooFinanceConstructor();
-        } else {
-            yahooFinance = YahooFinanceConstructor;
+        const response = await fetch(url, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'application/json'
+            },
+            next: { revalidate: 3600 } // Cache results for an hour
+        });
+
+        if (!response.ok) {
+            throw new Error(`Yahoo API error: ${response.status}`);
         }
 
-        if (typeof yahooFinance.search !== 'function') {
-            console.error("searchTicker: No search function found", { type: typeof yahooFinance });
-            return [];
-        }
+        const data = await response.json();
+        const quotes = data.quotes || [];
 
-        const results = await yahooFinance.search(query);
-        const quotes = results.quotes || [];
+        // If no results specifically for a numeric code like "0050", suggest Taiwan/HK suffixes
+        if (quotes.length === 0 && /^\d{4,6}$/.test(query)) {
+            return [
+                { symbol: `${query}.TW`, name: `${query} (台灣預測)`, exchange: "TPE" },
+                { symbol: `${query}.HK`, name: `${query} (香港預測)`, exchange: "HKG" }
+            ];
+        }
 
         return quotes
             .slice(0, 8)
             .map((q: any) => ({
                 symbol: q.symbol,
                 name: q.shortname || q.longname || q.symbol,
-                exchange: q.exchange || '',
+                exchange: q.exchange || q.exchDisp || '',
             }));
+
     } catch (err: any) {
         console.error("searchTicker error:", err.message);
 
-        // Handle rate limiting or crumb errors by showing common suggestions in DEV
-        if (err.message?.includes('429') || err.message?.includes('crumb')) {
-            return [
-                { symbol: "AAPL", name: "Apple Inc. (限流模式)", exchange: "NASDAQ" },
-                { symbol: "0050.TW", name: "元大台灣50 (限流模式)", exchange: "TPE" },
-                { symbol: "NVDA", name: "NVIDIA Corp (限流模式)", exchange: "NASDAQ" },
-                { symbol: "2330.TW", name: "台積電 (限流模式)", exchange: "TPE" }
-            ];
-        }
+        // Handle rate limiting (429) or other errors by showing common suggestions
+        const isRateLimited = err.message?.includes('429') || err.message?.includes('crumb');
+        const suffix = isRateLimited ? " (限流模式)" : " (備用模式)";
 
-        return [{ symbol: "ERROR", name: "搜尋 API 出錯: " + (err.message || "Unknown"), exchange: "ERROR" }];
+        return [
+            { symbol: "AAPL", name: "Apple Inc." + suffix, exchange: "NASDAQ" },
+            { symbol: "0050.TW", name: "元大台灣50" + suffix, exchange: "TPE" },
+            { symbol: "NVDA", name: "NVIDIA Corp" + suffix, exchange: "NASDAQ" },
+            { symbol: "2330.TW", name: "台積電" + suffix, exchange: "TPE" }
+        ];
     }
 }
 
