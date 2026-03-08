@@ -206,16 +206,32 @@ export async function searchTicker(query: string): Promise<TickerSuggestion[]> {
     // Demo mode: return mock suggestions
     if (process.env.NEXT_PUBLIC_DEMO_MODE === "true") {
         const DEMO: TickerSuggestion[] = [
+            // US Stocks
             { symbol: "AAPL", name: "Apple Inc.", exchange: "NASDAQ" },
             { symbol: "AMZN", name: "Amazon.com Inc.", exchange: "NASDAQ" },
             { symbol: "MSFT", name: "Microsoft Corporation", exchange: "NASDAQ" },
             { symbol: "NVDA", name: "Nvidia Corporation", exchange: "NASDAQ" },
+            { symbol: "GOOGL", name: "Alphabet Inc.", exchange: "NASDAQ" },
+            { symbol: "META", name: "Meta Platforms, Inc.", exchange: "NASDAQ" },
+            { symbol: "TSLA", name: "Tesla, Inc.", exchange: "NASDAQ" },
             { symbol: "MU", name: "Micron Technology Inc.", exchange: "NASDAQ" },
+            // Taiwan Stocks
+            { symbol: "2330.TW", name: "台積電 (TSMC)", exchange: "TPE" },
+            { symbol: "0050.TW", name: "元大台灣50", exchange: "TPE" },
+            { symbol: "0056.TW", name: "元大高股息", exchange: "TPE" },
+            { symbol: "2454.TW", name: "聯發科 (MediaTek)", exchange: "TPE" },
+            { symbol: "2317.TW", name: "鴻海 (Foxconn)", exchange: "TPE" },
+            { symbol: "00878.TW", name: "國泰永續高股息", exchange: "TPE" },
+            { symbol: "2881.TW", name: "富邦金", exchange: "TPE" },
+            { symbol: "2882.TW", name: "國泰金", exchange: "TPE" },
         ];
-        return DEMO.filter(s =>
-            s.symbol.toUpperCase().startsWith(query.toUpperCase()) ||
+        const filtered = DEMO.filter(s =>
+            s.symbol.toUpperCase().includes(query.toUpperCase()) ||
             s.name.toLowerCase().includes(query.toLowerCase())
         ).slice(0, 6);
+
+        // If no matches in demo, return the first few as "Suggestions" so the dropdown still shows
+        return filtered.length > 0 ? filtered : DEMO.slice(0, 5);
     }
 
     // Clean query and convert full-width characters to half-width
