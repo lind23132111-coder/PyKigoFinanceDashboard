@@ -188,3 +188,133 @@ export async function deleteSnapshot(snapshotId: string) {
 
     return { success: true };
 }
+
+// ─────────────────────────────────────────────────────────────────
+// TICKER AUTOCOMPLETE & VALIDATION
+// ─────────────────────────────────────────────────────────────────
+
+export type TickerSuggestion = {
+    symbol: string;
+    name: string;
+    exchange: string;
+};
+
+/** Search Yahoo Finance for ticker suggestions (used for autocomplete) */
+export async function searchTicker(query: string): Promise<TickerSuggestion[]> {
+    if (!query || query.trim().length < 1) return [];
+
+    // Demo mode: return mock suggestions
+    if (process.env.NEXT_PUBLIC_DEMO_MODE === "true") {
+        const DEMO: TickerSuggestion[] = [
+            // US Stocks
+            { symbol: "AAPL", name: "Apple Inc.", exchange: "NASDAQ" },
+            { symbol: "AMZN", name: "Amazon.com Inc.", exchange: "NASDAQ" },
+            { symbol: "MSFT", name: "Microsoft Corporation", exchange: "NASDAQ" },
+            { symbol: "NVDA", name: "Nvidia Corporation", exchange: "NASDAQ" },
+            { symbol: "GOOGL", name: "Alphabet Inc.", exchange: "NASDAQ" },
+            { symbol: "META", name: "Meta Platforms, Inc.", exchange: "NASDAQ" },
+            { symbol: "TSLA", name: "Tesla, Inc.", exchange: "NASDAQ" },
+            { symbol: "MU", name: "Micron Technology Inc.", exchange: "NASDAQ" },
+            // Taiwan Stocks
+            { symbol: "2330.TW", name: "台積電 (TSMC)", exchange: "TPE" },
+            { symbol: "0050.TW", name: "元大台灣50", exchange: "TPE" },
+            { symbol: "0056.TW", name: "元大高股息", exchange: "TPE" },
+            { symbol: "2454.TW", name: "聯發科 (MediaTek)", exchange: "TPE" },
+            { symbol: "2317.TW", name: "鴻海 (Foxconn)", exchange: "TPE" },
+            { symbol: "00878.TW", name: "國泰永續高股息", exchange: "TPE" },
+            { symbol: "2881.TW", name: "富邦金", exchange: "TPE" },
+            { symbol: "2882.TW", name: "國泰金", exchange: "TPE" },
+        ];
+        const filtered = DEMO.filter(s =>
+            s.symbol.toUpperCase().includes(query.toUpperCase()) ||
+            s.name.toLowerCase().includes(query.toLowerCase())
+        ).slice(0, 6);
+
+        // If no matches in demo, return the first few as "Suggestions" so the dropdown still shows
+        return filtered.length > 0 ? filtered : DEMO.slice(0, 5);
+    }
+
+    // Clean query and convert full-width characters to half-width
+    let cleanQuery = query.includes(' — ') ? query.split(' — ')[0].trim() : query.trim();
+    cleanQuery = cleanQuery.replace(/[\uFF01-\uFF5E]/g, (s) => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)).replace(/\u3000/g, ' ');
+
+    if (cleanQuery.length < 1) return [];
+
+    // Check if query contains non-alphanumeric characters (like Chinese)
+    // Yahoo Search API currently fails with 400 for Chinese characters in some contexts
+    const isStandardQuery = /^[a-zA-Z0-9.]+$/.test(cleanQuery);
+    if (!isStandardQuery) {
+        return [
+            { symbol: "TIPS", name: "中文字搜尋不穩定，請改輸入代號 (如 2330)", exchange: "HINT" },
+            { symbol: "TIPS", name: "或英文代號 (如 TSMC / AAPL)", exchange: "HINT" }
+        ];
+    }
+
+    try {
+        console.log(`[TickerSearch] Query: "${cleanQuery}" (original: "${query}")`);
+
+        // Yahoo Search API with region/lang for better local results
+        const url = `https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(cleanQuery)}&quotesCount=10&newsCount=0&lang=zh-Hant-TW&region=TW`;
+
+        const response = await fetch(url, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0',
+                'Accept': 'application/json'
+            },
+            cache: 'no-store'
+        });
+
+        if (!response.ok) {
+            console.error(`[TickerSearch] Yahoo API error status: ${response.status}`);
+            throw new Error(`Yahoo API error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const quotes = data.quotes || [];
+        console.log(`[TickerSearch] Found ${quotes.length} results`);
+
+        // If no results specifically for a numeric code like "2330", suggest Taiwan/HK suffixes
+        if (quotes.length === 0 && /^\d{4,6}$/.test(cleanQuery)) {
+            return [
+                { symbol: `${cleanQuery}.TW`, name: `${cleanQuery} (台灣預測)`, exchange: "TPE" },
+                { symbol: `${cleanQuery}.HK`, name: `${cleanQuery} (香港預測)`, exchange: "HKG" },
+                { symbol: `${cleanQuery}.TWO`, name: `${cleanQuery} (櫃買預測)`, exchange: "TWO" }
+            ];
+        }
+
+        return quotes
+            .slice(0, 8)
+            .map((q: any) => ({
+                symbol: q.symbol,
+                name: q.shortname || q.longname || q.symbol,
+                exchange: q.exchange || q.exchDisp || '',
+            }));
+
+    } catch (err: any) {
+        console.error("[TickerSearch] Error:", err.message);
+
+        const isRateLimited = err.message?.includes('429') || err.message?.includes('crumb');
+        const suffix = isRateLimited ? " (限流模式)" : " (備用模式)";
+
+        return [
+            { symbol: "AAPL", name: "Apple Inc." + suffix, exchange: "NASDAQ" },
+            { symbol: "0050.TW", name: "元大台灣50" + suffix, exchange: "TPE" },
+            { symbol: "NVDA", name: "NVIDIA Corp" + suffix, exchange: "NASDAQ" },
+            { symbol: "2330.TW", name: "台積電" + suffix, exchange: "TPE" },
+            { symbol: "0056.TW", name: "元大高股息" + suffix, exchange: "TPE" }
+        ];
+    }
+}
+
+/** Check if a ticker already exists for this owner in the assets table */
+export async function checkDuplicateTicker(ticker: string, owner: string): Promise<boolean> {
+    if (process.env.NEXT_PUBLIC_DEMO_MODE === "true") return false;
+    const { data } = await supabase
+        .from('assets')
+        .select('id')
+        .eq('ticker_symbol', ticker.toUpperCase())
+        .eq('owner', owner)
+        .eq('is_active', true)
+        .limit(1);
+    return !!(data && data.length > 0);
+}

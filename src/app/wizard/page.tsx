@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { CheckCircle2, TrendingUp, Wallet, Sparkles, Trash2, Plus, X, ArchiveRestore, RefreshCcw } from "lucide-react";
 import { supabase } from "@/utils/supabase/client";
-import { getWizardInitData } from "@/app/actions/wizard";
+import { getWizardInitData, searchTicker, checkDuplicateTicker } from "@/app/actions/wizard";
+import type { TickerSuggestion } from "@/app/actions/wizard";
 import { toggleAssetActive, addNewAsset } from "@/app/actions/goals";
 
 type Asset = {
@@ -55,6 +56,14 @@ export default function QuarterlyWizard() {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [newAsset, setNewAsset] = useState({ title: '', owner: 'PY', asset_type: 'cash', currency: 'TWD', ticker_symbol: '' });
 
+    // Ticker autocomplete states
+    const [tickerQuery, setTickerQuery] = useState('');
+    const [tickerSuggestions, setTickerSuggestions] = useState<TickerSuggestion[]>([]);
+    const [tickerSearching, setTickerSearching] = useState(false);
+    const [tickerDropdownOpen, setTickerDropdownOpen] = useState(false);
+    const [tickerSelected, setTickerSelected] = useState(false);
+    const [tickerError, setTickerError] = useState('');
+
     const handleDeleteAsset = async (id: string) => {
         if (!confirm("確定要移除此資產嗎？(歷史紀錄仍會保留)")) return;
         try {
@@ -93,7 +102,7 @@ export default function QuarterlyWizard() {
                 defaultValue: "0"
             };
 
-            if (mapped.asset_type === 'stock') {
+            if (mapped.asset_type === 'stock' || mapped.asset_type === 'rsu') {
                 setStockAssets(prev => [...prev, mapped]);
             } else {
                 setCashAccounts(prev => [...prev, mapped]);
@@ -103,10 +112,78 @@ export default function QuarterlyWizard() {
         }
     };
 
+    // Ticker autocomplete — debounced search
+    useEffect(() => {
+        if (tickerSelected || tickerQuery.trim().length < 1) {
+            setTickerSuggestions([]);
+            setTickerDropdownOpen(false);
+            return;
+        }
+        const timer = setTimeout(async () => {
+            setTickerSearching(true);
+            const results = await searchTicker(tickerQuery);
+            setTickerSuggestions(results);
+            setTickerDropdownOpen(results.length > 0);
+            setTickerSearching(false);
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [tickerQuery, tickerSelected]);
+
+    const handleTickerSelect = (suggestion: TickerSuggestion) => {
+        setNewAsset(prev => ({ ...prev, ticker_symbol: suggestion.symbol }));
+        setTickerQuery(`${suggestion.symbol} — ${suggestion.name}`);
+        setTickerSelected(true);
+        setTickerDropdownOpen(false);
+        setTickerError('');
+    };
+
+    const resetTickerState = () => {
+        setTickerQuery('');
+        setTickerSuggestions([]);
+        setTickerDropdownOpen(false);
+        setTickerSelected(false);
+        setTickerError('');
+        setNewAsset(prev => ({ ...prev, ticker_symbol: '' }));
+    };
+
     const handleAddAssetSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        // Duplicate ticker check for stock/RSU assets
+        if ((newAsset.asset_type === 'stock' || newAsset.asset_type === 'rsu') && newAsset.ticker_symbol) {
+            const isDuplicate = await checkDuplicateTicker(newAsset.ticker_symbol, newAsset.owner);
+            if (isDuplicate) {
+                setTickerError(`「${newAsset.ticker_symbol}」已存在於 ${newAsset.owner} 的資產清單中，請勿重複新增。`);
+                return;
+            }
+        }
+
+        // Strict Demo Mode Guard
+        const isDemo = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
+
+        // Keyword Check
+        const isTestName = /test|測試/i.test(newAsset.title);
+        if (isTestName && !isDemo) {
+            const confirmSave = window.confirm("偵測到名稱包含「Test/測試」，您確定要將測試資料存入正式資料庫嗎？");
+            if (!confirmSave) return;
+        }
+
         try {
-            const added = await addNewAsset(newAsset) as any;
+            let added: any;
+
+            if (isDemo) {
+                // In Demo mode, mock the DB response and DON'T call the server
+                console.log("[DemoMode] Blocking server write for:", newAsset.title);
+                added = {
+                    id: crypto.randomUUID(),
+                    owner: newAsset.owner,
+                    asset_type: newAsset.asset_type,
+                    currency: newAsset.currency
+                };
+                alert("【演示模式】資料僅存於本地，未寫入資料庫。");
+            } else {
+                added = await addNewAsset(newAsset) as any;
+            }
             const mapped: any = {
                 ...added,
                 title: newAsset.title,
@@ -122,13 +199,14 @@ export default function QuarterlyWizard() {
                 prevBalance: "0",
                 defaultValue: "0"
             };
-            if (mapped.asset_type === 'stock') {
+            if (mapped.asset_type === 'stock' || mapped.asset_type === 'rsu') {
                 setStockAssets(prev => [...prev, mapped]);
             } else {
                 setCashAccounts(prev => [...prev, mapped]);
             }
             setIsAddModalOpen(false);
             setNewAsset({ title: '', owner: 'PY', asset_type: 'cash', currency: 'TWD', ticker_symbol: '' });
+            resetTickerState();
         } catch (error) {
             alert("新增失敗");
         }
@@ -473,7 +551,7 @@ export default function QuarterlyWizard() {
                     {/* Add Asset Modal */}
                     {isAddModalOpen && (
                         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-                            <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden">
+                            <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl">
                                 <div className="p-6 border-b border-slate-100 flex justify-between items-center">
                                     <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
                                         <Plus className="w-5 h-5 text-brand-500" /> 新增資產帳戶
@@ -536,16 +614,77 @@ export default function QuarterlyWizard() {
                                                 <option value="JPY">JPY 日幣</option>
                                             </select>
                                         </div>
-                                        {newAsset.asset_type === 'stock' && (
-                                            <div>
+                                        {(newAsset.asset_type === 'stock' || newAsset.asset_type === 'rsu') && (
+                                            <div className="relative">
                                                 <label className="block text-sm font-bold text-slate-700 mb-1">股票代號 (Ticker)</label>
-                                                <input
-                                                    type="text"
-                                                    placeholder="ex: NASDAQ:MU"
-                                                    value={newAsset.ticker_symbol}
-                                                    onChange={e => setNewAsset(prev => ({ ...prev, ticker_symbol: e.target.value }))}
-                                                    className="w-full rounded-xl border-slate-200 shadow-sm focus:border-brand-500 focus:ring-brand-500 bg-white px-4 py-2.5 outline-none border transition-all"
-                                                />
+                                                <div className="relative">
+                                                    <input
+                                                        type="text"
+                                                        placeholder="搜尋代號或公司名..."
+                                                        value={tickerQuery}
+                                                        onChange={e => {
+                                                            setTickerQuery(e.target.value);
+                                                            setTickerSelected(false);
+                                                            setTickerError('');
+                                                            if (!e.target.value) setNewAsset(prev => ({ ...prev, ticker_symbol: '' }));
+                                                        }}
+                                                        onFocus={() => setTickerDropdownOpen(true)}
+                                                        className={`w-full rounded-xl border shadow-sm bg-white px-4 py-2.5 outline-none transition-all pr-8 ${tickerError ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-500/20 focus:ring-2' :
+                                                            'border-slate-200 focus:border-brand-500 focus:ring-brand-500/20 focus:ring-2'
+                                                            }`}
+                                                        autoComplete="off"
+                                                    />
+                                                    {tickerSearching && (
+                                                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                                            <div className="w-4 h-4 border-2 border-brand-400 border-t-transparent rounded-full animate-spin" />
+                                                        </div>
+                                                    )}
+                                                    {tickerSelected && newAsset.ticker_symbol && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={resetTickerState}
+                                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                                                        >
+                                                            <X className="w-3.5 h-3.5" />
+                                                        </button>
+                                                    )}
+                                                </div>
+
+                                                {/* Dropdown suggestions */}
+                                                {tickerDropdownOpen && (tickerSearching || tickerSuggestions.length > 0 || (tickerQuery.trim().length > 0 && !tickerSearching)) && (
+                                                    <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden max-h-60 overflow-y-auto py-1">
+                                                        {tickerSearching ? (
+                                                            <div className="px-4 py-3 text-sm text-slate-500 flex items-center gap-2">
+                                                                <div className="w-3 h-3 border-2 border-brand-400 border-t-transparent rounded-full animate-spin" />
+                                                                搜尋中...
+                                                            </div>
+                                                        ) : tickerSuggestions.length > 0 ? (
+                                                            tickerSuggestions.map(s => (
+                                                                <button
+                                                                    key={s.symbol}
+                                                                    type="button"
+                                                                    onClick={() => handleTickerSelect(s)}
+                                                                    className="w-full text-left px-4 py-2.5 hover:bg-brand-50 flex items-center justify-between gap-2 transition-colors border-b border-slate-50 last:border-0"
+                                                                >
+                                                                    <div className="flex flex-col">
+                                                                        <span className="font-bold text-slate-800 text-sm">{s.symbol}</span>
+                                                                        <span className="text-slate-400 text-[10px] leading-tight truncate max-w-[150px]">{s.name}</span>
+                                                                    </div>
+                                                                    <span className="text-slate-300 text-[10px] font-medium px-1.5 py-0.5 bg-slate-50 rounded border border-slate-100 uppercase">{s.exchange}</span>
+                                                                </button>
+                                                            ))
+                                                        ) : (tickerQuery.trim().length > 0 && !tickerSearching) && (
+                                                            <div className="px-4 py-3 text-sm text-slate-400 italic">
+                                                                無符合結果 (請嘗試輸入代號如 AAPL)
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+
+                                                {/* Error message */}
+                                                {tickerError && (
+                                                    <p className="mt-1.5 text-xs font-bold text-rose-500">{tickerError}</p>
+                                                )}
                                             </div>
                                         )}
                                     </div>
