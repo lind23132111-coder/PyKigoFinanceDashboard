@@ -14,6 +14,7 @@
 | **Phase 4** | **真實數據導入** | 從測試數據切換至真實資產資訊 | 1h |
 | **Phase 5** | **AI 互動與架構優化** | 雙向 AI 回饋、互動式濾鏡圖表、程式碼全模組化 | 4h |
 | **Phase 6** | **安全分享與完整管理** | 雙版本部署、全站密碼保護、目標管理 CRUD 化 | 3h |
+| **Phase 7** | **長期投資規劃** | 資產再平衡、股息雪球預測、投資策略儀表板 | 2h |
 | **Phase 8** | **行動版介面優化** | 底部導覽、置頂篩選、觸控友善 Wizard | 1h |
 | **Phase 9** | **代號智取與數據防護** | 穩定 Ticker 搜尋、彈出視窗 UI、Demo 模式防污染 | 2h |
 
@@ -61,6 +62,31 @@
     *   **CI/CD 自動化復原**: 修復 GitHub Actions 與 Secrets 設定，恢復市場報價與匯率的 6 小時自動更新。
 *   **Lesson Learnt**: 在專案發布前建立好「Demo 模式」與「安全保險箱 (Secrets)」非常重要，這能讓你在不洩漏真實隱私的前提下，維持長期的自動化維運。
 
+### 🔹 Phase 7: 長期投資規劃 (Investment Strategy)
+*   **目標**: 從當前的快照追蹤轉向未來的財務策略佈局。
+*   **實作亮點**:
+    *   **策略儀表板**: 實作 `/planning` 路由，提供專屬的投資策略介面。
+    *   **資產再平衡**: 新增 Rebalancing 模組，自動計算「目標權重」與「實際權重」的偏差。
+    *   **股息雪球預測**: 實作 10 年期的股息增長預測圖表，讓被動收入視覺化。
+*   **Lesson Learnt**: 從「記錄過去」提升到「規劃未來」，能顯著提升系統對長期投資決策的價值。
+
+### 🔹 Phase 8: 行動版體驗與 UI 優化 (Mobile Optimization)
+*   **目標**: 將儀表板從「桌面優先」轉變為真正的響應式行動應用體驗。
+*   **實作亮點**:
+    *   **持久型底部導覽**: 針對手機版實作符合人體工學的底部導覽列。
+    *   **置頂清空橫幅**: 在滾動查看圖表時，篩選器清空按鈕會自動置頂，優化操作連貫性。
+    *   **Wizard 行動化重構**: 加大點擊目標並優化頁首佈局，讓在手機上輸入銀行餘額更輕鬆。
+*   **Lesson Learnt**: 行動版邏輯不只是縮小縮放比，而是需要重新設計互動觸發點（從頂部懸停轉向底部點擊）。
+
+### 🔹 Phase 9: 代號智取與數據防護 (Ticker & Integrity)
+*   **目標**: 確保「新增資產」流程穩定、精美，且能防止意外的數據污染。
+*   **實作亮點**:
+    *   **代號邏輯升級**: 捨棄不穩定的函式庫，改用 Fetch 直連 Yahoo 搜尋。實作數字代碼自動補齊 `.TW` 與全形字自動轉半形。
+    *   **彈出視窗 UI 修復**: 解決了長期存在的下拉選單被視窗切掉的 Bug，顯著提升操作流暢度。
+    *   **嚴格 Demo 防護**: 在 `DEMO_MODE` 啟用時實作「禁止寫入」安全鎖，確保自動化測試不會產生垃圾數據。
+    *   **數據清理**: 徹底清理了 Supabase 中所有的殘留/孤立測試紀錄，還原乾淨的生產環境。
+*   **Lesson Learnt**: 保護生產環境數據完整性與功能開發同等重要，早期實作「防誤觸機制」能節省大量事後清理時間。
+
 ---
 
 ## 🌟 亮點總結 (Project Highlights)
@@ -74,34 +100,6 @@
 - [ ] 增加支出分類與記帳功能連動。
 - [ ] AI 預測模型：預估退休金達成率。
 - [x] 手機版 UI 進一步優化。
-
----
-**本誌錄由 Antigravity (AI Architect) 與 PY/Kigo 共同編輯完成。**
-### Phase 7: Long-term Stock Planning (Investment Strategy)
-- **Goal**: Transition from current snapshot tracking to future financial strategy.
-- **Achievements**:
-  - Implemented `/planning` route with "Strategy" dashboard.
-  - Added **Portfolio Rebalancing** module (Target vs. Actual).
-  - Added **Dividend Snowball** projection chart (10-year passive income forecast).
-  - Integrated with Navbar for easy access.
-
-### Phase 8: Mobile Experience & UI Polish (Current)
-- **Goal**: Transform the dashboard from "Desktop-Only" to a truly responsive mobile app experience.
-- **Achievements**:
-  - Implemented a **Persistent Bottom Navigation** with Cantonese-Chinese labels for localized clarity.
-  - Developed a **Sticky Interaction Banner** on the Dashboard for convenient filter clearing while scrolling.
-  - Refactor **Wizard Page** components for mobile (larger tap targets, responsive header).
-  - Optimized chart containers and padding for narrow aspect ratios.
-- **Lesson Learnt**: Mobile logic isn't just about "shrinking" elements, but about re-designing interaction points (from top-hover to bottom-tap).
-
-### 🔹 Phase 9: Ticker Intelligence & Data Integrity (Current)
-- **Goal**: Ensure the "Add Asset" flow is robust, premium, and safe from accidental data pollution.
-- **Achievements**:
-  - **Ticker Logic Upgrade**: Bypassed unstable libraries with a direct Fetch-based Yahoo Search. Implemented automatic `.TW` suffixing for numeric codes and full-width character conversion.
-  - **Premium UI Polish**: Resolved the long-standing "Dropdown Clipping" bug in the Wizard modal by adjusting overflow constraints and increasing padding.
-  - **Strict Demo Guard**: Implemented a "No-Write" safety lock when `DEMO_MODE` is active. This ensures that automated visual tests or public users cannot contaminate the production database.
-  - **Test Data Purge**: Identified and recursively cleaned up all legacy/orphaned test records from the Supabase `assets` table.
-- **Lesson Learnt**: Protecting production data integrity is as important as the feature itself. Implementing "Demo Guards" early prevents hours of manual cleanup later.
 
 ---
 **本誌錄由 Antigravity (AI Architect) 與 PY/Kigo 共同編輯完成。**
