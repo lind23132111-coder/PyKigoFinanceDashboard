@@ -218,30 +218,40 @@ export async function searchTicker(query: string): Promise<TickerSuggestion[]> {
         ).slice(0, 6);
     }
 
+    // Clean query and convert full-width characters to half-width
+    let cleanQuery = query.includes(' — ') ? query.split(' — ')[0].trim() : query.trim();
+    cleanQuery = cleanQuery.replace(/[\uFF01-\uFF5E]/g, (s) => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)).replace(/\u3000/g, ' ');
+
+    if (cleanQuery.length < 1) return [];
+
     try {
-        // Bypass the brittle yahoo-finance2 library and use the Yahoo Search API directly
-        const url = `https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(query)}&quotesCount=10&newsCount=0`;
+        console.log(`[TickerSearch] Query: "${cleanQuery}" (original: "${query}")`);
+
+        // Yahoo Search API with region/lang for better local results
+        const url = `https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(cleanQuery)}&quotesCount=10&newsCount=0&lang=zh-Hant-TW&region=TW`;
 
         const response = await fetch(url, {
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                 'Accept': 'application/json'
-            },
-            next: { revalidate: 3600 } // Cache results for an hour
+            }
         });
 
         if (!response.ok) {
+            console.error(`[TickerSearch] Yahoo API error status: ${response.status}`);
             throw new Error(`Yahoo API error: ${response.status}`);
         }
 
         const data = await response.json();
         const quotes = data.quotes || [];
+        console.log(`[TickerSearch] Found ${quotes.length} results`);
 
-        // If no results specifically for a numeric code like "0050", suggest Taiwan/HK suffixes
-        if (quotes.length === 0 && /^\d{4,6}$/.test(query)) {
+        // If no results specifically for a numeric code like "2330", suggest Taiwan/HK suffixes
+        if (quotes.length === 0 && /^\d{4,6}$/.test(cleanQuery)) {
             return [
-                { symbol: `${query}.TW`, name: `${query} (台灣預測)`, exchange: "TPE" },
-                { symbol: `${query}.HK`, name: `${query} (香港預測)`, exchange: "HKG" }
+                { symbol: `${cleanQuery}.TW`, name: `${cleanQuery} (台灣預測)`, exchange: "TPE" },
+                { symbol: `${cleanQuery}.HK`, name: `${cleanQuery} (香港預測)`, exchange: "HKG" },
+                { symbol: `${cleanQuery}.TWO`, name: `${cleanQuery} (櫃買預測)`, exchange: "TWO" }
             ];
         }
 
@@ -254,9 +264,8 @@ export async function searchTicker(query: string): Promise<TickerSuggestion[]> {
             }));
 
     } catch (err: any) {
-        console.error("searchTicker error:", err.message);
+        console.error("[TickerSearch] Error:", err.message);
 
-        // Handle rate limiting (429) or other errors by showing common suggestions
         const isRateLimited = err.message?.includes('429') || err.message?.includes('crumb');
         const suffix = isRateLimited ? " (限流模式)" : " (備用模式)";
 
@@ -264,7 +273,8 @@ export async function searchTicker(query: string): Promise<TickerSuggestion[]> {
             { symbol: "AAPL", name: "Apple Inc." + suffix, exchange: "NASDAQ" },
             { symbol: "0050.TW", name: "元大台灣50" + suffix, exchange: "TPE" },
             { symbol: "NVDA", name: "NVIDIA Corp" + suffix, exchange: "NASDAQ" },
-            { symbol: "2330.TW", name: "台積電" + suffix, exchange: "TPE" }
+            { symbol: "2330.TW", name: "台積電" + suffix, exchange: "TPE" },
+            { symbol: "0056.TW", name: "元大高股息" + suffix, exchange: "TPE" }
         ];
     }
 }
