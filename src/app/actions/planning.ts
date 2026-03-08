@@ -35,7 +35,7 @@ const DEMO_PLANNING_DATA = {
         { id: "demo-1", symbol: "NVDA", name: "Nvidia Corp", currentCategory: "成長動能 (科技股)", recommendedCategory: "成長動能 (科技股)" },
         { id: "demo-2", symbol: "GOOGL", name: "Alphabet Inc", currentCategory: "成長動能 (科技股)", recommendedCategory: "核心持股 (大型股)" },
         { id: "demo-3", symbol: "VOO", name: "Vanguard S&P 500 ETF", currentCategory: "核心持股 (大型股)", recommendedCategory: "核心持股 (大型股)" },
-        { id: "demo-5", symbol: "2330.TW", name: "台積電", currentCategory: "核心持股 (大型股)", recommendedCategory: "核心持股 (大型股)" },
+        { id: "demo-5", symbol: "TSM", name: "台積電 (TSM ADR)", currentCategory: "核心持股 (大型股)", recommendedCategory: "核心持股 (大型股)" },
         { id: "demo-8", symbol: "AAPL", name: "Apple Inc", currentCategory: "核心持股 (大型股)", recommendedCategory: "核心持股 (大型股)" },
         { id: "demo-9", symbol: "MSFT", name: "Microsoft Corp", currentCategory: "核心持股 (大型股)", recommendedCategory: "成長動能 (科技股)" },
         { id: "demo-6", symbol: "O", name: "Realty Income", currentCategory: "定存股 (領息資產)", recommendedCategory: "定存股 (領息資產)" },
@@ -124,46 +124,70 @@ export async function getStrategyNotes(tickerSymbol: string) {
         const mockNotes: Record<string, any> = {
             "NVDA": {
                 ticker_symbol: "NVDA",
-                target_price: 150,
-                exit_price: 180,
-                research_confidence: "High",
-                notes: "AI GPU 領導者，目前估值合理。建議長期持有並在拉回時加碼。",
+                target_buy_price: 110,
+                target_sell_price: 150,
+                confidence_level: 5,
+                note_content: "AI 晶片絕對領導者。Blackwell 架構效能大幅提升，毛利穩定。建議在季報公布前的拉回區間分批佈局。長期目標價看好 AI 基礎設施持續擴張。",
                 updated_at: new Date().toISOString()
             },
-            "2330.TW": {
-                ticker_symbol: "2330.TW",
-                target_price: 1200,
-                exit_price: 1500,
-                research_confidence: "High",
-                notes: "台積電先進製程領先全球，CoWoS 產能持續擴張。適合核心配置。",
+            "TSM": {
+                ticker_symbol: "TSM",
+                target_buy_price: 160,
+                target_sell_price: 200,
+                confidence_level: 5,
+                note_content: "全球最先進製程代工，AI 核心供應商。CoWoS 產能供不應求。目前評價仍低於美系 AI 股，補漲空間大。適合做為核心持股長期動態調整。",
                 updated_at: new Date().toISOString()
             },
             "AAPL": {
                 ticker_symbol: "AAPL",
-                target_price: 250,
-                exit_price: 300,
-                research_confidence: "Medium",
-                notes: "Apple Intelligence 帶來的換機潮值得期待。服務收入佔比持續提升，穩定性極佳。",
+                target_buy_price: 210,
+                target_sell_price: 250,
+                confidence_level: 4,
+                note_content: "Apple Intelligence 帶來的 iPhone 換機潮是 2024 下半年主旋律。服務收入成長抵銷硬體波動。現金流極強，回購政策支撐股價下檔。",
                 updated_at: new Date().toISOString()
             },
             "MSFT": {
                 ticker_symbol: "MSFT",
-                target_price: 500,
-                exit_price: 550,
-                research_confidence: "High",
-                notes: "Azure 與 OpenAI 深度整合，企業端市佔率穩固。雲端業務仍有巨大成長空間。",
+                target_buy_price: 400,
+                target_sell_price: 480,
+                confidence_level: 5,
+                note_content: "雲端服務龍頭與 OpenAI 最大受益者。Copilot 貨幣化進程優於預期。企業端黏著度高，是防禦與成長兼具的頂級資產。",
                 updated_at: new Date().toISOString()
             },
             "GOOGL": {
                 ticker_symbol: "GOOGL",
-                target_price: 180,
-                exit_price: 210,
-                research_confidence: "Medium",
-                notes: "搜尋廣告護城河依然深厚。YouTube 與 Waymo 是長期看點，目前本益比具吸引力。",
+                target_buy_price: 150,
+                target_sell_price: 190,
+                confidence_level: 3,
+                note_content: "搜尋廣告引擎穩定，但面臨 AI 競爭挑戰。Gemini 追趕速度尚可，YouTube 貢獻穩定成長。目前估值相對偏低，具備修復空間。",
+                updated_at: new Date().toISOString()
+            },
+            "VOO": {
+                ticker_symbol: "VOO",
+                target_buy_price: 480,
+                target_sell_price: null,
+                confidence_level: 5,
+                note_content: "S&P 500 指數基金。追隨美國國運，長期投資的首選。無需過度關注短線波动，定期定額投入即可實現資產穩定增值。",
+                updated_at: new Date().toISOString()
+            },
+            "O": {
+                ticker_symbol: "O",
+                target_buy_price: 50,
+                target_sell_price: 70,
+                confidence_level: 4,
+                note_content: "Realty Income，月月配息的指標性 REITs。租客多為連鎖便利商店、連鎖影院等，現金流極其穩定。適動作為長期被動收入的基石。",
+                updated_at: new Date().toISOString()
+            },
+            "SCHD": {
+                ticker_symbol: "SCHD",
+                target_buy_price: 75,
+                target_sell_price: 90,
+                confidence_level: 5,
+                note_content: "高品質高股息 ETF。篩選標準嚴格，包含股東權益報酬率與股息成長。在市場波动中展現極強韌性，是存股族的首選之一。",
                 updated_at: new Date().toISOString()
             }
         };
-        return mockNotes[tickerSymbol] || { ticker_symbol: tickerSymbol, notes: "Demo 模式：您可以嘗試修改筆記，但不會寫入資料庫。" };
+        return mockNotes[tickerSymbol] || { ticker_symbol: tickerSymbol, note_content: "Demo 模式：您可以嘗試修改筆記，但不會寫入資料庫。" };
     }
 
     const { data, error } = await supabase
