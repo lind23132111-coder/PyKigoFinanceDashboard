@@ -31,6 +31,12 @@ const DEMO_DASHBOARD_DATA = {
         { id: "snap-4", name: "2025/5", assets: 8400, fullAssets: 8400, filteredAssets: 8400, color: "#94a3b8" },
         { id: "demo-snap-v3", name: "2026/2", assets: 9842, fullAssets: 9842, filteredAssets: 9842, color: "#22c55e" }
     ],
+    strategyAllocationData: [
+        { name: "核心持股 (大型股)", value: 48.0, raw_value: 47241600, color: "#10b981", originalKey: "核心持股 (大型股)" },
+        { name: "成長動能 (科技股)", value: 28.0, raw_value: 27557600, color: "#6366f1", originalKey: "成長動能 (科技股)" },
+        { name: "定存股 (領息資產)", value: 14.0, raw_value: 13778800, color: "#f59e0b", originalKey: "定存股 (領息資產)" },
+        { name: "投機/現金資產", value: 10.0, raw_value: 9842000, color: "#94a3b8", originalKey: "投機/現金資產" }
+    ],
     latestSnapshot: { id: "demo-snap-v3", period_name: "2026/2", created_at: new Date().toISOString() },
     snapshotDetails: {
         "demo-snap-v3": {

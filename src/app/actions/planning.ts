@@ -23,7 +23,28 @@ const MOCK_DIVIDEND_PROJECTIONS: ProjectedDividend[] = [
     { year: 2030, amount: 190000 },
 ];
 
+// ─────────────────────────────────────────────────────────────────
+// DEMO MODE MOCK DATA
+// ─────────────────────────────────────────────────────────────────
+const DEMO_PLANNING_DATA = {
+    strategyTargets: MOCK_STRATEGY_TARGETS,
+    dividendProjections: MOCK_DIVIDEND_PROJECTIONS,
+    rebalancingThreshold: 5,
+    userGoal: { goal_name: '財務自由之翼', target_monthly_income: 80000 },
+    availableStocks: [
+        { id: "demo-1", symbol: "NVDA", name: "Nvidia Corp", currentCategory: "成長動能 (科技股)", recommendedCategory: "成長動能 (科技股)" },
+        { id: "demo-2", symbol: "GOOGL", name: "Alphabet Inc", currentCategory: "成長動能 (科技股)", recommendedCategory: "核心持股 (大型股)" },
+        { id: "demo-3", symbol: "VOO", name: "Vanguard S&P 500 ETF", currentCategory: "核心持股 (大型股)", recommendedCategory: "核心持股 (大型股)" },
+        { id: "demo-4", symbol: "0050.TW", name: "元大台灣50", currentCategory: "核心持股 (大型股)", recommendedCategory: "核心持股 (大型股)" },
+        { id: "demo-5", symbol: "2330.TW", name: "台積電", currentCategory: "核心持股 (大型股)", recommendedCategory: "核心持股 (大型股)" },
+        { id: "demo-6", symbol: "O", name: "Realty Income", currentCategory: "定存股 (領息資產)", recommendedCategory: "定存股 (領息資產)" },
+        { id: "demo-7", symbol: "SCHD", name: "Schwab US Dividend Equity", currentCategory: "定存股 (領息資產)", recommendedCategory: "定存股 (領息資產)" }
+    ]
+};
+
 export async function getPlanningData() {
+    if (process.env.NEXT_PUBLIC_DEMO_MODE === "true") return DEMO_PLANNING_DATA;
+
     // 1. Fetch active stocks for selection
     const { data: stocks, error: stockError } = await supabase
         .from('assets')
@@ -85,6 +106,7 @@ export async function getPlanningData() {
 }
 
 export async function updateStrategyTarget(category: string, target_percentage: number) {
+    if (process.env.NEXT_PUBLIC_DEMO_MODE === "true") return { success: true };
     const { data, error } = await supabase
         .from('strategy_targets')
         .upsert({ category, target_percentage }, { onConflict: 'category' });
@@ -97,6 +119,28 @@ export async function updateStrategyTarget(category: string, target_percentage: 
 }
 
 export async function getStrategyNotes(tickerSymbol: string) {
+    if (process.env.NEXT_PUBLIC_DEMO_MODE === "true") {
+        const mockNotes: Record<string, any> = {
+            "NVDA": {
+                ticker_symbol: "NVDA",
+                target_price: 150,
+                exit_price: 180,
+                research_confidence: "High",
+                notes: "AI GPU 領導者，目前估值合理。建議長期持有並在拉回時加碼。",
+                updated_at: new Date().toISOString()
+            },
+            "2330.TW": {
+                ticker_symbol: "2330.TW",
+                target_price: 1200,
+                exit_price: 1500,
+                research_confidence: "High",
+                notes: "台積電先進製程領先全球，CoWoS 產能持續擴張。適合核心配置。",
+                updated_at: new Date().toISOString()
+            }
+        };
+        return mockNotes[tickerSymbol] || { ticker_symbol: tickerSymbol, notes: "Demo 模式：您可以嘗試修改筆記，但不會寫入資料庫。" };
+    }
+
     const { data, error } = await supabase
         .from('strategy_notes')
         .select('*')
@@ -110,6 +154,11 @@ export async function getStrategyNotes(tickerSymbol: string) {
 }
 
 export async function saveStrategyNote(tickerSymbol: string, updates: any) {
+    if (process.env.NEXT_PUBLIC_DEMO_MODE === "true") {
+        console.log("Demo Mode: Skipping strategy note save for", tickerSymbol);
+        return { success: true, message: "Demo 模式不支援寫入資料庫" };
+    }
+
     const { data, error } = await supabase
         .from('strategy_notes')
         .upsert({
@@ -126,6 +175,7 @@ export async function saveStrategyNote(tickerSymbol: string, updates: any) {
 }
 
 export async function updateAssetStrategy(assetId: string, category: string) {
+    if (process.env.NEXT_PUBLIC_DEMO_MODE === "true") return { success: true };
     const { data, error } = await supabase
         .from('assets')
         .update({ strategy_category: category })
