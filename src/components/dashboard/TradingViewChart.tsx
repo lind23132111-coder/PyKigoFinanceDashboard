@@ -13,24 +13,26 @@ export default function TradingViewChart({ symbol }: TradingViewChartProps) {
         // Map symbol for TradingView
         // e.g., 2330.TW -> TWSE:2330, 006208.TWO -> TPEX:006208, TPE:0050 -> TWSE:0050
         let tvSymbol = symbol.toUpperCase().trim();
+        let ticker = tvSymbol.includes(':') ? tvSymbol.split(':')[1] : tvSymbol;
 
-        // 1. Handle Known Suffixes (Yahoo Finance style)
+        // 1. Differentiate TWSE vs TPEX (Critical for Taiwan)
+        // Most Bond ETFs (ending in B) and specific OTC stocks are on TPEX
+        const isTPEx = ticker.endsWith('.TWO') ||
+            ticker.endsWith('B') ||
+            ['8069', '8299', '5483', '6488'].includes(ticker); // Common OTC
+
         if (tvSymbol.endsWith('.TW')) {
-            tvSymbol = `TWSE:${tvSymbol.replace('.TW', '')}`;
+            tvSymbol = `TWSE:${ticker.replace('.TW', '')}`;
         } else if (tvSymbol.endsWith('.TWO')) {
-            tvSymbol = `TPEX:${tvSymbol.replace('.TWO', '')}`;
-        }
-        // 2. Handle Known Prefixes (Sometimes used in DB)
-        else if (tvSymbol.startsWith('TPE:')) {
-            // TPE: usually refers to Listed (TWSE) in many local datasets
-            tvSymbol = `TWSE:${tvSymbol.replace('TPE:', '')}`;
-        } else if (tvSymbol.startsWith('TWO:') || tvSymbol.startsWith('TPEX:')) {
-            tvSymbol = `TPEX:${tvSymbol.includes(':') ? tvSymbol.split(':')[1] : tvSymbol}`;
-        }
-        // 3. Special Case for ETFs or Numeric strings without prefix
-        else if (/^\d{4,6}[A-Z]{0,1}$/.test(tvSymbol)) {
-            // If it's pure numeric (00688L), default to TWSE as a guess for Taiwan users
-            tvSymbol = `TWSE:${tvSymbol}`;
+            tvSymbol = `TPEX:${ticker.replace('.TWO', '')}`;
+        } else if (tvSymbol.startsWith('TPE:')) {
+            // TPE: could be TWSE or TPEX. Map based on our check.
+            tvSymbol = `${isTPEx ? 'TPEX' : 'TWSE'}:${ticker}`;
+        } else if (tvSymbol.startsWith('TPEX:') || tvSymbol.startsWith('TWO:')) {
+            tvSymbol = `TPEX:${ticker}`;
+        } else if (/^\d{4,6}[A-Z]{0,1}$/.test(tvSymbol)) {
+            // Numeric only - guess based on pattern
+            tvSymbol = `${isTPEx ? 'TPEX' : 'TWSE'}:${tvSymbol}`;
         }
 
         const script = document.createElement("script");

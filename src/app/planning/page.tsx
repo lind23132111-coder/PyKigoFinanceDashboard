@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
-import { TrendingUp, AlertTriangle, ShieldCheck, ChevronRight, Activity, Search, Target, PenLine } from "lucide-react";
+import { TrendingUp, AlertTriangle, ShieldCheck, ChevronRight, Activity, Search, Target, PenLine, ExternalLink } from "lucide-react";
 import { getPlanningData } from "@/app/actions/planning";
 import { getLatestDashboardData } from "@/app/actions/dashboard";
 import TradingViewChart from "@/components/dashboard/TradingViewChart";
@@ -115,14 +115,31 @@ export default function PlanningPage() {
                     <div className="px-6 py-2.5 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
                         <div className="flex items-center gap-2">
                             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
-                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                                即時行情分析 <span className="text-brand-600 ml-1">{selectedStock}</span>
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                即時行情分析 <span className="text-brand-600">{selectedStock}</span>
+                                {selectedStock && (
+                                    <a
+                                        href={`https://www.tradingview.com/chart/?symbol=${selectedStock.replace('TPE:', 'TWSE:')}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="ml-2 px-2 py-0.5 bg-slate-200 hover:bg-slate-300 rounded text-[9px] text-slate-600 transition-colors flex items-center gap-1"
+                                        title="部分台股受限權限無法於嵌入元件顯示，點此前往官網查看"
+                                    >
+                                        <ExternalLink className="w-2.5 h-2.5" />
+                                        外部開啟
+                                    </a>
+                                )}
                             </span>
                         </div>
-                        <div className="flex gap-1.5">
-                            <div className="w-1 h-1 rounded-full bg-slate-200"></div>
-                            <div className="w-1 h-1 rounded-full bg-slate-200"></div>
-                            <div className="w-1 h-1 rounded-full bg-slate-200"></div>
+                        <div className="flex items-center gap-4">
+                            <div className="hidden sm:block text-[9px] text-slate-300 font-medium italic">
+                                * 部分標的受交易所限制僅能於官網開啟
+                            </div>
+                            <div className="flex gap-1.5">
+                                <div className="w-1 h-1 rounded-full bg-slate-200"></div>
+                                <div className="w-1 h-1 rounded-full bg-slate-200"></div>
+                                <div className="w-1 h-1 rounded-full bg-slate-200"></div>
+                            </div>
                         </div>
                     </div>
                     <div className="flex-1 relative">
