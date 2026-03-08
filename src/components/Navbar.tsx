@@ -21,9 +21,9 @@ export default function Navbar() {
                         <div className="flex items-center space-x-1 sm:space-x-4">
                             <NavLink href="/" icon={<Home className="w-4 h-4" />} label="Home" />
                             <NavLink href="/goals" icon={<Target className="w-4 h-4" />} label="Goals" />
+                            <NavLink href="/planning" icon={<TrendingUp className="w-4 h-4" />} label="Strategy" />
                             <NavLink href="/wizard" icon={<PlusCircle className="w-4 h-4" />} label="Wizard" />
                             <NavLink href="/report" icon={<FileText className="w-4 h-4" />} label="Report" />
-                            <NavLink href="/planning" icon={<TrendingUp className="w-4 h-4" />} label="Strategy (Beta)" />
 
                             {/* Docs Dropdown */}
                             <div className="relative group/docs">
@@ -57,12 +57,15 @@ export default function Navbar() {
 
             {/* Mobile Bottom Navigation (Hidden on desktop) */}
             <nav className="fixed bottom-0 w-full z-50 bg-white/80 backdrop-blur-md border-t border-slate-200 sm:hidden">
-                <div className="grid grid-cols-5 h-16">
-                    <MobileNavLink href="/" icon={<Home className="w-5 h-5" />} label="首頁" />
-                    <MobileNavLink href="/goals" icon={<Target className="w-5 h-5" />} label="目標" />
-                    <MobileNavLink href="/wizard" icon={<PlusCircle className="w-5 h-5" />} label="結算" />
-                    <MobileNavLink href="/report" icon={<FileText className="w-5 h-5" />} label="報告" />
-                    <MobileNavLink href="/planning" icon={<TrendingUp className="w-5 h-5" />} label="策略" />
+                <div className="grid grid-cols-6 h-16">
+                    <MobileNavLink href="/" icon={<Home className="w-4 h-4" />} label="首頁" />
+                    <MobileNavLink href="/goals" icon={<Target className="w-4 h-4" />} label="目標" />
+                    <MobileNavLink href="/planning" icon={<TrendingUp className="w-4 h-4" />} label="策略" />
+                    <MobileNavLink href="/wizard" icon={<PlusCircle className="w-4 h-4" />} label="結算" />
+                    <MobileNavLink href="/report" icon={<FileText className="w-4 h-4" />} label="報告" />
+                    <div className="relative group/mobile-docs flex flex-col items-center justify-center">
+                        <MobileNavLink href="https://github.com/lind23132111-coder/PyKigoFinanceDashboard/wiki/User-Guide" icon={<FileText className="w-4 h-4" />} label="文件" />
+                    </div>
                 </div>
             </nav>
 
