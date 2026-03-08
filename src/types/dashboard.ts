@@ -72,3 +72,13 @@ export interface ProjectedDividend {
     year: number;
     amount: number;
 }
+
+export interface StrategyNote {
+    id: string;
+    ticker_symbol: string;
+    note_content: string;
+    target_buy_price: number | null;
+    target_sell_price: number | null;
+    confidence_level: number;
+    updated_at: string;
+}

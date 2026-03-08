@@ -29,16 +29,20 @@ _註：本圖為實際 UI 介面展示 (使用模擬數據)。_
 *   **Secret Management**: Production credentials (Supabase URL/Key) are managed via GitHub Actions Secrets, ensuring they are never hard-coded in the source code or `.env` files tracked by Git.
 *   **Gemini AI Security**: All AI interactions use server-side actions with direct SDK calls, keeping API keys protected on the backend.
 
-## 2. 資料模型設計 (Data Model)
-
-資料庫採用星狀架構 (Star Schema)，核心在於追蹤資產隨時間變化的淨值。
-
-### 核心資料表
-- **`assets`**: 資產定義表（包含類型、幣別、所有人、Ticker）。
-- **`snapshots`**: 結算點容器，定義了結算的時期與 AI 總結摘要。
-- **`snapshot_records`**: 數據事實表，記錄特定資產在特定結算點的數量與 TWD 等值價值。
-- **`market_cache`**: 快取表，儲存最新的股票單價與各國匯率（USD/TWD, JPY/TWD）。
-- **`ai_summary_feedback`**: AI 回饋日誌表，記錄使用者指示以進行 AI 優化。
+### 核心資料表 (Core Tables)
+- **`assets`**: 資產定義表。包含：
+  - `title`, `owner`, `asset_type`, `currency`, `ticker_symbol`.
+  - `avg_cost`, `dividend_yield` (V1.2 新增：支援雪球預測)。
+  - `strategy_category` (V1.2 新增：對應策略佔比)。
+- **`snapshots` & `snapshot_records`**: 追蹤特定結算點的資產快照。
+  - `quantity`, `unit_price`, `fx_rate`, `total_twd_value`.
+- **`market_cache`**: 儲存最新市場報價與匯率。
+- **`strategy_notes`** (V1.2 新增): 儲存個股戰術。
+  - `ticker_symbol`, `note_content`, `target_buy_price`, `target_sell_price`, `confidence_level`.
+- **`strategy_targets`** (V1.2 新增): 定義各類別理想佔比與色彩。
+- **`goals`** & **`goal_asset_mapping`**: 特定財務目標（近期/長期）及其關聯資產。
+- **`user_goals`** (V1.2 新增): 總結性財務目標（如：月領 5 萬被動收入）。
+- **`ai_summary_feedback`**: Gemini AI 回饋循環日誌。
 
 ---
 
@@ -69,13 +73,22 @@ _註：本圖為實際 UI 介面展示 (使用模擬數據)。_
 - **雙向編輯**：支援從 UI 修改目標細節與重新勾選關聯資產。
 - **級聯刪除 (Cascading Cleanup)**：刪除目標時，系統自動清理映射表，確保資料庫一致性。
 
-### F. 行動版介面優化 (Mobile-First Optimization)
-針對手機使用者進行了操作路徑與視覺佈局的深度重構：
-- **底部固定導覽 (Bottom Nav)**：將主要操作（首頁、目標、結算、報告、策略）移至螢幕底部，符合行動裝置單手使用的「大拇指熱區」。
-- **置頂篩選橫幅 (Sticky Filter Banner)**：透過 `sticky top-16` 與 `backdrop-blur` 實作。當使用者在 Dashboard 下滑查看圖表時，篩選條件與清除按鈕會持續固定在視窗頂部，提供即時的互動回饋。
-- **響應式組件重構**：
-  - **AIInsightSection**：在手機版改用 `flex-col` 佈局並縮減內距，節省垂直空間。
-  - **AggregationPieCharts**：動態調整圖表高度與圖例 (Legend) 字級，確保在窄螢幕下仍具備可讀性。
+### F. 響應式優化與混合佈局 (V1.1 - V1.3 Evolution)
+- **V1.1 — 行動優先**: 實作 `Bottom Navigation`、`Sticky Filter Banner` 與 Wizard 觸控優化。
+- **V1.2 — 專業策略**: 整合 TradingView Widget 並實作 `strategy_notes` 持久化。
+- **V1.3 — 混合佈局 (Hybrid Strategy)**:
+  *   利用 Tailwind 斷點實作「電腦版三欄 (Sidebar-Chart-Notes)」與「手機版單欄堆疊」的自動切換。
+  *   **手機版特化**: 將 Asset List 改為 `relative` 選單，拉升線圖高度至 `600px` 並將筆記設為常置底部。
+
+### G. 智慧型資產搜尋與報價 (Smart Ticker Search)
+- **多階段搜尋策略** (V1.1):
+  1. **API 直連**：使用 `yahoo-finance2` 直連 Yahoo 搜尋建議 API。
+  2. **自動補全**：台股輸入 4 碼純數字會自動補齊 `.TW` 或 `.TWS` 字尾。
+  3. **Fallback 機制**：若搜尋結果為空或 API 超時，自動切換至內部常見股票列表 (`COMMON_STOCKS`)。
+
+### H. 深度技術分析整合 (TradingView Integration) (V1.2)
+- **動態 Widget 載入**：根據選取的 Ticker 自動映射 TradingView 格式 (如 `TPE:2330` -> `TWSE:2330`)，並載入深色主題分析組件。
+- **持久化狀態**：利用 Server Actions 結合 Supabase 即時保存使用者的「戰術筆記」。
 
 ---
 
