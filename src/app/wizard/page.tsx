@@ -628,7 +628,7 @@ export default function QuarterlyWizard() {
 
                                                 {/* Dropdown suggestions */}
                                                 {tickerDropdownOpen && (tickerSearching || tickerSuggestions.length > 0 || (tickerQuery.trim().length > 0 && !tickerSearching)) && (
-                                                    <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden max-h-60 overflow-y-auto">
+                                                    <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden max-h-60 overflow-y-auto py-1">
                                                         {tickerSearching ? (
                                                             <div className="px-4 py-3 text-sm text-slate-500 flex items-center gap-2">
                                                                 <div className="w-3 h-3 border-2 border-brand-400 border-t-transparent rounded-full animate-spin" />
