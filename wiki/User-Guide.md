@@ -40,9 +40,6 @@
 ![Strategy Desktop](images/strategy_desktop.png)
 *電腦版：專業三欄式佈局，清單、圖表、筆記一目瞭然。*
 
-![Strategy Mobile](images/strategy_mobile.png)
-*手機版：空間簡化術。下拉選單取標的，600px 大線圖配合常置式筆記。*
-
 - **資產再平衡 (Portfolio Rebalancing)**：
   - **目標 vs 實際**：系統會自動對比您設定的「理想配置比例」與「目前真實持股比例」。
   - **偏離提醒**：當某一分類的佔比偏離目標超過設定閥值時，系統會標示為 `Sell` (減碼) 或 `Buy` (加碼)，提醒您進行再平衡操作，以維持風險平衡。
