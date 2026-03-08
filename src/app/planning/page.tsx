@@ -144,7 +144,7 @@ export default function PlanningPage() {
                     </div>
                     <div className="flex-1 relative">
                         {selectedStock ? (
-                            <TradingViewChart symbol={selectedStock} />
+                            <TradingViewChart key={selectedStock} symbol={selectedStock} />
                         ) : (
                             <div className="h-full flex flex-col items-center justify-center text-slate-400 space-y-4 text-center">
                                 <Target className="w-12 h-12 opacity-20" />

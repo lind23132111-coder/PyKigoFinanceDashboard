@@ -59,6 +59,12 @@ export default function TradingViewChart({ symbol }: TradingViewChartProps) {
             container.current.innerHTML = "";
             container.current.appendChild(script);
         }
+
+        return () => {
+            if (container.current) {
+                container.current.innerHTML = "";
+            }
+        };
     }, [symbol]);
 
     return (
