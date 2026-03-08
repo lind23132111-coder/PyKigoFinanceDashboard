@@ -92,8 +92,8 @@ export default function PlanningPage() {
                                 key={stock.symbol}
                                 onClick={() => setSelectedStock(stock.symbol)}
                                 className={`w-full p-4 rounded-2xl transition-all border flex items-center gap-4 group ${selectedStock === stock.symbol
-                                        ? 'bg-white border-brand-200 shadow-lg shadow-brand-50'
-                                        : 'bg-transparent border-transparent hover:bg-white/60 hover:border-slate-100'
+                                    ? 'bg-white border-brand-200 shadow-lg shadow-brand-50'
+                                    : 'bg-transparent border-transparent hover:bg-white/60 hover:border-slate-100'
                                     }`}
                             >
                                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-xs ${selectedStock === stock.symbol ? 'bg-brand-500 text-white shadow-lg shadow-brand-200' : 'bg-slate-100 text-slate-400 group-hover:bg-brand-50 group-hover:text-brand-500'
@@ -112,9 +112,9 @@ export default function PlanningPage() {
 
                 {/* 2. TradingView Analysis (Col 6) */}
                 <div className="col-span-12 lg:col-span-6 glass rounded-3xl border border-slate-200/60 shadow-2xl overflow-hidden relative">
-                    <div className="absolute top-4 left-4 z-10 bg-slate-900/80 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/20 flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                        <span className="text-[10px] font-black text-white uppercase tracking-widest">Live Market Data: {selectedStock}</span>
+                    <div className="absolute top-4 right-4 z-10 bg-slate-900/40 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/10 flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                        <span className="text-[10px] font-black text-white/80 uppercase tracking-widest">Live: {selectedStock}</span>
                     </div>
                     {selectedStock ? (
                         <TradingViewChart symbol={selectedStock} />
