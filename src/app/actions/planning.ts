@@ -35,8 +35,9 @@ const DEMO_PLANNING_DATA = {
         { id: "demo-1", symbol: "NVDA", name: "Nvidia Corp", currentCategory: "成長動能 (科技股)", recommendedCategory: "成長動能 (科技股)" },
         { id: "demo-2", symbol: "GOOGL", name: "Alphabet Inc", currentCategory: "成長動能 (科技股)", recommendedCategory: "核心持股 (大型股)" },
         { id: "demo-3", symbol: "VOO", name: "Vanguard S&P 500 ETF", currentCategory: "核心持股 (大型股)", recommendedCategory: "核心持股 (大型股)" },
-        { id: "demo-4", symbol: "0050.TW", name: "元大台灣50", currentCategory: "核心持股 (大型股)", recommendedCategory: "核心持股 (大型股)" },
         { id: "demo-5", symbol: "2330.TW", name: "台積電", currentCategory: "核心持股 (大型股)", recommendedCategory: "核心持股 (大型股)" },
+        { id: "demo-8", symbol: "AAPL", name: "Apple Inc", currentCategory: "核心持股 (大型股)", recommendedCategory: "核心持股 (大型股)" },
+        { id: "demo-9", symbol: "MSFT", name: "Microsoft Corp", currentCategory: "核心持股 (大型股)", recommendedCategory: "成長動能 (科技股)" },
         { id: "demo-6", symbol: "O", name: "Realty Income", currentCategory: "定存股 (領息資產)", recommendedCategory: "定存股 (領息資產)" },
         { id: "demo-7", symbol: "SCHD", name: "Schwab US Dividend Equity", currentCategory: "定存股 (領息資產)", recommendedCategory: "定存股 (領息資產)" }
     ]
@@ -135,6 +136,30 @@ export async function getStrategyNotes(tickerSymbol: string) {
                 exit_price: 1500,
                 research_confidence: "High",
                 notes: "台積電先進製程領先全球，CoWoS 產能持續擴張。適合核心配置。",
+                updated_at: new Date().toISOString()
+            },
+            "AAPL": {
+                ticker_symbol: "AAPL",
+                target_price: 250,
+                exit_price: 300,
+                research_confidence: "Medium",
+                notes: "Apple Intelligence 帶來的換機潮值得期待。服務收入佔比持續提升，穩定性極佳。",
+                updated_at: new Date().toISOString()
+            },
+            "MSFT": {
+                ticker_symbol: "MSFT",
+                target_price: 500,
+                exit_price: 550,
+                research_confidence: "High",
+                notes: "Azure 與 OpenAI 深度整合，企業端市佔率穩固。雲端業務仍有巨大成長空間。",
+                updated_at: new Date().toISOString()
+            },
+            "GOOGL": {
+                ticker_symbol: "GOOGL",
+                target_price: 180,
+                exit_price: 210,
+                research_confidence: "Medium",
+                notes: "搜尋廣告護城河依然深厚。YouTube 與 Waymo 是長期看點，目前本益比具吸引力。",
                 updated_at: new Date().toISOString()
             }
         };
