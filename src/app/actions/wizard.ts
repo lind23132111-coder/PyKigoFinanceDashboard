@@ -1,6 +1,6 @@
 "use server";
 
-import { supabase } from "@/utils/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { revalidatePath } from "next/cache";
 
 // DTO for cash input from wizard

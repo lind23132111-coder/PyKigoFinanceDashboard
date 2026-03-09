@@ -19,7 +19,7 @@ _註：本圖為實際 UI 介面展示 (使用模擬數據)。_
 - **Backend/Service**: Next.js Server Actions 模組化處理業務邏輯。
 - **Security**: Next.js Middleware 實作全站密碼保護頁面；Supabase RLS 提供資料庫層級權限控管。
 - **Mobile-First Design**: 採用底部導覽與置頂橫幅優化小螢幕操作體驗。
-- **Database**: Supabase (Postgres) 提供即時數據存儲。
+- **Database**: Supabase (Postgres) 提供即時數據存儲。SQL 管理腳本存放於 `supabase/scripts/`。
 - **AI Engine**: Google Gemini 2.5 Flash (via `@google/genai`)。
 
 ---
@@ -66,7 +66,7 @@ _註：本圖為實際 UI 介面展示 (使用模擬數據)。_
 ### D. 站點存取安全 (Option B Middleware)
 針對正式版開發了自定義的安全層：
 - **Middleware 攔截**：透過 `middleware.ts` 偵測 `site_auth` Cookie。
-- **無縫 Demo 模式**：當 `NEXT_PUBLIC_DEMO_MODE` 為 `true` 時，系統自動跳過密碼驗證與 Supabase 初始化檢查，確保 Demo 版本在無環境變數下也能順利 Build 與存取。
+- **無縫 Demo 模式**：當 `NEXT_PUBLIC_DEMO_MODE` 為 `true` 時，系統自動跳過密碼驗證與 Supabase 初始化檢查，並透過 `@/lib/supabase` 提供穩定的 Mock Client 支援，確保 Demo 版本在無環境變數下也能順利 Build 與存取。
 
 ### E. 目標管理強化 (Goal Management CRUD)
 從單純的「顯示」進化為「管理」：

@@ -1,6 +1,6 @@
 "use server";
 
-import { supabase } from "@/utils/supabase/client";
+import { supabase } from "@/lib/supabase";
 
 // ─────────────────────────────────────────────────────────────────
 // DEMO MODE MOCK DATA
