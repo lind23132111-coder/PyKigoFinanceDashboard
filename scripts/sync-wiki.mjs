@@ -25,17 +25,24 @@ async function sync() {
         console.log(`📥 Cloning Wiki repository from ${WIKI_REPO_URL}...`);
         execSync(`git clone ${WIKI_REPO_URL} "${TEMP_WIKI_DIR}"`, { stdio: 'inherit' });
 
-        // 3. Copy files from local wiki/ to temp wiki dir
-        console.log('📂 Copying updated files from local wiki/ folder...');
-        const files = readdirSync(LOCAL_WIKI_PATH);
+        // 3. Clear destination (except .git) and copy files from local wiki/ to temp wiki dir
+        console.log('📂 Mirroring local wiki/ folder to remote...');
+        
+        // Remove all files/folders in temp dir except .git
+        const tempFiles = readdirSync(TEMP_WIKI_DIR);
+        for (const file of tempFiles) {
+            if (file === '.git') continue;
+            const targetPath = join(TEMP_WIKI_DIR, file);
+            rmSync(targetPath, { recursive: true, force: true });
+        }
 
+        const files = readdirSync(LOCAL_WIKI_PATH);
         for (const file of files) {
             const src = join(LOCAL_WIKI_PATH, file);
             const dst = join(TEMP_WIKI_DIR, file);
 
             if (existsSync(src) && !file.startsWith('.')) {
                 if (readdirSync(LOCAL_WIKI_PATH, { withFileTypes: true }).find(f => f.name === file)?.isDirectory()) {
-                    // It's a directory (like images/), handle recursively if needed or just use cp -r
                     execSync(`cp -r "${src}" "${TEMP_WIKI_DIR}/"`);
                 } else {
                     copyFileSync(src, dst);
