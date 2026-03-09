@@ -37,7 +37,7 @@
 ## 3. 投資策略與規劃 (Strategy & Planning)
 本頁面旨在協助您進行深度市場研究與投資紀律管理。
 
-![Strategy Desktop](images/strategy_desktop.png)
+![Strategy Desktop](images/strategy_ultra.png)
 *電腦版：專業三欄式佈局，清單、圖表、筆記一目瞭然。*
 
 - **資產再平衡 (Portfolio Rebalancing)**：

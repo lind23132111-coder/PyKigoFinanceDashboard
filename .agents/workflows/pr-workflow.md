@@ -70,20 +70,24 @@ node scripts/take-screenshots.mjs
     ```
 
 ### Phase 6 — 建立 PR
-19. **提交變更**：
+19. **提交與推播變更**：
     ```bash
     git add .
     git commit -m "<type>: <description>"
     git push origin <branch-name>
     ```
-20. **建立 Pull Request**：
+20. **確認所有 Refactor 已送出**：絕不允許在 PR 期間進行「未 Commit」的局部清理。若有重構，務必 Commit 並 Push 到 Feature Branch 後再通知使用者 Merge。
+21. **建立 Pull Request**：
     - 標題應包含版本號或功能名稱（如：`feat: Strategy Optimization V1.3`）。
     - 內容應包含：**Key Changes**、**Visuals (Screenshots)** 以及 **關聯的支援單號 (Closes #X)**。
 
 ### Phase 7 — 回報與結案
-21. 提供 PR 連結給使用者進行最終 Review。
-22. **合併後維護**：若合併後發現 `main` 分支有漏掉的重構或清理，應立即在 `main` 重新執行並補上提交。
-23. 確認 Vercel 自動部署成功。
+22. 提供 PR 連結給使用者進行最終 Review。
+23. **合併後二次驗證 (Post-Merge Audit)**：
+    - 切換回 `main` 並 `git pull` 後，**必須檢查 `Project-Work-Log.md` 是否有 Milestone 遺失**。
+    - 檢查核心 Client (`src/lib/supabase.ts`) 是否被舊代碼覆蓋。
+    - 若發現遺失，立即在 `main` 補上提交並執行 `node scripts/sync-wiki.mjs`。
+24. 確認 Vercel 自動部署成功。
 
 ---
 
@@ -95,6 +99,7 @@ node scripts/take-screenshots.mjs
 | **代碼一致性** | 統一使用 `@/lib/supabase` 作為 client 進入點，內建基礎 Error Handling 與 Demo 回退機制。 |
 | **Wiki 鏈結** | 檔案重新命名後（如 `_ultra.png`），必須同步搜尋並取代全 Wiki 文件中的引用字串。 |
 | **環境防護** | 開發新功能前，先確認 `.env.local` 內容。正式數據的操作絕對禁止出現在本地開發腳本中。 |
+| **同步完整性** | 常見陷阱：PR 被合併後拉回 `main` 會導致 local 尚未 push 的重構被覆蓋。**務必在 Merge 前完成所有 Push**。 |
 
 ---
 
