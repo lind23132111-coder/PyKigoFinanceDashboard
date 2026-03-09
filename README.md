@@ -58,9 +58,22 @@ NEXT_PUBLIC_DEMO_MODE=true
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | ✅ 填入 | ❌ 不需要 |
 | `GEMINI_API_KEY` | ✅ 填入 | ❌ 不需要 |
 
-兩個 Project 共用同一份程式碼，GitHub Push 一次即同步完成兩端部署。注意 Demo 版會自動跳過密碼驗證頁面，方便公開分享。
+兩個 Project 共用同一份程式碼，GitHub Push 一次即同步完成兩端部署。注意 Demo 版會自動跳過密碼驗證頁面，方便公開分享。### 🔐 環境配置 (Environment Configuration)
 
-## 🚀 快速開始
+本專案採用 **開發 (Development)** 與 **生產 (Production)** 環境分離機制：
+
+1.  **本地開發環境 (`.env.local`)**：
+    *   預設連向開發用 Supabase 專案。
+    *   可自由進行測試、刪除數據，不影響正式環境。
+    *   使用 `v1_2_full_setup.sql` 進行初始化，`dev_demo_mirror.sql` 載入測試數據。
+
+2.  **生產環境 (Vercel)**：
+    *   連向正式 Supabase 專案。
+    *   受 `SITE_PASSWORD` 保護。
+
+---
+
+## 🚀 快速開始 (Quick Start)
 
 ### 1. 安裝依賴
 ```bash
