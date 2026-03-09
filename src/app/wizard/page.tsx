@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { CheckCircle2, TrendingUp, Wallet, Sparkles, Trash2, Plus, X, ArchiveRestore, RefreshCcw } from "lucide-react";
-import { supabase } from "@/utils/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { getWizardInitData, searchTicker, checkDuplicateTicker } from "@/app/actions/wizard";
 import type { TickerSuggestion } from "@/app/actions/wizard";
 import { toggleAssetActive, addNewAsset } from "@/app/actions/goals";

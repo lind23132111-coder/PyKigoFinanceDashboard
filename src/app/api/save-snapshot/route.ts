@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/utils/supabase/client';
+import { supabase } from "@/lib/supabase";
 import { GoogleGenAI } from '@google/genai';
 import { submitQuarterlySnapshot, CashInputDTO } from '@/app/actions/wizard';
 
