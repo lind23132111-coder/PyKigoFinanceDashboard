@@ -46,10 +46,14 @@ git checkout -b <feature|fix|docs>/<short-description>
 ```bash
 npm run dev
 ```
-13. 執行 Playwright 自動截圖
-```bash
-node scripts/take-screenshots.mjs
-```
+13. **擷取視覺證明**：
+    - **優先使用自動化**：執行 `node scripts/take-screenshots.mjs`。
+    - **處理自動化瑕疵**：若自動化截圖出現「藍色焦點邊框」、「拼接線」或「動畫殘影」，**必須由開發人手動擷取渲染完全的畫面**。
+    - **手動截圖規範**：
+        1. 使用瀏覽器 DevTools (F12) 隱藏不必要的 Debug 元素。
+        2. 點擊頁面空白處並按 `Esc` 清除 Focus 狀態。
+        3. 確保資料為 **Demo Mode (Mock Data)**。
+        4. 儲存至 `wiki/images/`，檔名需具備辨識度（如 `expenses_v2_final.png`）。
 > ⚠️ **隱私規定**：腳本會自動在 port 3001 啟動一個 **`NEXT_PUBLIC_DEMO_MODE=true`** 的 dev server。  
 > 截圖用的是「最新的本地 UI」但資料是 **Mock Data**。完全不會洩漏真實資產。
 14. 確認截圖符合預期、無 Console Error。
@@ -58,6 +62,7 @@ node scripts/take-screenshots.mjs
 15. **README.md**：若有新功能，補充「主要功能」清單；若有架構變更，更新「環境配置」章節。
 16. **Wiki 全面更新**：
     - `wiki/User-Guide.md`：更新操作流程與功能描述。**務必檢查所有圖片網址是否正確對應 `wiki/images/` 內的檔案名稱 (避免 filename mismatch)**。
+    - **手動替換截圖**：若 Phase 4 中產生了手動截圖，請在此步驟更新對應的 `.md` 文件引用路徑。
     - `wiki/Design-Document.md`：更新資料表結構與架構決策。
     - `wiki/Project-Work-Log.md`：更新開發日誌，併入對應的 Milestone 與實施工時。
 17. **手動視覺稽核**：
