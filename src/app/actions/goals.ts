@@ -51,12 +51,37 @@ export async function getGoalsWithProgress() {
     const valueMap = new Map();
     records.forEach(r => valueMap.set(r.asset_id, Number(r.total_twd_value)));
 
+    // 3. Fetch reviewed expenses for each goal to update progress
+    const { data: expenseSums, error: expError } = await supabase
+        .from('expenses')
+        .select('goal_id, amount')
+        .eq('is_reviewed', true)
+        .not('goal_id', 'is', null);
+
+    const expenseMap = new Map();
+    if (!expError && expenseSums) {
+        expenseSums.forEach(e => {
+            const current = expenseMap.get(e.goal_id) || 0;
+            expenseMap.set(e.goal_id, current + Number(e.amount));
+        });
+    }
+
     return goals.map(goal => {
         let current_funding = 0;
         const mappings = Array.isArray(goal.goal_asset_mapping) ? goal.goal_asset_mapping : [];
         mappings.forEach((m: any) => { current_funding += valueMap.get(m.asset_id) || 0; });
-        const progress = goal.target_amount > 0 ? (current_funding / goal.target_amount) * 100 : 0;
-        return { ...goal, current_funding, progress: Math.min(progress, 100) };
+        
+        // Add reviewed expenses to total progress as per Issue #12
+        const spentAmount = expenseMap.get(goal.id) || 0;
+        const totalProgressAmount = current_funding + spentAmount;
+        
+        const progress = goal.target_amount > 0 ? (totalProgressAmount / goal.target_amount) * 100 : 0;
+        return { 
+            ...goal, 
+            current_funding: totalProgressAmount, // This reflects the total 'allocated' amount (cash + spent)
+            progress: Math.min(progress, 100),
+            meta: { cash_balance: current_funding, spent_balance: spentAmount }
+        };
     });
 }
 

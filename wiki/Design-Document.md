@@ -24,12 +24,7 @@ _註：本圖為實際 UI 介面展示 (使用模擬數據)。_
 
 ---
 
-### 4. Data Security & CI/CD
-*   **History Sanitization**: Sensitive files (`data.csv`, certain SQL seeds) are purged from Git history using `filter-branch` to prevent accidental exposure via public repositories.
-*   **Secret Management**: Production credentials (Supabase URL/Key) are managed via GitHub Actions Secrets, ensuring they are never hard-coded in the source code or `.env` files tracked by Git.
-*   **Gemini AI Security**: All AI interactions use server-side actions with direct SDK calls, keeping API keys protected on the backend.
-
-### 核心資料表 (Core Tables)
+## 2. 資料模型 (Data Model)
 - **`assets`**: 資產定義表。包含：
   - `title`, `owner`, `asset_type`, `currency`, `ticker_symbol`.
   - `avg_cost`, `dividend_yield` (V1.2 新增：支援雪球預測)。
@@ -42,6 +37,9 @@ _註：本圖為實際 UI 介面展示 (使用模擬數據)。_
 - **`strategy_targets`** (V1.2 新增): 定義各類別理想佔比與色彩。
 - **`goals`** & **`goal_asset_mapping`**: 特定財務目標（近期/長期）及其關聯資產。
 - **`user_goals`** (V1.2 新增): 總結性財務目標（如：月領 5 萬被動收入）。
+- **`expense_categories`** (V2.0): 定義消費分類（如：餐飲、交通、裝修）。
+- **`expenses`** (V2.0): 核心支出明細，支援 `paid_by` 與 `paid_for` 映射用於分帳結算。
+- **`settlements`** (V2.0): 紀錄成員間的債務清償歷史。
 - **`ai_summary_feedback`**: Gemini AI 回饋循環日誌。
 
 ---
@@ -90,9 +88,26 @@ _註：本圖為實際 UI 介面展示 (使用模擬數據)。_
 - **動態 Widget 載入**：根據選取的 Ticker 自動映射 TradingView 格式 (如 `TPE:2330` -> `TWSE:2330`)，並載入深色主題分析組件。
 - **持久化狀態**：利用 Server Actions 結合 Supabase 即時保存使用者的「戰術筆記」。
 
+### I. AI 智慧帳務解析與去重 (AI Inbox) (V2.0)
+- **多模態解析**: 透過 Gemini 處理非結構化文字（載具、LINE 訊息）與視覺檔案（PDF 帳單、截圖）。
+- **智慧去重邏輯**: 結合商戶名稱模糊比對、金額與日期區寫，防止重複匯入已存在的帳目。
+- **批次處理機制**: 實作 Server-side 批次確認與刪除動作，優化大量核對時的效能。
+
+### J. 分帳淨負債結算演算法 (V2.0)
+- **債務模型**: 基於 `paid_by` (付款人) 與 `paid_for` (受益人) 的映射。
+- **淨額邏輯**: 對沖雙方交叉墊付的金額，產生單一方向的應付帳款，並扣除已存在的 `settlements` 歷史紀錄以求得當前餘額。
+- **部分結算支援**: 允許使用者自定義結算金額（不限於全額清償），系統自動更新累計債務狀態。
+
 ---
 
-## 4. 安全性與擴充性
+## 4. Data Security & CI/CD
+*   **History Sanitization**: Sensitive files (`data.csv`, certain SQL seeds) are purged from Git history using `filter-branch` to prevent accidental exposure via public repositories.
+*   **Secret Management**: Production credentials (Supabase URL/Key) are managed via GitHub Actions Secrets, ensuring they are never hard-coded in the source code or `.env` files tracked by Git.
+*   **Gemini AI Security**: All AI interactions use server-side actions with direct SDK calls, keeping API keys protected on the backend.
+
+---
+
+## 5. 安全性與擴充性
 
 - **RLS (Row Level Security)**：資料庫層級的權限控管。
 - **Wiki Sync SOP**：由於 GitHub Wiki 是獨立倉庫，修改主專案 `wiki/` 後必須執行 `node scripts/sync-wiki.mjs` 來同步至外部 Wiki 頁面。

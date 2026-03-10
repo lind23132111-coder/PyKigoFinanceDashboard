@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Home, PlusCircle, Target, Wallet, FileText, TrendingUp, Menu } from 'lucide-react';
+import { Home, PlusCircle, Target, Wallet, FileText, TrendingUp, Menu, ReceiptText } from 'lucide-react';
 
 export default function Navbar() {
     return (
@@ -22,6 +22,7 @@ export default function Navbar() {
                             <NavLink href="/" icon={<Home className="w-4 h-4" />} label="Home" />
                             <NavLink href="/goals" icon={<Target className="w-4 h-4" />} label="Goals" />
                             <NavLink href="/planning" icon={<TrendingUp className="w-4 h-4" />} label="Strategy" />
+                            <NavLink href="/expenses" icon={<ReceiptText className="w-4 h-4" />} label="Expenses" />
                             <NavLink href="/wizard" icon={<PlusCircle className="w-4 h-4" />} label="Wizard" />
                             <NavLink href="/report" icon={<FileText className="w-4 h-4" />} label="Report" />
 
@@ -61,6 +62,7 @@ export default function Navbar() {
                     <MobileNavLink href="/" icon={<Home className="w-4 h-4" />} label="首頁" />
                     <MobileNavLink href="/goals" icon={<Target className="w-4 h-4" />} label="目標" />
                     <MobileNavLink href="/planning" icon={<TrendingUp className="w-4 h-4" />} label="策略" />
+                    <MobileNavLink href="/expenses" icon={<ReceiptText className="w-4 h-4" />} label="支出" />
                     <MobileNavLink href="/wizard" icon={<PlusCircle className="w-4 h-4" />} label="結算" />
                     <MobileNavLink href="/report" icon={<FileText className="w-4 h-4" />} label="報告" />
                     <div className="relative group/mobile-docs flex flex-col items-center justify-center">
