@@ -8,7 +8,10 @@ export async function getExpenses(filters?: {
     goal_id?: string, 
     is_reviewed?: boolean,
     startDate?: string,
-    endDate?: string
+    endDate?: string,
+    sortBy?: string,
+    sortOrder?: 'ascending' | 'descending',
+    limit?: number
 }) {
     if (process.env.NEXT_PUBLIC_DEMO_MODE === 'true') {
         const mockExpenses = [
@@ -17,6 +20,7 @@ export async function getExpenses(filters?: {
             { id: '2', date: '2026-03-06', amount: 4500, store_name: '宜家家居', project_label: 'general', goal_id: 'demo-goal-1', paid_by: 'Kigo', paid_for: 'Both', is_reviewed: true, is_automated: false, category_id: 'cat2', categories: { name: '居家生活', icon: 'home', color: '#3b82f6' } },
             { id: '3', date: '2026-03-08', amount: 320, store_name: '7-11', project_label: 'general', goal_id: null, paid_by: 'PY', paid_for: 'PY', is_reviewed: true, is_automated: true, category_id: 'cat1', categories: { name: '餐飲食品', icon: 'utensils', color: '#ef4444' } },
             { id: '4', date: '2026-03-09', amount: 12000, store_name: '全國電子', project_label: 'general', goal_id: null, paid_by: 'PY', paid_for: 'Kigo', is_reviewed: true, is_automated: false, category_id: 'cat3', categories: { name: '電子產品', icon: 'cpu', color: '#8b5cf6' } },
+            { id: '10', date: '2026-03-10', amount: 850, store_name: '星巴克 (已確認)', project_label: 'general', goal_id: null, paid_by: 'PY', paid_for: 'Both', is_reviewed: true, is_automated: true, category_id: 'cat1', categories: { name: '餐飲食品', icon: 'utensils', color: '#ef4444' } },
             
             // Unreviewed (AI Inbox / Smart Input)
             { id: '5', date: '2026-03-10', amount: 500, store_name: '星巴克', project_label: 'general', goal_id: null, paid_by: 'Kigo', paid_for: 'Both', is_reviewed: false, is_automated: true, category_id: 'cat1', categories: { name: '餐飲食品', icon: 'utensils', color: '#ef4444' } },
@@ -25,26 +29,53 @@ export async function getExpenses(filters?: {
 
             // Past Month (February) - Home Renovation Goal
             { id: '6', date: '2026-02-15', amount: 8500, store_name: '特力屋', project_label: 'general', goal_id: 'demo-goal-1', paid_by: 'PY', paid_for: 'Both', is_reviewed: true, is_automated: false, category_id: 'cat2', categories: { name: '居家生活', icon: 'home', color: '#3b82f6' } },
-            { id: '7', date: '2026-02-20', amount: 1500, store_name: '無印良品', project_label: 'general', goal_id: 'demo-goal-1', paid_by: 'Kigo', paid_for: 'PY', is_reviewed: true, is_automated: true, category_id: 'cat1', categories: { name: '餐飲食品', icon: 'utensils', color: '#ef4444' } }
+            { id: '7', date: '2026-02-20', amount: 1500, store_name: '無印良品', project_label: 'general', goal_id: 'demo-goal-1', paid_by: 'Kigo', paid_for: 'PY', is_reviewed: true, is_automated: true, category_id: 'cat1', categories: { name: '餐飲食品', icon: 'utensils', color: '#ef4444' } },
+
+            // Past Month (January)
+            { id: 'jan1', date: '2026-01-10', amount: 3500, store_name: '壽司郎', project_label: 'general', goal_id: null, paid_by: 'PY', paid_for: 'Both', is_reviewed: true, is_automated: false, category_id: 'cat1', categories: { name: '餐飲食品', icon: 'utensils', color: '#ef4444' } },
+            { id: 'jan2', date: '2026-01-25', amount: 48000, store_name: '長榮航空', project_label: 'general', goal_id: null, paid_by: 'Kigo', paid_for: 'Both', is_reviewed: true, is_automated: false, category_id: 'cat5', categories: { name: '交通旅遊', icon: 'plane', color: '#10b981' } }
         ];
         
-        let filtered = mockExpenses;
+        let filtered = [...mockExpenses];
         
         // Filter by review status
         if (filters?.is_reviewed !== undefined) {
             filtered = filtered.filter(e => e.is_reviewed === filters.is_reviewed);
         }
 
-        // Filter by date if provided
-        if (filters?.startDate) filtered = filtered.filter(e => e.date >= filters.startDate!);
-        if (filters?.endDate) filtered = filtered.filter(e => e.date <= filters.endDate!);
-        
-        // Filter by project/goal
-        if (filters?.project_label && filters.project_label !== 'all') {
+        // Filter by project
+        if (filters?.project_label) {
             filtered = filtered.filter(e => e.project_label === filters.project_label);
         }
+
+        // Filter by goal
         if (filters?.goal_id) {
             filtered = filtered.filter(e => e.goal_id === filters.goal_id);
+        }
+
+        // Filter by date range
+        if (filters?.startDate) {
+            filtered = filtered.filter(e => e.date >= filters.startDate!);
+        }
+        if (filters?.endDate) {
+            filtered = filtered.filter(e => e.date <= filters.endDate!);
+        }
+
+        // Apply sorting
+        const sortBy = filters?.sortBy || 'date';
+        const sortOrder = filters?.sortOrder || 'descending';
+        
+        filtered.sort((a: any, b: any) => {
+            const valA = a[sortBy];
+            const valB = b[sortBy];
+            if (valA < valB) return sortOrder === 'ascending' ? -1 : 1;
+            if (valA > valB) return sortOrder === 'ascending' ? 1 : -1;
+            return 0;
+        });
+
+        // Apply limit
+        if (filters?.limit) {
+            filtered = filtered.slice(0, filters.limit);
         }
         
         return filtered as any[];
@@ -52,8 +83,7 @@ export async function getExpenses(filters?: {
 
     let query = supabase
         .from('expenses')
-        .select('*, categories:expense_categories(*)')
-        .order('date', { ascending: false });
+        .select('*, categories:expense_categories(*)');
 
     if (filters?.startDate) {
         query = query.gte('date', filters.startDate);
@@ -70,6 +100,16 @@ export async function getExpenses(filters?: {
     }
     if (filters?.is_reviewed !== undefined) {
         query = query.eq('is_reviewed', filters.is_reviewed);
+    }
+
+    // Apply sorting
+    const sortBy = filters?.sortBy || 'date';
+    const sortOrder = filters?.sortOrder || 'descending';
+    query = query.order(sortBy, { ascending: sortOrder === 'ascending' });
+
+    // Apply limit
+    if (filters?.limit) {
+        query = query.limit(filters.limit);
     }
 
     const { data, error } = await query;

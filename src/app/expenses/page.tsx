@@ -71,6 +71,7 @@ function cn(...inputs: any[]) {
 export default function ExpensesPage() {
     const [activeTab, setActiveTab] = useState('all');
     const [expenses, setExpenses] = useState<Expense[]>([]);
+    const [recentExpenses, setRecentExpenses] = useState<Expense[]>([]);
     const [unreviewed, setUnreviewed] = useState<Expense[]>([]);
     const [categories, setCategories] = useState<ExpenseCategory[]>([]);
     const [settlement, setSettlement] = useState<any>(null);
@@ -84,6 +85,8 @@ export default function ExpensesPage() {
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [showInbox, setShowInbox] = useState(false);
     const [showCategoryMgmt, setShowCategoryMgmt] = useState(false);
+    const [showAllExpensesModal, setShowAllExpensesModal] = useState(false);
+    const [batchSettings, setBatchSettings] = useState({ paid_by: 'PY', paid_for: 'Both' });
     const [prevMonthTotal, setPrevMonthTotal] = useState(0);
 
     // Date Range State
@@ -113,7 +116,7 @@ export default function ExpensesPage() {
             const prevEnd = new Date(start.getTime() - 86400000);
             const prevStart = new Date(prevEnd.getTime() - (diffDays - 1) * 86400000);
             
-            const [allExp, unrevExp, catData, setlData, goalData, prevExp, historyData] = await Promise.all([
+            const [allExp, unrevExp, catData, setlData, goalData, prevExp, historyData, recentExp] = await Promise.all([
                 getExpenses({ 
                     project_label: activeTab === 'all' ? undefined : (isGoalTab ? undefined : activeTab),
                     goal_id: isGoalTab ? activeTab : undefined,
@@ -140,9 +143,18 @@ export default function ExpensesPage() {
                 getSettlementHistory(
                     activeTab === 'all' ? undefined : (isGoalTab ? undefined : activeTab),
                     isGoalTab ? activeTab : undefined
-                )
+                ),
+                getExpenses({ 
+                    project_label: activeTab === 'all' ? undefined : (isGoalTab ? undefined : activeTab),
+                    goal_id: isGoalTab ? activeTab : undefined,
+                    is_reviewed: true,
+                    sortBy: 'updated_at',
+                    sortOrder: 'descending',
+                    limit: 12
+                })
             ]);
             setExpenses(allExp);
+            setRecentExpenses(recentExp);
             setUnreviewed(unrevExp);
             setCategories(catData);
             setSettlement(setlData);
@@ -157,8 +169,12 @@ export default function ExpensesPage() {
     };
 
     const handleConfirm = async (id: string, updates: Partial<Expense>) => {
-        await updateExpense(id, { ...updates, is_reviewed: true });
-        loadData();
+        try {
+            await updateExpense(id, { ...updates, is_reviewed: true });
+            await loadData();
+        } catch (error) {
+            console.error("Failed to confirm expense:", error);
+        }
     };
 
     // Calculate chart data from expenses
@@ -434,14 +450,42 @@ export default function ExpensesPage() {
                                     >
                                         <Settings2 className="w-4 h-4" />
                                     </button>
+                                    
+                                    {showInbox && !selectedIds.size && (
+                                        <div className="flex items-center gap-2 bg-white/40 border border-amber-200/50 rounded-xl px-3 py-1.5 ml-2">
+                                            <span className="text-[9px] font-black text-amber-700 uppercase tracking-widest mr-2">Batch Defaults</span>
+                                            <select 
+                                                value={batchSettings.paid_by}
+                                                onChange={(e) => setBatchSettings({...batchSettings, paid_by: e.target.value})}
+                                                className="bg-transparent text-[10px] font-black text-emerald-600 outline-none cursor-pointer"
+                                            >
+                                                <option value="PY">PY</option>
+                                                <option value="Kigo">Kigo</option>
+                                                <option value="Both">BOTH</option>
+                                            </select>
+                                            <div className="w-px h-3 bg-amber-200 mx-1"></div>
+                                            <select 
+                                                value={batchSettings.paid_for}
+                                                onChange={(e) => setBatchSettings({...batchSettings, paid_for: e.target.value})}
+                                                className="bg-transparent text-[10px] font-black text-slate-500 outline-none cursor-pointer uppercase"
+                                            >
+                                                <option value="Both">BOTH</option>
+                                                <option value="PY">PY</option>
+                                                <option value="Kigo">Kigo</option>
+                                            </select>
+                                        </div>
+                                    )}
                                     {selectedIds.size > 0 ? (
                                         <>
                                             <button 
                                                 onClick={async () => {
                                                     if (confirm(`確定要批次確認選取的 ${selectedIds.size} 筆支出嗎？`)) {
-                                                        await confirmExpenses(Array.from(selectedIds), {});
+                                                        await confirmExpenses(Array.from(selectedIds), {
+                                                            paid_by: batchSettings.paid_by,
+                                                            paid_for: batchSettings.paid_for
+                                                        });
                                                         setSelectedIds(new Set());
-                                                        loadData();
+                                                        await loadData();
                                                     }
                                                 }}
                                                 className="text-[10px] font-black bg-white text-amber-600 px-4 py-2 rounded-xl border border-amber-200 shadow-sm hover:bg-amber-50 transition-colors flex items-center gap-1.5"
@@ -488,7 +532,10 @@ export default function ExpensesPage() {
                                                     <button 
                                                         onClick={async () => {
                                                             if (confirm(`確定要批次確認 ${unreviewed.length} 筆支出嗎？`)) {
-                                                                await confirmExpenses(unreviewed.map(u => u.id), {});
+                                                                await confirmExpenses(unreviewed.map(u => u.id), {
+                                                                    paid_by: batchSettings.paid_by,
+                                                                    paid_for: batchSettings.paid_for
+                                                                });
                                                                 loadData();
                                                             }
                                                         }}
@@ -525,6 +572,7 @@ export default function ExpensesPage() {
                                             }}
                                             categories={categories}
                                             goals={goals}
+                                            batchSettings={batchSettings}
                                         />
                                     ))}
                                 </div>
@@ -537,7 +585,7 @@ export default function ExpensesPage() {
                     <div className="flex justify-between items-center mb-6">
                         <h3 className="font-extrabold text-xl text-gray-900 tracking-tight">近期已確認明細</h3>
                         <button 
-                            onClick={() => document.getElementById('expense-list')?.scrollIntoView({ behavior: 'smooth' })}
+                            onClick={() => setShowAllExpensesModal(true)}
                             className="text-blue-600 hover:text-blue-700 text-sm font-bold flex items-center gap-1 transition-colors group"
                         >
                             檢視全部明細 <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -545,10 +593,13 @@ export default function ExpensesPage() {
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {expenses.slice(0, 12).map(item => (
+                        {recentExpenses.map(item => (
                             <ExpenseItemCard 
                                 key={item.id} 
                                 item={item} 
+                                categories={categories}
+                                goals={goals}
+                                onUpdate={loadData}
                                 onDelete={async (id) => {
                                     if (confirm("確定要刪除此筆記錄嗎？")) {
                                         await deleteExpense(id);
@@ -640,6 +691,16 @@ export default function ExpensesPage() {
                     onUpdate={loadData}
                 />
             )}
+
+            {showAllExpensesModal && (
+                <AllExpensesModal 
+                    onClose={() => setShowAllExpensesModal(false)}
+                    categories={categories}
+                    goals={goals}
+                    onUpdate={loadData}
+                    activeTab={activeTab}
+                />
+            )}
         </div>
     );
 }
@@ -715,21 +776,31 @@ function getGoalColor(goalName: string): "blue" | "indigo" | "amber" | "teal" | 
     return "teal";
 }
 
-function ReviewItem({ item, onConfirm, onDelete, isSelected, onToggleSelect, categories, goals }: any) {
+function ReviewItem({ item, onConfirm, onDelete, isSelected, onToggleSelect, categories, goals, batchSettings }: any) {
     const [updates, setUpdates] = useState({
         goal_id: item.goal_id || '',
         category_id: item.category_id || getSuggestedCategoryId(item.store_name, categories),
-        paid_by: item.paid_by || 'PY',
-        paid_for: item.paid_for || 'Both'
+        paid_by: item.paid_by || (batchSettings?.paid_by || 'PY'),
+        paid_for: item.paid_for || (batchSettings?.paid_for || 'Both')
     });
+
+    useEffect(() => {
+        if (batchSettings) {
+            setUpdates(prev => ({ 
+                ...prev, 
+                paid_by: batchSettings.paid_by,
+                paid_for: batchSettings.paid_for
+            }));
+        }
+    }, [batchSettings]);
 
     return (
         <div className={cn(
-            "bg-white/80 backdrop-blur-md border rounded-[2rem] p-5 flex flex-col md:flex-row md:items-center justify-between gap-6 transition-all duration-500",
+            "bg-white/80 backdrop-blur-md border rounded-[2rem] p-4 flex flex-col xl:grid xl:grid-cols-12 xl:items-center gap-4 transition-all duration-500",
             isSelected ? "border-amber-400 bg-amber-50/50 ring-4 ring-amber-100/20 shadow-2xl shadow-amber-200/20" : "border-gray-100 hover:border-indigo-200 shadow-sm"
         )}>
-            <div className="flex items-center gap-5 flex-1">
-                <div className="relative">
+            <div className="flex items-center gap-4 xl:col-span-4 min-w-0">
+                <div className="flex-shrink-0">
                     <input 
                         type="checkbox"
                         checked={isSelected}
@@ -737,23 +808,23 @@ function ReviewItem({ item, onConfirm, onDelete, isSelected, onToggleSelect, cat
                         className="w-6 h-6 rounded-xl border-gray-200 text-amber-500 focus:ring-amber-500 cursor-pointer transition-all hover:scale-110"
                     />
                 </div>
-                <div className="hidden sm:flex h-14 w-14 rounded-3xl bg-gray-50 items-center justify-center border border-gray-100 flex-shrink-0 group overflow-hidden relative">
+                <div className="hidden sm:flex h-12 w-12 rounded-2xl bg-gray-50 items-center justify-center border border-gray-100 flex-shrink-0 group overflow-hidden relative">
                     <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                    {item.is_automated ? <Sparkles className="w-6 h-6 text-amber-500 animate-pulse relative z-10" /> : <Receipt className="w-6 h-6 text-gray-300 relative z-10" />}
+                    {item.is_automated ? <Sparkles className="w-5 h-5 text-amber-500 animate-pulse relative z-10" /> : <Receipt className="w-5 h-5 text-gray-300 relative z-10" />}
                 </div>
-                <div className="flex-1 min-w-0">
-                    <div className="font-black text-gray-900 text-lg md:text-xl tracking-tighter flex items-center gap-2 truncate">
-                        {item.store_name}
+                <div className="min-w-0">
+                    <div className="font-black text-gray-900 text-lg tracking-tighter flex items-center gap-2">
+                        <span className="truncate">{item.store_name}</span>
                         {item.is_duplicate && (
                             <span 
-                                className="flex items-center gap-1.5 bg-rose-50 text-rose-600 text-[10px] px-3 py-1 rounded-full border border-rose-100 font-black uppercase tracking-widest"
+                                className="flex-shrink-0 flex items-center gap-1 bg-rose-50 text-rose-600 text-[8px] px-2 py-0.5 rounded-full border border-rose-100 font-black uppercase tracking-widest"
                                 title={item.metadata?.duplicate_of_id ? `與現有記錄匹配 (#${item.metadata.duplicate_of_id.substring(0,6)})` : "偵測到疑似重複的現有支出"}
                             >
-                                <AlertTriangle className="w-3 h-3" /> DUPLICATE
+                                <AlertTriangle className="w-2 h-2" /> DUP
                             </span>
                         )}
                     </div>
-                    <div className="text-[11px] font-black text-gray-400 mt-1 flex items-center gap-3 uppercase tracking-[0.15em]">
+                    <div className="text-[10px] font-black text-gray-400 mt-0.5 flex items-center gap-2 uppercase tracking-widest truncate">
                         <span>{item.date}</span>
                         <div className="w-1 h-1 bg-gray-200 rounded-full"></div>
                         <span className={cn(item.is_automated ? "text-amber-500" : "text-gray-300")}>
@@ -763,74 +834,72 @@ function ReviewItem({ item, onConfirm, onDelete, isSelected, onToggleSelect, cat
                 </div>
             </div>
             
-            <div className="flex flex-wrap md:flex-nowrap items-center gap-5">
-                <div className="font-black text-2xl md:text-3xl text-gray-900 min-w-[140px] md:text-right tracking-tighter">NT$ {item.amount.toLocaleString()}</div>
-                
-                <div className="flex items-center gap-3 bg-gray-50/50 px-5 py-2.5 rounded-[1.5rem] border border-gray-100 flex-1 md:flex-none">
-                    <div className="flex flex-col">
-                        <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Project</span>
-                        <select 
-                            value={updates.goal_id} 
-                            onChange={(e) => setUpdates({...updates, goal_id: e.target.value})}
-                            className="bg-transparent text-[11px] font-black text-indigo-600 outline-none cursor-pointer pr-4"
-                        >
-                            <option value="">🏠 HOME</option>
-                            {goals.map((g: any) => <option key={g.id} value={g.id}>🎯 {g.name}</option>)}
-                        </select>
-                    </div>
-                    <div className="h-8 w-px bg-gray-200/60 mx-1"></div>
-                    <div className="flex flex-col">
-                        <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Category</span>
-                        <select 
-                            value={updates.category_id}
-                            onChange={(e) => setUpdates({...updates, category_id: e.target.value})}
-                            className="bg-transparent text-[11px] font-black text-gray-600 outline-none cursor-pointer pr-4"
-                        >
-                            <option value="">UNCATEGORIZED</option>
-                            {categories.map((c: any) => <option key={c.id} value={c.id}>{c.name.toUpperCase()}</option>)}
-                        </select>
-                    </div>
-                    <div className="h-8 w-px bg-gray-200/60 mx-1"></div>
-                    <div className="flex flex-col">
-                        <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Paid By</span>
-                        <select 
-                            value={updates.paid_by}
-                            onChange={(e) => setUpdates({...updates, paid_by: e.target.value})}
-                            className="bg-transparent text-[11px] font-black text-emerald-600 outline-none cursor-pointer pr-4"
-                        >
-                            <option value="PY">PY</option>
-                            <option value="Kigo">Kigo</option>
-                        </select>
-                    </div>
-                    <div className="h-8 w-px bg-gray-200/60 mx-1"></div>
-                    <div className="flex flex-col">
-                        <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-0.5">For</span>
-                        <select 
-                            value={updates.paid_for}
-                            onChange={(e) => setUpdates({...updates, paid_for: e.target.value})}
-                            className="bg-transparent text-[11px] font-black text-slate-500 outline-none cursor-pointer pr-4 uppercase"
-                        >
-                            <option value="Both">BOTH</option>
-                            <option value="PY">PY</option>
-                            <option value="Kigo">Kigo</option>
-                        </select>
-                    </div>
-                </div>
+            <div className="xl:col-span-2 text-left xl:text-center">
+                <div className="font-black text-2xl text-gray-900 tracking-tighter">NT$ {item.amount.toLocaleString()}</div>
+            </div>
 
-                <div className="flex items-center gap-3">
-                    <button 
-                        onClick={() => onConfirm(item.id, updates)}
-                        className="bg-indigo-600 hover:bg-black text-white px-8 py-3.5 rounded-2xl font-black text-xs transition-all active:scale-[0.98] shadow-xl shadow-indigo-500/10"
+            <div className="xl:col-span-5 grid grid-cols-2 gap-x-10 gap-y-3 bg-gray-50/50 px-6 py-4 rounded-[2rem] border border-gray-100">
+                <div className="flex flex-col">
+                    <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Project</span>
+                    <select 
+                        value={updates.goal_id} 
+                        onChange={(e) => setUpdates({...updates, goal_id: e.target.value})}
+                        className="bg-transparent text-[13px] font-black text-indigo-600 outline-none cursor-pointer max-w-[150px] truncate"
                     >
-                        確認匯入
-                    </button>
-                    <button 
-                        onClick={() => onDelete(item.id)}
-                        className="p-3.5 text-gray-400 hover:text-rose-600 bg-gray-50 hover:bg-rose-50 rounded-2xl transition-all border border-transparent shadow-sm hover:shadow-md"
-                    >
-                        <Trash2 className="w-5 h-5" />
-                    </button>
+                        <option value="">🏠 HOME</option>
+                        {goals.map((g: any) => <option key={g.id} value={g.id}>🎯 {g.name}</option>)}
+                    </select>
                 </div>
+                <div className="flex flex-col border-l border-gray-200/60 pl-8">
+                    <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Paid By</span>
+                    <select 
+                        value={updates.paid_by}
+                        onChange={(e) => setUpdates({...updates, paid_by: e.target.value})}
+                        className="bg-transparent text-[13px] font-black text-emerald-600 outline-none cursor-pointer"
+                    >
+                        <option value="PY">PY</option>
+                        <option value="Kigo">Kigo</option>
+                        <option value="Both">Both</option>
+                    </select>
+                </div>
+                <div className="flex flex-col">
+                    <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Category</span>
+                    <select 
+                        value={updates.category_id}
+                        onChange={(e) => setUpdates({...updates, category_id: e.target.value})}
+                        className="bg-transparent text-[13px] font-black text-gray-600 outline-none cursor-pointer max-w-[150px] truncate"
+                    >
+                        <option value="">UNCATEGORIZED</option>
+                        {categories.map((c: any) => <option key={c.id} value={c.id}>{c.name.toUpperCase()}</option>)}
+                    </select>
+                </div>
+                <div className="flex flex-col border-l border-gray-200/60 pl-8">
+                    <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">For</span>
+                    <select 
+                        value={updates.paid_for}
+                        onChange={(e) => setUpdates({...updates, paid_for: e.target.value})}
+                        className="bg-transparent text-[13px] font-black text-slate-500 outline-none cursor-pointer uppercase"
+                    >
+                        <option value="Both">BOTH</option>
+                        <option value="PY">PY</option>
+                        <option value="Kigo">Kigo</option>
+                    </select>
+                </div>
+            </div>
+
+            <div className="xl:col-span-1 flex items-center justify-end gap-2">
+                <button 
+                    onClick={() => onConfirm(item.id, updates)}
+                    className="bg-indigo-600 hover:bg-black text-white px-4 py-2.5 rounded-xl font-black text-[9px] transition-all active:scale-[0.95] shadow-lg shadow-indigo-500/5 whitespace-nowrap"
+                >
+                    確認
+                </button>
+                <button 
+                    onClick={() => onDelete(item.id)}
+                    className="p-2.5 text-gray-400 hover:text-rose-600 bg-gray-50 hover:bg-rose-50 rounded-xl transition-all border border-transparent"
+                >
+                    <Trash2 className="w-3.5 h-3.5" />
+                </button>
             </div>
         </div>
     );
@@ -947,62 +1016,119 @@ function SettlementCard({ settlement, onOpenHistory, onOpenSettlement }: any) {
     );
 }
 
-function ExpenseItemCard({ item, onDelete }: { item: Expense, onDelete?: (id: string) => void }) {
+function ExpenseItemCard({ item, onDelete, categories, goals, onUpdate }: { item: Expense, onDelete?: (id: string) => void, categories: any[], goals: any[], onUpdate: () => void }) {
+    const [isEditing, setIsEditing] = useState(false);
+    const [updates, setUpdates] = useState({
+        category_id: item.category_id || '',
+        paid_by: item.paid_by || 'PY',
+        paid_for: item.paid_for || 'Both',
+        goal_id: item.goal_id || ''
+    });
+
+    const hasChanges = updates.category_id !== (item.category_id || '') || 
+                       updates.paid_by !== (item.paid_by || 'PY') || 
+                       updates.paid_for !== (item.paid_for || 'Both') ||
+                       updates.goal_id !== (item.goal_id || '');
+
+    const handleUpdate = async () => {
+        await updateExpense(item.id, updates);
+        setIsEditing(false);
+        onUpdate();
+    };
+
     return (
-        <div className="group bg-white border border-gray-100 rounded-[2rem] p-6 hover:border-indigo-100 hover:bg-indigo-50/20 transition-all duration-300 hover:shadow-xl hover:shadow-indigo-500/5 relative overflow-hidden">
+        <div className={cn(
+            "group bg-white border rounded-[2rem] p-5 hover:shadow-xl transition-all duration-300 relative overflow-hidden",
+            isEditing ? "border-indigo-400 ring-2 ring-indigo-50" : "border-gray-100"
+        )}>
             <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-indigo-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
             
-            <div className="flex justify-between items-start mb-6 relative z-10">
-                <div className="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center border border-gray-100 group-hover:bg-white group-hover:shadow-sm transition-all">
-                    <Receipt className="w-5 h-5 text-gray-300 group-hover:text-indigo-500" />
+            <div className="flex justify-between items-start mb-4 relative z-10">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-gray-50 flex items-center justify-center border border-gray-100 group-hover:bg-white group-hover:shadow-sm transition-all">
+                        <Receipt className="w-4 h-4 text-gray-300 group-hover:text-indigo-500" />
+                    </div>
+                    <div>
+                        <div className="font-black text-gray-900 text-sm tracking-tight truncate max-w-[120px]">
+                            {item.store_name}
+                        </div>
+                        <div className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{item.date}</div>
+                    </div>
                 </div>
                 <div className="flex items-center gap-2">
+                    <div className="font-black text-gray-900 text-base tracking-tight">-NT$ {item.amount.toLocaleString()}</div>
                     {onDelete && (
                         <button 
                             onClick={() => onDelete(item.id)}
                             className="p-2 text-gray-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl opacity-0 group-hover:opacity-100 transition-all"
                         >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-3.5 h-3.5" />
                         </button>
                     )}
-                    <div className="font-black text-gray-900 text-lg tracking-tight">-NT$ {item.amount.toLocaleString()}</div>
                 </div>
             </div>
 
-            <div className="relative z-10">
-                <div className="font-black text-gray-900 text-lg tracking-tight mb-2 flex items-center justify-between group-hover:text-indigo-950">
-                    {item.store_name}
-                    {item.is_duplicate && (
-                        <div className="bg-rose-50 p-1.5 rounded-lg border border-rose-100">
-                            <AlertTriangle className="w-4 h-4 text-rose-500" />
-                        </div>
-                    )}
-                </div>
-                
-                <div className="text-[11px] font-black text-gray-400 mb-5 flex items-center gap-2 uppercase tracking-widest">
-                    <span>{item.date}</span>
-                    <span className="w-1 h-1 bg-gray-200 rounded-full"></span>
-                    <span className={cn(item.is_automated ? "text-amber-500" : "text-gray-300")}>
-                        {item.is_automated ? '✨ AI Smart Import' : '📝 Manual Entry'}
-                    </span>
-                </div>
-
-                <div className="flex flex-wrap gap-2">
-                    <span className="text-[10px] px-3 py-1.5 rounded-xl bg-gray-100 text-gray-500 font-black uppercase tracking-widest">
-                        {item.project_label === 'general' ? 'HOME' : 'PROJECT'}
-                    </span>
-                    <span className="text-[10px] px-3 py-1.5 rounded-xl bg-indigo-50 text-indigo-600 font-black uppercase tracking-widest border border-indigo-100 shadow-sm">
-                        {item.categories?.name}
-                    </span>
-                    <div className="flex -space-x-2 ml-auto">
-                        <div className="w-7 h-7 rounded-full bg-slate-900 border-2 border-white flex items-center justify-center text-[8px] font-black text-white" title={`Paid by ${item.paid_by}`}>
-                            {item.paid_by}
-                        </div>
-                        <div className="w-7 h-7 rounded-full bg-indigo-500 border-2 border-white flex items-center justify-center text-[8px] font-black text-white" title={`Paid for ${item.paid_for}`}>
-                            {item.paid_for === 'Both' ? 'ALL' : item.paid_for}
-                        </div>
+            <div className="relative z-10 space-y-3">
+                <div className="grid grid-cols-2 gap-2">
+                    <div className="flex flex-col bg-gray-50/50 p-2 rounded-xl border border-gray-100/50">
+                        <span className="text-[7px] font-black text-gray-400 uppercase tracking-widest mb-1">Project</span>
+                        <select 
+                            value={updates.goal_id}
+                            onChange={(e) => { setUpdates({...updates, goal_id: e.target.value}); setIsEditing(true); }}
+                            className="bg-transparent text-[9px] font-black text-indigo-600 outline-none cursor-pointer"
+                        >
+                            <option value="">🏠 HOME</option>
+                            {goals.map((g: any) => <option key={g.id} value={g.id}>🎯 {g.name}</option>)}
+                        </select>
+                    </div>
+                    <div className="flex flex-col bg-gray-50/50 p-2 rounded-xl border border-gray-100/50">
+                        <span className="text-[7px] font-black text-gray-400 uppercase tracking-widest mb-1">Category</span>
+                        <select 
+                            value={updates.category_id}
+                            onChange={(e) => { setUpdates({...updates, category_id: e.target.value}); setIsEditing(true); }}
+                            className="bg-transparent text-[9px] font-black text-gray-600 outline-none cursor-pointer"
+                        >
+                            <option value="">UNCATEGORIZED</option>
+                            {categories.map((c: any) => <option key={c.id} value={c.id}>{c.name.toUpperCase()}</option>)}
+                        </select>
                     </div>
                 </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                    <div className="flex flex-col bg-gray-50/50 p-2 rounded-xl border border-gray-100/50">
+                        <span className="text-[7px] font-black text-gray-400 uppercase tracking-widest mb-1">Paid By</span>
+                        <select 
+                            value={updates.paid_by}
+                            onChange={(e) => { setUpdates({...updates, paid_by: e.target.value}); setIsEditing(true); }}
+                            className="bg-transparent text-[9px] font-black text-emerald-600 outline-none cursor-pointer"
+                        >
+                            <option value="PY">PY</option>
+                            <option value="Kigo">Kigo</option>
+                            <option value="Both">Both</option>
+                        </select>
+                    </div>
+                    <div className="flex flex-col bg-gray-50/50 p-2 rounded-xl border border-gray-100/50">
+                        <span className="text-[7px] font-black text-gray-400 uppercase tracking-widest mb-1">For</span>
+                        <select 
+                            value={updates.paid_for}
+                            onChange={(e) => { setUpdates({...updates, paid_for: e.target.value}); setIsEditing(true); }}
+                            className="bg-transparent text-[9px] font-black text-slate-500 outline-none cursor-pointer uppercase"
+                        >
+                            <option value="Both">BOTH</option>
+                            <option value="PY">PY</option>
+                            <option value="Kigo">Kigo</option>
+                        </select>
+                    </div>
+                </div>
+
+                {hasChanges && (
+                    <button 
+                        onClick={handleUpdate}
+                        className="w-full py-2 bg-indigo-600 text-white rounded-xl text-[10px] font-black shadow-lg shadow-indigo-200 animate-in fade-in slide-in-from-bottom-2"
+                    >
+                        SAVE CHANGES
+                    </button>
+                )}
             </div>
         </div>
     );
@@ -1138,6 +1264,7 @@ function ExpenseEntryModal({ onClose, categories, goals, onSubmit, onSubmitCateg
                             >
                                 <option>PY</option>
                                 <option>Kigo</option>
+                                <option>Both</option>
                             </select>
                         </div>
                         <div className="col-span-2 sm:col-span-1 space-y-1.5">
@@ -1739,6 +1866,150 @@ function ImportDataModal({ onClose, onSubmit }: { onClose: () => void, onSubmit:
                             </>
                         )}
                     </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function AllExpensesModal({ onClose, categories, goals, onUpdate, activeTab }: any) {
+    const [allExpenses, setAllExpenses] = useState<Expense[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [search, setSearch] = useState("");
+    const [startDate, setStartDate] = useState("");
+    const [endDate, setEndDate] = useState("");
+
+    useEffect(() => {
+        loadAll();
+    }, [activeTab, startDate, endDate]);
+
+    const loadAll = async () => {
+        setIsLoading(true);
+        try {
+            const isGoalTab = activeTab !== 'all' && activeTab !== 'general';
+            const data = await getExpenses({ 
+                project_label: activeTab === 'all' ? undefined : (isGoalTab ? undefined : activeTab),
+                goal_id: isGoalTab ? activeTab : undefined,
+                is_reviewed: true,
+                sortBy: 'date',
+                sortOrder: 'descending',
+                startDate: startDate || undefined,
+                endDate: endDate || undefined
+            });
+            setAllExpenses(data);
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const filtered = allExpenses.filter(e => 
+        e.store_name.toLowerCase().includes(search.toLowerCase()) ||
+        e.category_id && categories.find((c:any) => c.id === e.category_id)?.name.toLowerCase().includes(search.toLowerCase())
+    );
+
+    return (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xl z-[100] flex items-center justify-center p-4 py-10 md:p-8 animate-in fade-in duration-300">
+            <div className="bg-white/95 backdrop-blur-2xl w-full max-w-6xl h-full rounded-[3rem] shadow-2xl border border-white/20 flex flex-col overflow-hidden relative">
+                <div className="p-8 border-b border-gray-100 flex items-center justify-between bg-white/50 relative z-10">
+                    <div>
+                        <h2 className="text-3xl font-black text-gray-900 tracking-tighter flex items-center gap-3">
+                            <Receipt className="w-8 h-8 text-indigo-600" />
+                            全部支出明細
+                        </h2>
+                        <p className="text-xs font-black text-gray-400 uppercase tracking-widest mt-1">View All Transaction History</p>
+                    </div>
+                    <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2 bg-gray-50 p-2 px-4 rounded-2xl border-2 border-transparent focus-within:border-indigo-100 transition-all">
+                            <Calendar className="w-4 h-4 text-gray-400" />
+                            <input 
+                                type="date"
+                                value={startDate}
+                                onChange={(e) => setStartDate(e.target.value)}
+                                className="bg-transparent text-[11px] font-black text-gray-900 outline-none w-28 uppercase"
+                                title="開始日期"
+                            />
+                            <span className="text-gray-300 font-black">→</span>
+                            <input 
+                                type="date"
+                                value={endDate}
+                                onChange={(e) => setEndDate(e.target.value)}
+                                className="bg-transparent text-[11px] font-black text-gray-900 outline-none w-28 uppercase"
+                                title="結束日期"
+                            />
+                            {(startDate || endDate) && (
+                                <button 
+                                    onClick={() => { setStartDate(""); setEndDate(""); }}
+                                    className="p-1 hover:bg-gray-200 rounded-full text-gray-400 hover:text-gray-900 transition-colors ml-1"
+                                    title="重置日期"
+                                >
+                                    <X className="w-3 h-3" />
+                                </button>
+                            )}
+                        </div>
+
+                        <div className="relative group">
+                            <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                                <PenLine className="w-4 h-4 text-gray-400 group-focus-within:text-indigo-500 transition-colors" />
+                            </div>
+                            <input 
+                                type="text"
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                placeholder="搜索店家或類別..."
+                                className="pl-11 pr-6 py-3 bg-gray-50 border-2 border-transparent focus:border-indigo-100 focus:bg-white rounded-2xl text-sm font-bold text-gray-900 w-64 transition-all outline-none shadow-sm"
+                            />
+                        </div>
+                        <button 
+                            onClick={onClose}
+                            className="p-3 bg-gray-50 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-2xl transition-all border border-gray-100"
+                        >
+                            <X className="w-6 h-6" />
+                        </button>
+                    </div>
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-8 space-y-4 bg-gray-50/30">
+                    {isLoading ? (
+                        <div className="h-full flex flex-col items-center justify-center text-gray-400 gap-4">
+                            <div className="w-12 h-12 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin" />
+                            <p className="font-black text-sm uppercase tracking-widest">Loading transactions...</p>
+                        </div>
+                    ) : filtered.length === 0 ? (
+                        <div className="h-full flex flex-col items-center justify-center text-gray-300 gap-4 opacity-50">
+                            <Receipt className="w-16 h-16" />
+                            <p className="font-black text-lg uppercase tracking-widest">No matching records found</p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {filtered.map(item => (
+                                <ExpenseItemCard 
+                                    key={item.id} 
+                                    item={item} 
+                                    categories={categories}
+                                    goals={goals}
+                                    onUpdate={() => {
+                                        loadAll();
+                                        onUpdate();
+                                    }}
+                                    onDelete={async (id) => {
+                                        if (confirm("確定要刪除此筆記錄嗎？")) {
+                                            await deleteExpense(id);
+                                            loadAll();
+                                            onUpdate();
+                                        }
+                                    }}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                <div className="p-8 border-t border-gray-100 bg-white flex items-center justify-between relative z-10">
+                    <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                        Total {filtered.length} Records
+                    </div>
                 </div>
             </div>
         </div>
