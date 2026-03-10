@@ -241,23 +241,36 @@ export async function getSplitSettlement(project_label?: string, goal_id?: strin
         if (endDate) filtered = filtered.filter(e => e.date <= endDate);
         if (project_label && project_label !== 'all') filtered = filtered.filter(e => e.project_label === project_label);
 
-        let tpC = 0, tpD = 0;
+        let tpC_period = 0, tpD_period = 0;
+        let tpC_total = 0, tpD_total = 0;
+        
         filtered.forEach(exp => {
             const amount = Number(exp.amount);
             if (exp.paid_by === 'PY') {
-                if (exp.paid_for === 'Kigo') tpC += amount;
-                else if (exp.paid_for === 'Both') tpC += amount * 0.5;
+                if (exp.paid_for === 'Kigo') tpC_period += amount;
+                else if (exp.paid_for === 'Both') tpC_period += amount * 0.5;
             } else if (exp.paid_by === 'Kigo') {
-                if (exp.paid_for === 'PY') tpD += amount;
-                else if (exp.paid_for === 'Both') tpD += amount * 0.5;
+                if (exp.paid_for === 'PY') tpD_period += amount;
+                else if (exp.paid_for === 'Both') tpD_period += amount * 0.5;
             }
         });
 
-        // Mock past settlements (none for simplicity or can add based on project)
-        const currentBalance = tpC - tpD;
+        // Demo logic: for simplicity, total = period in demo unless we add full history
+        mockExpenses.forEach(exp => {
+             const amount = Number(exp.amount);
+            if (exp.paid_by === 'PY') {
+                if (exp.paid_for === 'Kigo') tpC_total += amount;
+                else if (exp.paid_for === 'Both') tpC_total += amount * 0.5;
+            } else if (exp.paid_by === 'Kigo') {
+                if (exp.paid_for === 'PY') tpD_total += amount;
+                else if (exp.paid_for === 'Both') tpD_total += amount * 0.5;
+            }
+        });
+
+        const currentBalance = tpC_total - tpD_total;
         return {
-            py_credit: tpC,
-            py_debit: tpD,
+            py_credit: tpC_period,
+            py_debit: tpD_period,
             net_balance: currentBalance,
             base_balance: currentBalance,
             settled_total: 0,
@@ -266,32 +279,53 @@ export async function getSplitSettlement(project_label?: string, goal_id?: strin
         };
     }
 
-    // 1. Get raw expenses data
-    let query = supabase.from('expenses').select('amount, paid_by, paid_for, is_reviewed');
-    
-    if (startDate) query = query.gte('date', startDate);
-    if (endDate) query = query.lte('date', endDate);
-    if (project_label && project_label !== 'all') query = query.eq('project_label', project_label);
-    if (goal_id) query = query.eq('goal_id', goal_id);
+    // 1. Get ALL-TIME raw expenses data for Net Balance
+    let totalQuery = supabase.from('expenses').select('amount, paid_by, paid_for').eq('is_reviewed', true);
+    if (project_label && project_label !== 'all') totalQuery = totalQuery.eq('project_label', project_label);
+    if (goal_id) totalQuery = totalQuery.eq('goal_id', goal_id);
 
-    const { data: expData, error: expError } = await query;
-    if (expError) throw expError;
+    const { data: allExpData, error: allExpError } = await totalQuery;
+    if (allExpError) throw allExpError;
 
-    let totalPYCredit = 0;
-    let totalPYDebit = 0;
+    let totalPYCredit_AllTime = 0;
+    let totalPYDebit_AllTime = 0;
 
-    expData.forEach(exp => {
+    allExpData.forEach(exp => {
         const amount = Number(exp.amount);
         if (exp.paid_by === 'PY') {
-            if (exp.paid_for === 'Kigo') totalPYCredit += amount;
-            else if (exp.paid_for === 'Both') totalPYCredit += amount * 0.5;
+            if (exp.paid_for === 'Kigo') totalPYCredit_AllTime += amount;
+            else if (exp.paid_for === 'Both') totalPYCredit_AllTime += amount * 0.5;
         } else if (exp.paid_by === 'Kigo') {
-            if (exp.paid_for === 'PY') totalPYDebit += amount;
-            else if (exp.paid_for === 'Both') totalPYDebit += amount * 0.5;
+            if (exp.paid_for === 'PY') totalPYDebit_AllTime += amount;
+            else if (exp.paid_for === 'Both') totalPYDebit_AllTime += amount * 0.5;
         }
     });
 
-    // 2. Get past settlements data
+    // 2. Get PERIOD-SPECIFIC raw expenses data for UI Display
+    let periodQuery = supabase.from('expenses').select('amount, paid_by, paid_for').eq('is_reviewed', true);
+    if (startDate) periodQuery = periodQuery.gte('date', startDate);
+    if (endDate) periodQuery = periodQuery.lte('date', endDate);
+    if (project_label && project_label !== 'all') periodQuery = periodQuery.eq('project_label', project_label);
+    if (goal_id) periodQuery = periodQuery.eq('goal_id', goal_id);
+
+    const { data: periodExpData, error: periodExpError } = await periodQuery;
+    if (periodExpError) throw periodExpError;
+
+    let totalPYCredit_Period = 0;
+    let totalPYDebit_Period = 0;
+
+    periodExpData.forEach(exp => {
+        const amount = Number(exp.amount);
+        if (exp.paid_by === 'PY') {
+            if (exp.paid_for === 'Kigo') totalPYCredit_Period += amount;
+            else if (exp.paid_for === 'Both') totalPYCredit_Period += amount * 0.5;
+        } else if (exp.paid_by === 'Kigo') {
+            if (exp.paid_for === 'PY') totalPYDebit_Period += amount;
+            else if (exp.paid_for === 'Both') totalPYDebit_Period += amount * 0.5;
+        }
+    });
+
+    // 3. Get all settlements data (lifetime)
     let setlQuery = supabase.from('settlements').select('amount, payer, payee');
     if (project_label && project_label !== 'all') setlQuery = setlQuery.eq('project_label', project_label);
     if (goal_id) setlQuery = setlQuery.eq('goal_id', goal_id);
@@ -307,12 +341,12 @@ export async function getSplitSettlement(project_label?: string, goal_id?: strin
         if (s.payer === 'Kigo' && s.payee === 'PY') settledAmountByKigo += Number(s.amount);
     });
 
-    const baseBalance = totalPYCredit - totalPYDebit; 
+    const baseBalance = totalPYCredit_AllTime - totalPYDebit_AllTime; 
     const currentBalance = baseBalance - settledAmountByPY + settledAmountByKigo;
 
     return {
-        py_credit: totalPYCredit,
-        py_debit: totalPYDebit,
+        py_credit: totalPYCredit_Period,
+        py_debit: totalPYDebit_Period,
         net_balance: currentBalance,
         base_balance: baseBalance,
         settled_total: settledAmountByPY + settledAmountByKigo,
