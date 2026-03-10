@@ -12,13 +12,26 @@ export async function getExpenses(filters?: {
 }) {
     if (process.env.NEXT_PUBLIC_DEMO_MODE === 'true') {
         const mockExpenses = [
+            // Current Month
             { id: '1', date: '2026-03-05', amount: 1250, store_name: '微風超市', project_label: '一般帳務', paid_by: 'PY', paid_for: 'Both', is_reviewed: true, category_id: 'cat1', categories: { name: '餐飲食品', icon: 'utensils', color: '#ef4444' } },
             { id: '2', date: '2026-03-06', amount: 4500, store_name: '宜家家居', project_label: '新家裝修', paid_by: 'Kigo', paid_for: 'Both', is_reviewed: true, category_id: 'cat2', categories: { name: '居家生活', icon: 'home', color: '#3b82f6' } },
             { id: '3', date: '2026-03-08', amount: 320, store_name: '7-11', project_label: '一般帳務', paid_by: 'PY', paid_for: 'PY', is_reviewed: true, category_id: 'cat1', categories: { name: '餐飲食品', icon: 'utensils', color: '#ef4444' } },
             { id: '4', date: '2026-03-09', amount: 12000, store_name: '全國電子', project_label: '一般帳務', paid_by: 'PY', paid_for: 'Kigo', is_reviewed: true, category_id: 'cat3', categories: { name: '電子產品', icon: 'cpu', color: '#8b5cf6' } },
-            { id: '5', date: '2026-03-10', amount: 500, store_name: '星巴克', project_label: '一般帳務', paid_by: 'Kigo', paid_for: 'Both', is_reviewed: false, category_id: 'cat1', categories: { name: '餐飲食品', icon: 'utensils', color: '#ef4444' } }
+            { id: '5', date: '2026-03-10', amount: 500, store_name: '星巴克', project_label: '一般帳務', paid_by: 'Kigo', paid_for: 'Both', is_reviewed: false, category_id: 'cat1', categories: { name: '餐飲食品', icon: 'utensils', color: '#ef4444' } },
+            // Past Month (February) - Home Renovation Project
+            { id: '6', date: '2026-02-15', amount: 8500, store_name: '特力屋', project_label: '新家裝修', paid_by: 'PY', paid_for: 'Both', is_reviewed: true, category_id: 'cat2', categories: { name: '居家生活', icon: 'home', color: '#3b82f6' } },
+            { id: '7', date: '2026-02-20', amount: 1500, store_name: '無印良品', project_label: '新家裝修', paid_by: 'Kigo', paid_for: 'PY', is_reviewed: true, category_id: 'cat1', categories: { name: '餐飲食品', icon: 'utensils', color: '#ef4444' } }
         ];
-        return mockExpenses as any[];
+        
+        // Filter by date if provided
+        let filtered = mockExpenses;
+        if (filters?.startDate) filtered = filtered.filter(e => e.date >= filters.startDate!);
+        if (filters?.endDate) filtered = filtered.filter(e => e.date <= filters.endDate!);
+        if (filters?.project_label && filters.project_label !== 'all') {
+            filtered = filtered.filter(e => e.project_label === filters.project_label);
+        }
+        
+        return filtered as any[];
     }
 
     let query = supabase
@@ -157,15 +170,43 @@ export async function confirmExpenses(ids: string[], commonUpdates: Partial<Expe
  */
 export async function getSplitSettlement(project_label?: string, goal_id?: string, startDate?: string, endDate?: string) {
     if (process.env.NEXT_PUBLIC_DEMO_MODE === 'true') {
-        const currentBalance = 5875; // Pre-calculated mock balance
+        const mockExpenses = [
+            { id: '1', date: '2026-03-05', amount: 1250, store_name: '微風超市', project_label: '一般帳務', paid_by: 'PY', paid_for: 'Both' },
+            { id: '2', date: '2026-03-06', amount: 4500, store_name: '宜家家居', project_label: '新家裝修', paid_by: 'Kigo', paid_for: 'Both' },
+            { id: '3', date: '2026-03-08', amount: 320, store_name: '7-11', project_label: '一般帳務', paid_by: 'PY', paid_for: 'PY' },
+            { id: '4', date: '2026-03-09', amount: 12000, store_name: '全國電子', project_label: '一般帳務', paid_by: 'PY', paid_for: 'Kigo' },
+            { id: '5', date: '2026-03-10', amount: 500, store_name: '星巴克', project_label: '一般帳務', paid_by: 'Kigo', paid_for: 'Both' },
+            { id: '6', date: '2026-02-15', amount: 8500, store_name: '特力屋', project_label: '新家裝修', paid_by: 'PY', paid_for: 'Both' },
+            { id: '7', date: '2026-02-20', amount: 1500, store_name: '無印良品', project_label: '新家裝修', paid_by: 'Kigo', paid_for: 'PY' }
+        ];
+
+        let filtered = mockExpenses;
+        if (startDate) filtered = filtered.filter(e => e.date >= startDate);
+        if (endDate) filtered = filtered.filter(e => e.date <= endDate);
+        if (project_label && project_label !== 'all') filtered = filtered.filter(e => e.project_label === project_label);
+
+        let tpC = 0, tpD = 0;
+        filtered.forEach(exp => {
+            const amount = Number(exp.amount);
+            if (exp.paid_by === 'PY') {
+                if (exp.paid_for === 'Kigo') tpC += amount;
+                else if (exp.paid_for === 'Both') tpC += amount * 0.5;
+            } else if (exp.paid_by === 'Kigo') {
+                if (exp.paid_for === 'PY') tpD += amount;
+                else if (exp.paid_for === 'Both') tpD += amount * 0.5;
+            }
+        });
+
+        // Mock past settlements (none for simplicity or can add based on project)
+        const currentBalance = tpC - tpD;
         return {
-            py_credit: 12625,
-            py_debit: 6750,
+            py_credit: tpC,
+            py_debit: tpD,
             net_balance: currentBalance,
-            base_balance: 5875,
+            base_balance: currentBalance,
             settled_total: 0,
-            summary: "Kigo 應給付 PY",
-            abs_balance: 5875
+            summary: currentBalance > 0 ? "Kigo 應給付 PY" : currentBalance < 0 ? "PY 應給付 Kigo" : "雙方互不相欠",
+            abs_balance: Math.abs(currentBalance)
         };
     }
 
