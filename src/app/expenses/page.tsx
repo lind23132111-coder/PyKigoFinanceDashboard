@@ -55,6 +55,7 @@ import {
     createSettlement,
     updateSettlement,
     deleteSettlement,
+    getExpensesSummary,
     processAIImport,
     deleteExpense,
     deleteExpenses,
@@ -85,6 +86,7 @@ export default function ExpensesPage() {
     const [showPartialSettlementModal, setShowPartialSettlementModal] = useState(false);
     const [showImportModal, setShowImportModal] = useState(false);
     const [editingSettlement, setEditingSettlement] = useState<Settlement | null>(null);
+    const [expensesStats, setExpensesStats] = useState({ count: 0, automatedCount: 0 });
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [showInbox, setShowInbox] = useState(false);
     const [showCategoryMgmt, setShowCategoryMgmt] = useState(false);
@@ -119,11 +121,10 @@ export default function ExpensesPage() {
             const prevEnd = new Date(start.getTime() - 86400000);
             const prevStart = new Date(prevEnd.getTime() - (diffDays - 1) * 86400000);
             
-            const [allExp, unrevExp, catData, setlData, goalData, prevExp, historyData, recentExp] = await Promise.all([
-                getExpenses({ 
+            const [summaryData, unrevExp, catData, setlData, goalData, prevSummary, historyData, recentExp] = await Promise.all([
+                getExpensesSummary({ 
                     project_label: activeTab === 'all' ? undefined : (isGoalTab ? undefined : activeTab),
                     goal_id: isGoalTab ? activeTab : undefined,
-                    is_reviewed: true,
                     startDate,
                     endDate
                 }),
@@ -136,10 +137,9 @@ export default function ExpensesPage() {
                     endDate
                 ),
                 getGoalsWithProgress(),
-                getExpenses({
+                getExpensesSummary({
                     project_label: activeTab === 'all' ? undefined : (isGoalTab ? undefined : activeTab),
                     goal_id: isGoalTab ? activeTab : undefined,
-                    is_reviewed: true,
                     startDate: prevStart.toISOString().split('T')[0],
                     endDate: prevEnd.toISOString().split('T')[0]
                 }),
@@ -156,14 +156,27 @@ export default function ExpensesPage() {
                     limit: 12
                 })
             ]);
-            setExpenses(allExp);
+            
+            // Reconstruct a lightweight expenses list for compatibility with existing chart logic
+            // Since chartData (lines 185+) filters categories from 'expenses', we provide a summary-based mock
+            const syntheticExpenses = Object.entries(summaryData.categoryBreakdown).map(([catId, amt]) => ({
+                amount: amt,
+                category_id: catId,
+                is_reviewed: true
+            })) as any[];
+            
+            setExpenses(syntheticExpenses);
             setRecentExpenses(recentExp);
             setUnreviewed(unrevExp);
             setCategories(catData);
             setSettlement(setlData);
             setGoals(goalData);
-            setPrevMonthTotal(prevExp.reduce((sum: number, e: Expense) => sum + Number(e.amount), 0));
+            setPrevMonthTotal(prevSummary.total);
             setSettlementHistory(historyData);
+            setExpensesStats({ 
+                count: summaryData.count || 0, 
+                automatedCount: summaryData.automatedCount || 0 
+            });
         } catch (error) {
             console.error(error);
         } finally {
@@ -313,15 +326,15 @@ export default function ExpensesPage() {
                             icon={<Zap className="w-5 h-5" />} 
                             label="記帳自動化比例" 
                             value={(() => {
-                                const total = expenses.length + unreviewed.length;
+                                const total = expensesStats.count + unreviewed.length;
                                 if (total === 0) return "100%";
-                                const automated = expenses.filter(e => e.is_automated).length + unreviewed.filter(e => e.is_automated).length;
+                                const automated = expensesStats.automatedCount + unreviewed.filter(e => e.is_automated).length;
                                 return `${Math.round((automated / total) * 100)}%`;
                             })()} 
                             progress={(() => {
-                                const total = expenses.length + unreviewed.length;
+                                const total = expensesStats.count + unreviewed.length;
                                 if (total === 0) return 100;
-                                const automated = expenses.filter(e => e.is_automated).length + unreviewed.filter(e => e.is_automated).length;
+                                const automated = expensesStats.automatedCount + unreviewed.filter(e => e.is_automated).length;
                                 return Math.round((automated / total) * 100);
                             })()}
                             color="amber"
@@ -1637,11 +1650,17 @@ function PartialSettlementModal({ settlement, activeTab, goals, onClose, onSubmi
     const [notes, setNotes] = useState(settlement.notes || '');
     const [date, setDate] = useState(settlement.settlement_date || new Date().toISOString().split('T')[0]);
 
-    const isPYPaying = settlement.net_balance < 0; // PY 應給付 Kigo (PY pays)
-    const isKigoPaying = settlement.net_balance > 0; // Kigo 應給付 PY (Kigo pays)
+    const isPYPaying = isEditing 
+        ? settlement.payer === 'PY'
+        : settlement.net_balance < 0; 
+    const isKigoPaying = isEditing 
+        ? settlement.payer === 'Kigo'
+        : settlement.net_balance > 0;
+
+    const currentAbsBalance = isEditing ? settlement.amount : settlement.abs_balance;
 
     const handleSubmit = () => {
-        if (amount <= 0 || (settlement.abs_balance > 0 && amount > settlement.abs_balance + 1)) {
+        if (amount <= 0 || (!isEditing && currentAbsBalance > 0 && amount > currentAbsBalance + 1)) {
             alert('金額必須大於 0');
             return;
         }
@@ -1654,7 +1673,7 @@ function PartialSettlementModal({ settlement, activeTab, goals, onClose, onSubmi
             payee: isPYPaying ? 'Kigo' : 'PY',
             project_label: isGoalTab ? 'all' : activeTab,
             goal_id: isGoalTab ? activeTab : null,
-            notes: notes || (amount < settlement.abs_balance ? '部份結算' : '全額結算')
+            notes: notes || (isEditing ? '' : (amount < currentAbsBalance ? '部份結算' : '全額結算'))
         });
     };
 
@@ -1671,8 +1690,12 @@ function PartialSettlementModal({ settlement, activeTab, goals, onClose, onSubmi
                         </button>
                     </div>
                     
-                    <h3 className="text-2xl font-black text-gray-900 tracking-tight mb-2">執行分帳結算</h3>
-                    <p className="text-gray-500 font-medium">記錄雙方之間的代墊款項償還情況</p>
+                    <h3 className="text-2xl font-black text-gray-900 tracking-tight mb-2">
+                        {isEditing ? '編輯結算紀錄' : '執行分帳結算'}
+                    </h3>
+                    <p className="text-gray-500 font-medium">
+                        {isEditing ? '修改過往的結算金額或備註' : '記錄雙方之間的代墊款項償還情況'}
+                    </p>
                     
                     <div className="mt-8 space-y-6">
                         {/* Summary Box */}

@@ -274,6 +274,8 @@ export async function getSplitSettlement(project_label?: string, goal_id?: strin
     }
 
     // 1. Get ALL-TIME raw expenses data for Net Balance
+    // Optimized: We only need sums, but grouping by payer/recipient is tricky in simple select
+    // For now, we fetch ONLY necessary columns to reduce payload
     let totalQuery = supabase.from('expenses').select('amount, paid_by, paid_for').eq('is_reviewed', true);
     if (project_label && project_label !== 'all') totalQuery = totalQuery.eq('project_label', project_label);
     if (goal_id) totalQuery = totalQuery.eq('goal_id', goal_id);
@@ -316,12 +318,11 @@ export async function getSplitSettlement(project_label?: string, goal_id?: strin
     });
 
     // 3. Card stats should be ALL-TIME and ONLY include reviewed items
-    // (Ignoring startDate, endDate for card stats as per user request)
     const baseBalance = totalPYCredit_AllTime - totalPYDebit_AllTime; 
     const currentBalance = baseBalance + settledAmountByPY - settledAmountByKigo;
 
     return {
-        py_credit: totalPYCredit_AllTime, // Box statistics now reflect all-time confirmed
+        py_credit: totalPYCredit_AllTime, 
         py_debit: totalPYDebit_AllTime,
         net_balance: currentBalance,
         base_balance: baseBalance,
@@ -329,6 +330,44 @@ export async function getSplitSettlement(project_label?: string, goal_id?: strin
         summary: currentBalance > 0 ? "Kigo 應給付 PY" : currentBalance < 0 ? "PY 應給付 Kigo" : "雙方互不相欠",
         abs_balance: Math.abs(currentBalance)
     };
+}
+
+export async function getExpensesSummary(filters?: { 
+    project_label?: string, 
+    goal_id?: string, 
+    is_reviewed?: boolean,
+    startDate?: string,
+    endDate?: string
+}) {
+    if (process.env.NEXT_PUBLIC_DEMO_MODE === 'true') {
+        return { total: 15600, categoryBreakdown: {} };
+    }
+
+    let query = supabase.from('expenses').select('amount, category_id, is_automated').eq('is_reviewed', true);
+    if (filters?.startDate) query = query.gte('date', filters.startDate);
+    if (filters?.endDate) query = query.lte('date', filters.endDate);
+    if (filters?.project_label && filters.project_label !== 'all') query = query.eq('project_label', filters.project_label);
+    if (filters?.goal_id) query = query.eq('goal_id', filters.goal_id);
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    const breakdown: Record<string, number> = {};
+    let total = 0;
+    let count = 0;
+    let automatedCount = 0;
+
+    data.forEach(e => {
+        const amt = Number(e.amount);
+        total += amt;
+        count++;
+        if (e.is_automated) automatedCount++;
+        if (e.category_id) {
+            breakdown[e.category_id] = (breakdown[e.category_id] || 0) + amt;
+        }
+    });
+
+    return { total, count, automatedCount, categoryBreakdown: breakdown };
 }
 
 export async function getSettlementHistory(project_label?: string, goal_id?: string) {
