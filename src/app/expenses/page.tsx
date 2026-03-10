@@ -59,7 +59,8 @@ import {
     processAIImport,
     deleteExpense,
     deleteExpenses,
-    confirmExpenses
+    confirmExpenses,
+    confirmExpensesBulk
 } from "@/app/actions/expenses";
 import { getGoalsWithProgress } from "@/app/actions/goals";
 import { Expense, ExpenseCategory, Settlement } from "@/types/expenses";
@@ -504,10 +505,18 @@ export default function ExpensesPage() {
                                             <button 
                                                 onClick={async () => {
                                                     if (confirm(`確定要批次確認選取的 ${selectedIds.size} 筆支出嗎？`)) {
-                                                        await confirmExpenses(Array.from(selectedIds), {
-                                                            paid_by: batchSettings.paid_by,
-                                                            paid_for: batchSettings.paid_for
-                                                        });
+                                                        const itemsToConfirm = unreviewed
+                                                            .filter(u => selectedIds.has(u.id))
+                                                            .map(u => ({
+                                                                id: u.id,
+                                                                updates: {
+                                                                    goal_id: u.goal_id,
+                                                                    category_id: u.category_id,
+                                                                    paid_by: u.paid_by,
+                                                                    paid_for: u.paid_for
+                                                                }
+                                                            }));
+                                                        await confirmExpensesBulk(itemsToConfirm);
                                                         setSelectedIds(new Set());
                                                         await loadData();
                                                     }
@@ -556,10 +565,16 @@ export default function ExpensesPage() {
                                                     <button 
                                                         onClick={async () => {
                                                             if (confirm(`確定要批次確認 ${unreviewed.length} 筆支出嗎？`)) {
-                                                                await confirmExpenses(unreviewed.map(u => u.id), {
-                                                                    paid_by: batchSettings.paid_by,
-                                                                    paid_for: batchSettings.paid_for
-                                                                });
+                                                                const itemsToConfirm = unreviewed.map(u => ({
+                                                                    id: u.id,
+                                                                    updates: {
+                                                                        goal_id: u.goal_id,
+                                                                        category_id: u.category_id,
+                                                                        paid_by: u.paid_by,
+                                                                        paid_for: u.paid_for
+                                                                    }
+                                                                }));
+                                                                await confirmExpensesBulk(itemsToConfirm);
                                                                 loadData();
                                                             }
                                                         }}
@@ -586,6 +601,9 @@ export default function ExpensesPage() {
                                                     await deleteExpense(id);
                                                     loadData();
                                                 }
+                                            }}
+                                            onUpdate={(id: string, fields: any) => {
+                                                setUnreviewed(prev => prev.map(u => u.id === id ? { ...u, ...fields } : u));
                                             }}
                                             isSelected={selectedIds.has(item.id)}
                                             onToggleSelect={(id: string) => {
@@ -825,7 +843,7 @@ function getGoalColor(goalName: string): "blue" | "indigo" | "amber" | "teal" | 
     return "teal";
 }
 
-function ReviewItem({ item, onConfirm, onDelete, isSelected, onToggleSelect, categories, goals, batchSettings }: any) {
+function ReviewItem({ item, onConfirm, onDelete, onUpdate, isSelected, onToggleSelect, categories, goals, batchSettings }: any) {
     const [updates, setUpdates] = useState({
         goal_id: item.goal_id || '',
         category_id: item.category_id || getSuggestedCategoryId(item.store_name, categories),
@@ -835,13 +853,15 @@ function ReviewItem({ item, onConfirm, onDelete, isSelected, onToggleSelect, cat
 
     useEffect(() => {
         if (batchSettings) {
-            setUpdates(prev => ({ 
-                ...prev, 
+            const next = { 
+                ...updates, 
                 paid_by: batchSettings.paid_by,
                 paid_for: batchSettings.paid_for
-            }));
+            };
+            setUpdates(next);
+            onUpdate?.(item.id, next);
         }
-    }, [batchSettings]);
+    }, [batchSettings, item.id]);
 
     return (
         <div className={cn(
@@ -892,7 +912,11 @@ function ReviewItem({ item, onConfirm, onDelete, isSelected, onToggleSelect, cat
                     <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Project</span>
                     <select 
                         value={updates.goal_id} 
-                        onChange={(e) => setUpdates({...updates, goal_id: e.target.value})}
+                        onChange={(e) => {
+                            const next = {...updates, goal_id: e.target.value};
+                            setUpdates(next);
+                            onUpdate?.(item.id, next);
+                        }}
                         className="bg-transparent text-[13px] font-black text-indigo-600 outline-none cursor-pointer max-w-[150px] truncate"
                     >
                         <option value="">🏠 HOME</option>
@@ -903,7 +927,11 @@ function ReviewItem({ item, onConfirm, onDelete, isSelected, onToggleSelect, cat
                     <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Paid By</span>
                     <select 
                         value={updates.paid_by}
-                        onChange={(e) => setUpdates({...updates, paid_by: e.target.value})}
+                        onChange={(e) => {
+                            const next = {...updates, paid_by: e.target.value};
+                            setUpdates(next);
+                            onUpdate?.(item.id, next);
+                        }}
                         className="bg-transparent text-[13px] font-black text-emerald-600 outline-none cursor-pointer"
                     >
                         <option value="PY">PY</option>
@@ -915,7 +943,11 @@ function ReviewItem({ item, onConfirm, onDelete, isSelected, onToggleSelect, cat
                     <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Category</span>
                     <select 
                         value={updates.category_id}
-                        onChange={(e) => setUpdates({...updates, category_id: e.target.value})}
+                        onChange={(e) => {
+                            const next = {...updates, category_id: e.target.value};
+                            setUpdates(next);
+                            onUpdate?.(item.id, next);
+                        }}
                         className="bg-transparent text-[13px] font-black text-gray-600 outline-none cursor-pointer max-w-[150px] truncate"
                     >
                         <option value="">UNCATEGORIZED</option>
@@ -926,7 +958,11 @@ function ReviewItem({ item, onConfirm, onDelete, isSelected, onToggleSelect, cat
                     <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">For</span>
                     <select 
                         value={updates.paid_for}
-                        onChange={(e) => setUpdates({...updates, paid_for: e.target.value})}
+                        onChange={(e) => {
+                            const next = {...updates, paid_for: e.target.value};
+                            setUpdates(next);
+                            onUpdate?.(item.id, next);
+                        }}
                         className="bg-transparent text-[13px] font-black text-slate-500 outline-none cursor-pointer uppercase"
                     >
                         <option value="Both">BOTH</option>

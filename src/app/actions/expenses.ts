@@ -220,6 +220,25 @@ export async function confirmExpenses(ids: string[], commonUpdates: Partial<Expe
     return data as Expense[];
 }
 
+export async function confirmExpensesBulk(items: { id: string, updates: Partial<Expense> }[]) {
+    if (process.env.NEXT_PUBLIC_DEMO_MODE === 'true') return [];
+    
+    // Supabase doesn't have a built-in multiple individual-updates-in-one-query without upserting full rows
+    // Since these are already in DB, we'll use a transaction via RPC or just concurrent updates for now
+    // For smaller batches, concurrent updates are fine
+    const results = await Promise.all(items.map(async (item) => {
+        const { data, error } = await supabase
+            .from('expenses')
+            .update({ ...item.updates, is_reviewed: true })
+            .eq('id', item.id)
+            .select()
+            .single();
+        if (error) throw error;
+        return data;
+    }));
+    return results;
+}
+
 /**
  * 分帳結算計算 (PY 視視角)
  * Balance = (PY_Credit - PY_Debit) - (Existing Settlements)
