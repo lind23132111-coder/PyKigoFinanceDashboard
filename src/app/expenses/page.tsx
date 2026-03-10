@@ -83,6 +83,7 @@ export default function ExpensesPage() {
     const [showImportModal, setShowImportModal] = useState(false);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [showInbox, setShowInbox] = useState(false);
+    const [showCategoryMgmt, setShowCategoryMgmt] = useState(false);
     const [prevMonthTotal, setPrevMonthTotal] = useState(0);
 
     // Date Range State
@@ -426,6 +427,13 @@ export default function ExpensesPage() {
                                 </h3>
                                 
                                 <div className="ml-auto flex items-center gap-2">
+                                    <button 
+                                        onClick={() => setShowCategoryMgmt(true)}
+                                        className="p-2.5 bg-white/60 hover:bg-white text-indigo-500 hover:text-indigo-700 rounded-xl border border-indigo-100 shadow-sm transition-all"
+                                        title="管理支出類別"
+                                    >
+                                        <Settings2 className="w-4 h-4" />
+                                    </button>
                                     {selectedIds.size > 0 ? (
                                         <>
                                             <button 
@@ -624,6 +632,14 @@ export default function ExpensesPage() {
                     }}
                 />
             )}
+            
+            {showCategoryMgmt && (
+                <CategoryManagementModal 
+                    categories={categories}
+                    onClose={() => setShowCategoryMgmt(false)}
+                    onUpdate={loadData}
+                />
+            )}
         </div>
     );
 }
@@ -703,6 +719,7 @@ function ReviewItem({ item, onConfirm, onDelete, isSelected, onToggleSelect, cat
     const [updates, setUpdates] = useState({
         goal_id: item.goal_id || '',
         category_id: item.category_id || getSuggestedCategoryId(item.store_name, categories),
+        paid_by: item.paid_by || 'PY',
         paid_for: item.paid_for || 'Both'
     });
 
@@ -771,6 +788,31 @@ function ReviewItem({ item, onConfirm, onDelete, isSelected, onToggleSelect, cat
                         >
                             <option value="">UNCATEGORIZED</option>
                             {categories.map((c: any) => <option key={c.id} value={c.id}>{c.name.toUpperCase()}</option>)}
+                        </select>
+                    </div>
+                    <div className="h-8 w-px bg-gray-200/60 mx-1"></div>
+                    <div className="flex flex-col">
+                        <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Paid By</span>
+                        <select 
+                            value={updates.paid_by}
+                            onChange={(e) => setUpdates({...updates, paid_by: e.target.value})}
+                            className="bg-transparent text-[11px] font-black text-emerald-600 outline-none cursor-pointer pr-4"
+                        >
+                            <option value="PY">PY</option>
+                            <option value="Kigo">Kigo</option>
+                        </select>
+                    </div>
+                    <div className="h-8 w-px bg-gray-200/60 mx-1"></div>
+                    <div className="flex flex-col">
+                        <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-0.5">For</span>
+                        <select 
+                            value={updates.paid_for}
+                            onChange={(e) => setUpdates({...updates, paid_for: e.target.value})}
+                            className="bg-transparent text-[11px] font-black text-slate-500 outline-none cursor-pointer pr-4 uppercase"
+                        >
+                            <option value="Both">BOTH</option>
+                            <option value="PY">PY</option>
+                            <option value="Kigo">Kigo</option>
                         </select>
                     </div>
                 </div>
