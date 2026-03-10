@@ -185,11 +185,19 @@ export default function ExpensesPage() {
     };
 
     const handleConfirm = async (id: string, updates: Partial<Expense>) => {
+        // Optimistic update
+        setUnreviewed(prev => prev.filter(e => e.id !== id));
+        const confirmedItem = unreviewed.find(e => e.id === id);
+        if (confirmedItem) {
+            setRecentExpenses(prev => [{ ...confirmedItem, ...updates, is_reviewed: true }, ...prev].slice(0, 12));
+        }
+
         try {
             await updateExpense(id, { ...updates, is_reviewed: true });
-            await loadData();
+            loadData(); // Re-sync in background
         } catch (error) {
             console.error("Failed to confirm expense:", error);
+            loadData(); // Re-sync on error to restore state
         }
     };
 
@@ -673,14 +681,20 @@ export default function ExpensesPage() {
                         setEditingSettlement(null);
                     }}
                     onSubmit={async (data: any) => {
-                        if (editingSettlement) {
-                            await updateSettlement(editingSettlement.id, data);
-                        } else {
-                            await createSettlement(data);
-                        }
+                        // Optimistic close modal
                         setShowPartialSettlementModal(false);
-                        setEditingSettlement(null);
-                        loadData();
+                        try {
+                            if (editingSettlement) {
+                                await updateSettlement(editingSettlement.id, data);
+                            } else {
+                                await createSettlement(data);
+                            }
+                            setEditingSettlement(null);
+                            loadData();
+                        } catch (error) {
+                            console.error(error);
+                            loadData(); // Re-sync
+                        }
                     }}
                 />
             )}
@@ -1646,18 +1660,18 @@ function SettlementHistoryModal({ history, onClose, onDelete, onEdit }: { histor
 }
 
 function PartialSettlementModal({ settlement, activeTab, goals, onClose, onSubmit, isEditing }: any) {
-    const [amount, setAmount] = useState(isEditing ? settlement.amount : settlement.abs_balance);
+    const [amount, setAmount] = useState(isEditing ? (settlement.amount || 0) : (settlement.abs_balance || 0));
     const [notes, setNotes] = useState(settlement.notes || '');
     const [date, setDate] = useState(settlement.settlement_date || new Date().toISOString().split('T')[0]);
 
     const isPYPaying = isEditing 
         ? settlement.payer === 'PY'
-        : settlement.net_balance < 0; 
+        : (settlement.net_balance || 0) < 0; 
     const isKigoPaying = isEditing 
         ? settlement.payer === 'Kigo'
-        : settlement.net_balance > 0;
+        : (settlement.net_balance || 0) > 0;
 
-    const currentAbsBalance = isEditing ? settlement.amount : settlement.abs_balance;
+    const currentAbsBalance = isEditing ? (settlement.amount || 0) : (settlement.abs_balance || 0);
 
     const handleSubmit = () => {
         if (amount <= 0 || (!isEditing && currentAbsBalance > 0 && amount > currentAbsBalance + 1)) {
@@ -1709,7 +1723,9 @@ function PartialSettlementModal({ settlement, activeTab, goals, onClose, onSubmi
                                 </div>
                                 <div className="text-amber-800">
                                     <div className="text-[10px] font-black uppercase tracking-widest opacity-60">Payer</div>
-                                    <div className="text-sm font-bold">目前總欠款 ${settlement.abs_balance.toLocaleString()}</div>
+                                    <div className="text-sm font-bold">
+                                        {isEditing ? `結算金額 $${settlement.amount.toLocaleString()}` : `目前總欠款 $${(settlement.abs_balance || 0).toLocaleString()}`}
+                                    </div>
                                 </div>
                             </div>
                             <div className="h-6 w-px bg-amber-200"></div>
@@ -1739,20 +1755,22 @@ function PartialSettlementModal({ settlement, activeTab, goals, onClose, onSubmi
                                     className="w-full bg-gray-50 border-2 border-gray-100 rounded-2xl py-4 pl-10 pr-6 font-black text-3xl text-gray-900 focus:border-indigo-500 transition-all outline-none"
                                 />
                             </div>
-                            <div className="flex gap-2 mt-3">
-                                <button 
-                                    onClick={() => setAmount(settlement.abs_balance)}
-                                    className="text-[10px] font-black bg-white border border-gray-200 px-3 py-1 rounded-lg text-gray-500 hover:border-indigo-500 hover:text-indigo-600 transition-all shadow-sm"
-                                >
-                                    全額結算
-                                </button>
-                                <button 
-                                    onClick={() => setAmount(Math.round(settlement.abs_balance / 2))}
-                                    className="text-[10px] font-black bg-white border border-gray-200 px-3 py-1 rounded-lg text-gray-500 hover:border-indigo-500 hover:text-indigo-600 transition-all shadow-sm"
-                                >
-                                    結算一半
-                                </button>
-                            </div>
+                            {!isEditing && (
+                                <div className="flex gap-2 mt-3">
+                                    <button 
+                                        onClick={() => setAmount(settlement.abs_balance || 0)}
+                                        className="text-[10px] font-black bg-white border border-gray-200 px-3 py-1 rounded-lg text-gray-500 hover:border-indigo-500 hover:text-indigo-600 transition-all shadow-sm"
+                                    >
+                                        全額結算
+                                    </button>
+                                    <button 
+                                        onClick={() => setAmount(Math.round((settlement.abs_balance || 0) / 2))}
+                                        className="text-[10px] font-black bg-white border border-gray-200 px-3 py-1 rounded-lg text-gray-500 hover:border-indigo-500 hover:text-indigo-600 transition-all shadow-sm"
+                                    >
+                                        結算一半
+                                    </button>
+                                </div>
+                            )}
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">

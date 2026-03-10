@@ -30,21 +30,22 @@ const DEMO_ASSETS = [
 export async function getGoalsWithProgress() {
     if (process.env.NEXT_PUBLIC_DEMO_MODE === "true") return DEMO_GOALS;
 
-    const { data: goals, error: goalsError } = await supabase
-        .from('goals')
-        .select(`*, goal_asset_mapping (asset_id)`)
-        .order('priority', { ascending: true });
+    // Parallelize all 4 initial queries
+    const [goalsRes, snapshotsRes, expRes] = await Promise.all([
+        supabase.from('goals').select(`*, goal_asset_mapping (asset_id)`).order('priority', { ascending: true }),
+        supabase.from('snapshots').select('id').not('period_name', 'like', 'ARCHIVE%').order('created_at', { ascending: false }).limit(1),
+        supabase.from('expenses').select('goal_id, amount').eq('is_reviewed', true).not('goal_id', 'is', null)
+    ]);
+
+    const { data: goals, error: goalsError } = goalsRes;
+    const { data: latestSnapshots } = snapshotsRes;
+    const { data: expenseSums, error: expError } = expRes;
 
     if (goalsError || !goals) return [];
 
-    const { data: latestSnapshots } = await supabase
-        .from('snapshots').select('id')
-        .not('period_name', 'like', 'ARCHIVE%')
-        .order('created_at', { ascending: false }).limit(1);
-
     const latestSnapshot = latestSnapshots?.[0];
-
     let records: any[] = [];
+
     if (latestSnapshot) {
         const { data } = await supabase
             .from('snapshot_records').select('asset_id, total_twd_value')
@@ -54,13 +55,6 @@ export async function getGoalsWithProgress() {
 
     const valueMap = new Map();
     records.forEach(r => valueMap.set(r.asset_id, Number(r.total_twd_value)));
-
-    // 3. Fetch reviewed expenses for each goal to update progress
-    const { data: expenseSums, error: expError } = await supabase
-        .from('expenses')
-        .select('goal_id, amount')
-        .eq('is_reviewed', true)
-        .not('goal_id', 'is', null);
 
     const expenseMap = new Map();
     if (!expError && expenseSums) {

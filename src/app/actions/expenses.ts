@@ -277,16 +277,26 @@ export async function getSplitSettlement(project_label?: string, goal_id?: strin
     // Optimized: We only need sums, but grouping by payer/recipient is tricky in simple select
     // For now, we fetch ONLY necessary columns to reduce payload
     let totalQuery = supabase.from('expenses').select('amount, paid_by, paid_for').eq('is_reviewed', true);
-    if (project_label && project_label !== 'all') totalQuery = totalQuery.eq('project_label', project_label);
-    if (goal_id) totalQuery = totalQuery.eq('goal_id', goal_id);
+    // 1 & 2. Get ALL-TIME raw expenses and settlements in parallel
+    let setlQuery = supabase.from('settlements').select('amount, payer, payee');
+    if (project_label && project_label !== 'all') setlQuery = setlQuery.eq('project_label', project_label);
+    if (goal_id) setlQuery = setlQuery.eq('goal_id', goal_id);
 
-    const { data: allExpData, error: allExpError } = await totalQuery;
+    const [expRes, setlRes] = await Promise.all([
+        totalQuery,
+        setlQuery
+    ]);
+
+    const { data: allExpData, error: allExpError } = expRes;
+    const { data: pastSetl, error: setlError } = setlRes;
+
     if (allExpError) throw allExpError;
+    if (setlError) throw setlError;
 
     let totalPYCredit_AllTime = 0;
     let totalPYDebit_AllTime = 0;
 
-    allExpData.forEach(exp => {
+    (allExpData as any[]).forEach((exp: any) => {
         const amount = Number(exp.amount);
         const pBy = String(exp.paid_by).toUpperCase();
         const pFor = String(exp.paid_for).toUpperCase();
@@ -300,18 +310,10 @@ export async function getSplitSettlement(project_label?: string, goal_id?: strin
         }
     });
 
-    // 2. Get all settlements data (lifetime)
-    let setlQuery = supabase.from('settlements').select('amount, payer, payee');
-    if (project_label && project_label !== 'all') setlQuery = setlQuery.eq('project_label', project_label);
-    if (goal_id) setlQuery = setlQuery.eq('goal_id', goal_id);
-
-    const { data: pastSetl, error: setlError } = await setlQuery;
-    if (setlError) throw setlError;
-
     let settledAmountByPY = 0;
     let settledAmountByKigo = 0;
 
-    pastSetl?.forEach(s => {
+    (pastSetl as any[])?.forEach((s: any) => {
         const payer = String(s.payer).toUpperCase();
         if (payer === 'PY') settledAmountByPY += Number(s.amount);
         if (payer === 'KIGO') settledAmountByKigo += Number(s.amount);
