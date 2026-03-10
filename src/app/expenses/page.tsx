@@ -505,9 +505,18 @@ export default function ExpensesPage() {
                                             <button 
                                                 onClick={async () => {
                                                     if (confirm(`確定要批次確認選取的 ${selectedIds.size} 筆支出嗎？`)) {
-                                                        const itemsToConfirm = unreviewed
-                                                            .filter(u => selectedIds.has(u.id))
-                                                            .map(u => ({
+                                                        const itemsToConfirm = unreviewed.filter(u => selectedIds.has(u.id));
+                                                        
+                                                        // Optimistic Update
+                                                        setUnreviewed(prev => prev.filter(u => !selectedIds.has(u.id)));
+                                                        setRecentExpenses(prev => [
+                                                            ...itemsToConfirm.map(u => ({ ...u, is_reviewed: true })),
+                                                            ...prev
+                                                        ].slice(0, 12));
+                                                        setSelectedIds(new Set());
+
+                                                        try {
+                                                            const payloadItems = itemsToConfirm.map(u => ({
                                                                 id: u.id,
                                                                 updates: {
                                                                     goal_id: u.goal_id,
@@ -516,9 +525,12 @@ export default function ExpensesPage() {
                                                                     paid_for: u.paid_for
                                                                 }
                                                             }));
-                                                        await confirmExpensesBulk(itemsToConfirm);
-                                                        setSelectedIds(new Set());
-                                                        await loadData();
+                                                            await confirmExpensesBulk(payloadItems);
+                                                            loadData();
+                                                        } catch (error) {
+                                                            console.error(error);
+                                                            loadData(); // Restore on error
+                                                        }
                                                     }
                                                 }}
                                                 className="text-[10px] font-black bg-white text-amber-600 px-4 py-2 rounded-xl border border-amber-200 shadow-sm hover:bg-amber-50 transition-colors flex items-center gap-1.5"
@@ -565,17 +577,31 @@ export default function ExpensesPage() {
                                                     <button 
                                                         onClick={async () => {
                                                             if (confirm(`確定要批次確認 ${unreviewed.length} 筆支出嗎？`)) {
-                                                                const itemsToConfirm = unreviewed.map(u => ({
-                                                                    id: u.id,
-                                                                    updates: {
-                                                                        goal_id: u.goal_id,
-                                                                        category_id: u.category_id,
-                                                                        paid_by: u.paid_by,
-                                                                        paid_for: u.paid_for
-                                                                    }
-                                                                }));
-                                                                await confirmExpensesBulk(itemsToConfirm);
-                                                                loadData();
+                                                                const itemsToConfirm = [...unreviewed];
+                                                                
+                                                                // Optimistic Update
+                                                                setUnreviewed([]);
+                                                                setRecentExpenses(prev => [
+                                                                    ...itemsToConfirm.map(u => ({ ...u, is_reviewed: true })),
+                                                                    ...prev
+                                                                ].slice(0, 12));
+
+                                                                try {
+                                                                    const payloadItems = itemsToConfirm.map(u => ({
+                                                                        id: u.id,
+                                                                        updates: {
+                                                                            goal_id: u.goal_id,
+                                                                            category_id: u.category_id,
+                                                                            paid_by: u.paid_by,
+                                                                            paid_for: u.paid_for
+                                                                        }
+                                                                    }));
+                                                                    await confirmExpensesBulk(payloadItems);
+                                                                    loadData();
+                                                                } catch (error) {
+                                                                    console.error(error);
+                                                                    loadData(); // Restore on error
+                                                                }
                                                             }
                                                         }}
                                                         className="text-[10px] font-black bg-amber-600 text-white px-3 py-1.5 rounded-xl shadow-sm hover:bg-amber-700 transition-colors"
