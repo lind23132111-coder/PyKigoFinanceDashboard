@@ -219,10 +219,12 @@ export async function getReportData() {
     if (process.env.NEXT_PUBLIC_DEMO_MODE === "true") return DEMO_REPORT_DATA;
 
     const { data: marketCache } = await supabase.from('market_cache').select('*');
-    const { data: latestSnapshot } = await supabase
+    const { data: snapshots } = await supabase
         .from('snapshots').select('*')
         .not('period_name', 'like', 'ARCHIVE%')
-        .order('created_at', { ascending: false }).limit(1).single();
+        .order('created_at', { ascending: false }).limit(1);
+    
+    const latestSnapshot = snapshots?.[0];
 
     let records: any[] = [];
     if (latestSnapshot) {

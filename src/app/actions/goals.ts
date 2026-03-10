@@ -37,10 +37,12 @@ export async function getGoalsWithProgress() {
 
     if (goalsError || !goals) return [];
 
-    const { data: latestSnapshot } = await supabase
+    const { data: latestSnapshots } = await supabase
         .from('snapshots').select('id')
         .not('period_name', 'like', 'ARCHIVE%')
-        .order('created_at', { ascending: false }).limit(1).single();
+        .order('created_at', { ascending: false }).limit(1);
+
+    const latestSnapshot = latestSnapshots?.[0];
 
     let records: any[] = [];
     if (latestSnapshot) {
