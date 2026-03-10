@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo, useRef } from "react";
+import React, { useEffect, useState, useMemo, memo, useRef } from "react";
 import { 
     Layers, 
     Home, 
@@ -94,6 +94,7 @@ export default function ExpensesPage() {
     const [showAllExpensesModal, setShowAllExpensesModal] = useState(false);
     const [batchSettings, setBatchSettings] = useState({ paid_by: 'PY', paid_for: 'Both' });
     const [prevMonthTotal, setPrevMonthTotal] = useState(0);
+    const [confirmedPendingIds, setConfirmedPendingIds] = useState<Set<string>>(new Set());
 
     // Date Range State
     const [startDate, setStartDate] = useState(() => {
@@ -168,7 +169,8 @@ export default function ExpensesPage() {
             
             setExpenses(syntheticExpenses);
             setRecentExpenses(recentExp);
-            setUnreviewed(unrevExp);
+            // Sync Shadowing: Filter out items that are pending confirmation
+            setUnreviewed(unrevExp.filter((e: any) => !confirmedPendingIds.has(e.id)));
             setCategories(catData);
             setSettlement(setlData);
             setGoals(goalData);
@@ -186,8 +188,10 @@ export default function ExpensesPage() {
     };
 
     const handleConfirm = async (id: string, updates: Partial<Expense>) => {
-        // Optimistic update
+        // Sync Shadowing
+        setConfirmedPendingIds(prev => new Set(prev).add(id));
         setUnreviewed(prev => prev.filter(e => e.id !== id));
+        
         const confirmedItem = unreviewed.find(e => e.id === id);
         if (confirmedItem) {
             setRecentExpenses(prev => [{ ...confirmedItem, ...updates, is_reviewed: true }, ...prev].slice(0, 12));
@@ -195,15 +199,19 @@ export default function ExpensesPage() {
 
         try {
             await updateExpense(id, { ...updates, is_reviewed: true });
-            loadData(); // Re-sync in background
+            loadData();
         } catch (error) {
             console.error("Failed to confirm expense:", error);
-            loadData(); // Re-sync on error to restore state
+            setConfirmedPendingIds(prev => {
+                const next = new Set(prev);
+                next.delete(id);
+                return next;
+            });
+            loadData();
         }
     };
 
-    // Calculate chart data from expenses
-    const chartData = categories.map(cat => {
+    const chartData = useMemo(() => categories.map(cat => {
         const catExpenses = expenses.filter(e => e.category_id === cat.id);
         const total = catExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
         return {
@@ -211,9 +219,9 @@ export default function ExpensesPage() {
             value: total,
             color: cat.color
         };
-    }).filter(d => d.value > 0);
+    }).filter(d => d.value > 0), [categories, expenses]);
 
-    const totalExpense = chartData.reduce((sum, e) => sum + e.value, 0);
+    const totalExpense = useMemo(() => chartData.reduce((sum, e) => sum + e.value, 0), [chartData]);
 
     return (
         <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 p-4 md:p-8 text-gray-800 selection:bg-blue-100 font-sans">
@@ -504,9 +512,17 @@ export default function ExpensesPage() {
                                         <>
                                             <button 
                                                 onClick={async () => {
+                                                    const itemsToConfirm = unreviewed.filter(u => selectedIds.has(u.id));
+                                                    if (itemsToConfirm.length === 0) return;
+
                                                     if (confirm(`確定要批次確認選取的 ${selectedIds.size} 筆支出嗎？`)) {
-                                                        const itemsToConfirm = unreviewed.filter(u => selectedIds.has(u.id));
-                                                        
+                                                        const idsArray = Array.from(selectedIds);
+                                                        setConfirmedPendingIds(prev => {
+                                                            const next = new Set(prev);
+                                                            idsArray.forEach(id => next.add(id));
+                                                            return next;
+                                                        });
+
                                                         // Optimistic Update
                                                         setUnreviewed(prev => prev.filter(u => !selectedIds.has(u.id)));
                                                         setRecentExpenses(prev => [
@@ -522,14 +538,20 @@ export default function ExpensesPage() {
                                                                     goal_id: u.goal_id,
                                                                     category_id: u.category_id,
                                                                     paid_by: u.paid_by,
-                                                                    paid_for: u.paid_for
+                                                                    paid_for: u.paid_for,
+                                                                    project_label: u.goal_id ? 'goal' : 'general'
                                                                 }
                                                             }));
                                                             await confirmExpensesBulk(payloadItems);
                                                             loadData();
                                                         } catch (error) {
                                                             console.error(error);
-                                                            loadData(); // Restore on error
+                                                            setConfirmedPendingIds(prev => {
+                                                                const next = new Set(prev);
+                                                                idsArray.forEach(id => next.delete(id));
+                                                                return next;
+                                                            });
+                                                            loadData();
                                                         }
                                                     }
                                                 }}
@@ -578,7 +600,14 @@ export default function ExpensesPage() {
                                                         onClick={async () => {
                                                             if (confirm(`確定要批次確認 ${unreviewed.length} 筆支出嗎？`)) {
                                                                 const itemsToConfirm = [...unreviewed];
+                                                                const idsArray = itemsToConfirm.map(u => u.id);
                                                                 
+                                                                setConfirmedPendingIds(prev => {
+                                                                    const next = new Set(prev);
+                                                                    idsArray.forEach(id => next.add(id));
+                                                                    return next;
+                                                                });
+
                                                                 // Optimistic Update
                                                                 setUnreviewed([]);
                                                                 setRecentExpenses(prev => [
@@ -593,14 +622,21 @@ export default function ExpensesPage() {
                                                                             goal_id: u.goal_id,
                                                                             category_id: u.category_id,
                                                                             paid_by: u.paid_by,
-                                                                            paid_for: u.paid_for
+                                                                            paid_for: u.paid_for,
+                                                                            project_label: u.goal_id ? 'goal' : 'general'
                                                                         }
                                                                     }));
                                                                     await confirmExpensesBulk(payloadItems);
-                                                                    loadData();
+                                                                    // Do NOT loadData immediately to avoid stale DB fetch
+                                                                    setTimeout(loadData, 2000); 
                                                                 } catch (error) {
                                                                     console.error(error);
-                                                                    loadData(); // Restore on error
+                                                                    setConfirmedPendingIds(prev => {
+                                                                        const next = new Set(prev);
+                                                                        idsArray.forEach(id => next.delete(id));
+                                                                        return next;
+                                                                    });
+                                                                    loadData();
                                                                 }
                                                             }
                                                         }}
@@ -679,6 +715,18 @@ export default function ExpensesPage() {
                     </div>
                 </div>
             </div>
+
+            {showAllExpensesModal && (
+                <AllExpensesModal 
+                    categories={categories}
+                    goals={goals}
+                    onClose={() => setShowAllExpensesModal(false)}
+                    onUpdate={loadData}
+                    activeTab={activeTab}
+                    initialStartDate={startDate}
+                    initialEndDate={endDate}
+                />
+            )}
 
             {showModal && (
                 <ExpenseEntryModal 
@@ -879,15 +927,18 @@ function ReviewItem({ item, onConfirm, onDelete, onUpdate, isSelected, onToggleS
 
     useEffect(() => {
         if (batchSettings) {
-            const next = { 
-                ...updates, 
+            setUpdates(prev => ({ 
+                ...prev, 
                 paid_by: batchSettings.paid_by,
                 paid_for: batchSettings.paid_for
-            };
-            setUpdates(next);
-            onUpdate?.(item.id, next);
+            }));
         }
-    }, [batchSettings, item.id]);
+    }, [batchSettings]);
+
+    // Update parent only when local state changes
+    useEffect(() => {
+        onUpdate?.(item.id, updates);
+    }, [updates, item.id]);
 
     return (
         <div className={cn(
@@ -1016,7 +1067,7 @@ function ReviewItem({ item, onConfirm, onDelete, onUpdate, isSelected, onToggleS
     );
 }
 
-function StatCard({ icon, label, value, change, subtext, color, progress, project }: any) {
+const StatCard = memo(function StatCard({ icon, label, value, change, subtext, color, progress, project }: any) {
     const colorClasses: any = {
         blue: "bg-blue-100/50 text-blue-600 ring-4 ring-blue-50/50",
         indigo: "bg-indigo-100/50 text-indigo-600 ring-4 ring-indigo-50/50",
@@ -1062,9 +1113,9 @@ function StatCard({ icon, label, value, change, subtext, color, progress, projec
             </div>
         </div>
     );
-}
+});
 
-function SettlementCard({ settlement, onOpenHistory, onOpenSettlement }: any) {
+const SettlementCard = memo(function SettlementCard({ settlement, onOpenHistory, onOpenSettlement }: any) {
     if (!settlement) return null;
 
     return (
@@ -1125,9 +1176,10 @@ function SettlementCard({ settlement, onOpenHistory, onOpenSettlement }: any) {
             </div>
         </div>
     );
-}
+});
 
-function ExpenseItemCard({ item, onDelete, categories, goals, onUpdate }: { item: Expense, onDelete?: (id: string) => void, categories: any[], goals: any[], onUpdate: () => void }) {
+const ExpenseItemCard = memo(function ExpenseItemCard({ item, onDelete, categories, goals, onUpdate }: { item: Expense, onDelete?: (id: string) => void, categories: any[], goals: any[], onUpdate: () => void }) {
+
     const [isEditing, setIsEditing] = useState(false);
     const [updates, setUpdates] = useState({
         category_id: item.category_id || '',
@@ -1243,7 +1295,7 @@ function ExpenseItemCard({ item, onDelete, categories, goals, onUpdate }: { item
             </div>
         </div>
     );
-}
+});
 
 function ExpenseEntryModal({ onClose, categories, goals, onSubmit, onSubmitCategory }: any) {
     const [showCategoryMgmt, setShowCategoryMgmt] = useState(false);
@@ -1584,7 +1636,7 @@ function CategoryManagementModal({ categories, onClose, onUpdate }: any) {
                                         </>
                                     )}
                                 </div>
-                            ) )}
+                            ))}
                         </div>
                     </div>
 
@@ -1633,7 +1685,7 @@ function CategoryManagementModal({ categories, onClose, onUpdate }: any) {
     );
 }
 
-function SettlementHistoryModal({ history, onClose, onDelete, onEdit }: { history: Settlement[], onClose: () => void, onDelete?: (id: string) => void, onEdit?: (item: Settlement) => void }) {
+function SettlementHistoryModal({ history, onClose, onDelete, onEdit }: { history: any[], onClose: () => void, onDelete?: (id: string) => void, onEdit?: (item: any) => void }) {
     return (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
             <div className="bg-white rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl border border-gray-100 flex flex-col max-h-[80vh]">
@@ -1848,9 +1900,9 @@ function PartialSettlementModal({ settlement, activeTab, goals, onClose, onSubmi
                             <div>
                                 <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2 block">結算範圍</label>
                                 <div className="bg-slate-100 rounded-xl py-2 px-3 text-sm font-bold text-slate-600 flex items-center gap-2">
-                                    <Layers className="w-3 h-3" /> {activeTab === 'all' ? '全帳本' : (activeTab === 'general' ? '日常家庭' : goals.find((g: any) => g.id === activeTab)?.name)}
+                                    <Layers className="w-3 h-3" /> {activeTab === 'all' ? '全帳本' : (activeTab === 'general' ? '日常家庭' : goals?.find((g: any) => g.id === activeTab)?.name)}
                                 </div>
-                                </div>
+                            </div>
                         </div>
 
                         <div>
@@ -2013,12 +2065,13 @@ function ImportDataModal({ onClose, onSubmit }: { onClose: () => void, onSubmit:
     );
 }
 
-function AllExpensesModal({ onClose, categories, goals, onUpdate, activeTab }: any) {
+function AllExpensesModal({ onClose, categories, goals, onUpdate, activeTab, initialStartDate, initialEndDate }: any) {
     const [allExpenses, setAllExpenses] = useState<Expense[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [search, setSearch] = useState("");
-    const [startDate, setStartDate] = useState("");
-    const [endDate, setEndDate] = useState("");
+    const [startDate, setStartDate] = useState(initialStartDate || "");
+    const [endDate, setEndDate] = useState(initialEndDate || "");
+    const [sortBy, setSortBy] = useState<'date' | 'updated_at'>('updated_at');
 
     useEffect(() => {
         loadAll();
@@ -2032,7 +2085,7 @@ function AllExpensesModal({ onClose, categories, goals, onUpdate, activeTab }: a
                 project_label: activeTab === 'all' ? undefined : (isGoalTab ? undefined : activeTab),
                 goal_id: isGoalTab ? activeTab : undefined,
                 is_reviewed: true,
-                sortBy: 'date',
+                sortBy: sortBy,
                 sortOrder: 'descending',
                 startDate: startDate || undefined,
                 endDate: endDate || undefined
@@ -2047,7 +2100,7 @@ function AllExpensesModal({ onClose, categories, goals, onUpdate, activeTab }: a
 
     const filtered = allExpenses.filter(e => 
         e.store_name.toLowerCase().includes(search.toLowerCase()) ||
-        e.category_id && categories.find((c:any) => c.id === e.category_id)?.name.toLowerCase().includes(search.toLowerCase())
+        e.category_id && categories?.find((c:any) => c.id === e.category_id)?.name.toLowerCase().includes(search.toLowerCase())
     );
 
     return (
@@ -2128,8 +2181,8 @@ function AllExpensesModal({ onClose, categories, goals, onUpdate, activeTab }: a
                                 <ExpenseItemCard 
                                     key={item.id} 
                                     item={item} 
-                                    categories={categories}
-                                    goals={goals}
+                                    categories={categories || []}
+                                    goals={goals || []}
                                     onUpdate={() => {
                                         loadAll();
                                         onUpdate();
