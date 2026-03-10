@@ -246,30 +246,36 @@ export async function getSplitSettlement(project_label?: string, goal_id?: strin
         
         filtered.forEach(exp => {
             const amount = Number(exp.amount);
-            if (exp.paid_by === 'PY') {
-                if (exp.paid_for === 'Kigo') tpC_period += amount;
-                else if (exp.paid_for === 'Both') tpC_period += amount * 0.5;
-            } else if (exp.paid_by === 'Kigo') {
-                if (exp.paid_for === 'PY') tpD_period += amount;
-                else if (exp.paid_for === 'Both') tpD_period += amount * 0.5;
+            const pBy = String(exp.paid_by).toUpperCase();
+            const pFor = String(exp.paid_for).toUpperCase();
+            
+            if (pBy === 'PY') {
+                if (pFor === 'KIGO') tpC_period += amount;
+                else if (pFor === 'BOTH') tpC_period += amount * 0.5;
+            } else if (pBy === 'KIGO') {
+                if (pFor === 'PY') tpD_period += amount;
+                else if (pFor === 'BOTH') tpD_period += amount * 0.5;
             }
         });
 
-        // Demo logic: for simplicity, total = period in demo unless we add full history
+        // Demo logic: Total debt comes from all items
         mockExpenses.forEach(exp => {
              const amount = Number(exp.amount);
-            if (exp.paid_by === 'PY') {
-                if (exp.paid_for === 'Kigo') tpC_total += amount;
-                else if (exp.paid_for === 'Both') tpC_total += amount * 0.5;
-            } else if (exp.paid_by === 'Kigo') {
-                if (exp.paid_for === 'PY') tpD_total += amount;
-                else if (exp.paid_for === 'Both') tpD_total += amount * 0.5;
+             const pBy = String(exp.paid_by).toUpperCase();
+             const pFor = String(exp.paid_for).toUpperCase();
+             
+             if (pBy === 'PY') {
+                if (pFor === 'KIGO') tpC_total += amount;
+                else if (pFor === 'BOTH') tpC_total += amount * 0.5;
+            } else if (pBy === 'KIGO') {
+                if (pFor === 'PY') tpD_total += amount;
+                else if (pFor === 'BOTH') tpD_total += amount * 0.5;
             }
         });
 
         const currentBalance = tpC_total - tpD_total;
         return {
-            py_credit: tpC_period,
+            py_credit: tpC_period, // Period stats for the boxes
             py_debit: tpD_period,
             net_balance: currentBalance,
             base_balance: currentBalance,
@@ -290,19 +296,8 @@ export async function getSplitSettlement(project_label?: string, goal_id?: strin
     let totalPYCredit_AllTime = 0;
     let totalPYDebit_AllTime = 0;
 
-    allExpData.forEach(exp => {
-        const amount = Number(exp.amount);
-        if (exp.paid_by === 'PY') {
-            if (exp.paid_for === 'Kigo') totalPYCredit_AllTime += amount;
-            else if (exp.paid_for === 'Both') totalPYCredit_AllTime += amount * 0.5;
-        } else if (exp.paid_by === 'Kigo') {
-            if (exp.paid_for === 'PY') totalPYDebit_AllTime += amount;
-            else if (exp.paid_for === 'Both') totalPYDebit_AllTime += amount * 0.5;
-        }
-    });
-
-    // 2. Get PERIOD-SPECIFIC raw expenses data for UI Display
-    let periodQuery = supabase.from('expenses').select('amount, paid_by, paid_for').eq('is_reviewed', true);
+    // 2. Get PERIOD-SPECIFIC raw expenses data for UI Display (Include unreviewed for live feel)
+    let periodQuery = supabase.from('expenses').select('amount, paid_by, paid_for, is_reviewed');
     if (startDate) periodQuery = periodQuery.gte('date', startDate);
     if (endDate) periodQuery = periodQuery.lte('date', endDate);
     if (project_label && project_label !== 'all') periodQuery = periodQuery.eq('project_label', project_label);
@@ -316,12 +311,15 @@ export async function getSplitSettlement(project_label?: string, goal_id?: strin
 
     periodExpData.forEach(exp => {
         const amount = Number(exp.amount);
-        if (exp.paid_by === 'PY') {
-            if (exp.paid_for === 'Kigo') totalPYCredit_Period += amount;
-            else if (exp.paid_for === 'Both') totalPYCredit_Period += amount * 0.5;
-        } else if (exp.paid_by === 'Kigo') {
-            if (exp.paid_for === 'PY') totalPYDebit_Period += amount;
-            else if (exp.paid_for === 'Both') totalPYDebit_Period += amount * 0.5;
+        const pBy = String(exp.paid_by).toUpperCase();
+        const pFor = String(exp.paid_for).toUpperCase();
+
+        if (pBy === 'PY') {
+            if (pFor === 'KIGO') totalPYCredit_Period += amount;
+            else if (pFor === 'BOTH') totalPYCredit_Period += amount * 0.5;
+        } else if (pBy === 'KIGO') {
+            if (pFor === 'PY') totalPYDebit_Period += amount;
+            else if (pFor === 'BOTH') totalPYDebit_Period += amount * 0.5;
         }
     });
 
@@ -337,15 +335,17 @@ export async function getSplitSettlement(project_label?: string, goal_id?: strin
     let settledAmountByKigo = 0;
 
     pastSetl?.forEach(s => {
-        if (s.payer === 'PY' && s.payee === 'Kigo') settledAmountByPY += Number(s.amount);
-        if (s.payer === 'Kigo' && s.payee === 'PY') settledAmountByKigo += Number(s.amount);
+        const payer = String(s.payer).toUpperCase();
+        if (payer === 'PY') settledAmountByPY += Number(s.amount);
+        if (payer === 'KIGO') settledAmountByKigo += Number(s.amount);
     });
 
+    // Net Balance = (PY Credit - Kigo Credit) + (Settlement PY to Kigo) - (Settlement Kigo to PY)
     const baseBalance = totalPYCredit_AllTime - totalPYDebit_AllTime; 
-    const currentBalance = baseBalance - settledAmountByPY + settledAmountByKigo;
+    const currentBalance = baseBalance + settledAmountByPY - settledAmountByKigo;
 
     return {
-        py_credit: totalPYCredit_Period,
+        py_credit: totalPYCredit_Period, // Box statistics reflect current filter
         py_debit: totalPYDebit_Period,
         net_balance: currentBalance,
         base_balance: baseBalance,
@@ -374,6 +374,17 @@ export async function createSettlement(settlement: Partial<Settlement>) {
     const { data, error } = await supabase.from('settlements').insert(settlement).select().single();
     if (error) throw error;
     return data as Settlement;
+}
+
+export async function updateSettlement(id: string, updates: Partial<Settlement>) {
+    const { data, error } = await supabase.from('settlements').update(updates).eq('id', id).select().single();
+    if (error) throw error;
+    return data as Settlement;
+}
+
+export async function deleteSettlement(id: string) {
+    const { error } = await supabase.from('settlements').delete().eq('id', id);
+    if (error) throw error;
 }
 
 export async function createExpenses(expenses: Partial<Expense>[]) {

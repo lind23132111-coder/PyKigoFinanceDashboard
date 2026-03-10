@@ -53,6 +53,8 @@ import {
     mergeCategories,
     getSettlementHistory,
     createSettlement,
+    updateSettlement,
+    deleteSettlement,
     processAIImport,
     deleteExpense,
     deleteExpenses,
@@ -82,6 +84,7 @@ export default function ExpensesPage() {
     const [showHistoryModal, setShowHistoryModal] = useState(false);
     const [showPartialSettlementModal, setShowPartialSettlementModal] = useState(false);
     const [showImportModal, setShowImportModal] = useState(false);
+    const [editingSettlement, setEditingSettlement] = useState<Settlement | null>(null);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [showInbox, setShowInbox] = useState(false);
     const [showCategoryMgmt, setShowCategoryMgmt] = useState(false);
@@ -633,18 +636,37 @@ export default function ExpensesPage() {
                 <SettlementHistoryModal 
                     history={settlementHistory}
                     onClose={() => setShowHistoryModal(false)}
+                    onDelete={async (id) => {
+                        if (confirm("確定要刪除此筆結算紀錄嗎？")) {
+                            await deleteSettlement(id);
+                            loadData();
+                        }
+                    }}
+                    onEdit={(item) => {
+                        setEditingSettlement(item);
+                        setShowPartialSettlementModal(true);
+                    }}
                 />
             )}
 
             {showPartialSettlementModal && (
                 <PartialSettlementModal 
-                    settlement={settlement}
+                    settlement={editingSettlement || settlement}
+                    isEditing={!!editingSettlement}
                     activeTab={activeTab}
                     goals={goals}
-                    onClose={() => setShowPartialSettlementModal(false)}
-                    onSubmit={async (data: any) => {
-                        await createSettlement(data);
+                    onClose={() => {
                         setShowPartialSettlementModal(false);
+                        setEditingSettlement(null);
+                    }}
+                    onSubmit={async (data: any) => {
+                        if (editingSettlement) {
+                            await updateSettlement(editingSettlement.id, data);
+                        } else {
+                            await createSettlement(data);
+                        }
+                        setShowPartialSettlementModal(false);
+                        setEditingSettlement(null);
                         loadData();
                     }}
                 />
@@ -1089,7 +1111,7 @@ function ExpenseItemCard({ item, onDelete, categories, goals, onUpdate }: { item
                             className="bg-transparent text-[9px] font-black text-gray-600 outline-none cursor-pointer"
                         >
                             <option value="">UNCATEGORIZED</option>
-                            {categories.map((c: any) => <option key={c.id} value={c.id}>{c.name.toUpperCase()}</option>)}
+                            {categories.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
                         </select>
                     </div>
                 </div>
@@ -1522,7 +1544,7 @@ function CategoryManagementModal({ categories, onClose, onUpdate }: any) {
     );
 }
 
-function SettlementHistoryModal({ history, onClose }: { history: Settlement[], onClose: () => void }) {
+function SettlementHistoryModal({ history, onClose, onDelete, onEdit }: { history: Settlement[], onClose: () => void, onDelete?: (id: string) => void, onEdit?: (item: Settlement) => void }) {
     return (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
             <div className="bg-white rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl border border-gray-100 flex flex-col max-h-[80vh]">
@@ -1571,9 +1593,25 @@ function SettlementHistoryModal({ history, onClose }: { history: Settlement[], o
                                         </div>
                                     </div>
                                 </div>
-                                <div className="text-right">
-                                    <div className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest bg-indigo-50 px-2 py-1 rounded-lg">
-                                        {item.project_label === 'all' ? '全專案' : item.project_label}
+                                <div className="flex items-center gap-2">
+                                    <div className="text-right mr-2">
+                                        <div className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest bg-indigo-50 px-2 py-1 rounded-lg">
+                                            {item.project_label === 'all' ? '全專案' : item.project_label}
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <button 
+                                            onClick={() => onEdit?.(item)}
+                                            className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-white rounded-xl transition-all shadow-sm"
+                                        >
+                                            <PenLine className="w-4 h-4" />
+                                        </button>
+                                        <button 
+                                            onClick={() => onDelete?.(item.id)}
+                                            className="p-2 text-gray-400 hover:text-red-500 hover:bg-white rounded-xl transition-all shadow-sm"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -1594,10 +1632,10 @@ function SettlementHistoryModal({ history, onClose }: { history: Settlement[], o
     );
 }
 
-function PartialSettlementModal({ settlement, activeTab, goals, onClose, onSubmit }: any) {
-    const [amount, setAmount] = useState(settlement.abs_balance);
-    const [notes, setNotes] = useState('');
-    const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+function PartialSettlementModal({ settlement, activeTab, goals, onClose, onSubmit, isEditing }: any) {
+    const [amount, setAmount] = useState(isEditing ? settlement.amount : settlement.abs_balance);
+    const [notes, setNotes] = useState(settlement.notes || '');
+    const [date, setDate] = useState(settlement.settlement_date || new Date().toISOString().split('T')[0]);
 
     const isPYPaying = settlement.net_balance < 0; // PY 應給付 Kigo (PY pays)
     const isKigoPaying = settlement.net_balance > 0; // Kigo 應給付 PY (Kigo pays)
