@@ -8,12 +8,14 @@ import { supabase } from "@/lib/supabase";
 // ─────────────────────────────────────────────────────────────────
 const DEMO_GOALS = [
     {
-        id: "demo-goal-1", name: "World Expedition 2027", target_amount: 5000000,
-        current_funding: 3500000, progress: 70.0, category: "upcoming_expense", target_date: "2027-06-01"
+        id: "demo-goal-1", name: "新家裝修", target_amount: 1500000,
+        current_funding: 800000, progress: 53.3, category: "upcoming_expense", target_date: "2026-12-31",
+        meta: { spent_balance: 14500 }
     },
     {
-        id: "demo-goal-2", name: "Extreme Luxury Villa 2035", target_amount: 85000000,
-        current_funding: 42500000, progress: 50.0, category: "long_term", target_date: "2035-12-31"
+        id: "demo-goal-2", name: "日本滑雪之旅", target_amount: 200000,
+        current_funding: 150000, progress: 75.0, category: "upcoming_expense", target_date: "2026-02-28",
+        meta: { spent_balance: 0 }
     }
 ];
 
