@@ -10,6 +10,17 @@ export async function getExpenses(filters?: {
     startDate?: string,
     endDate?: string
 }) {
+    if (process.env.NEXT_PUBLIC_DEMO_MODE === 'true') {
+        const mockExpenses = [
+            { id: '1', date: '2026-03-05', amount: 1250, store_name: '微風超市', project_label: '一般帳務', paid_by: 'PY', paid_for: 'Both', is_reviewed: true, category_id: 'cat1', categories: { name: '餐飲食品', icon: 'utensils', color: '#ef4444' } },
+            { id: '2', date: '2026-03-06', amount: 4500, store_name: '宜家家居', project_label: '新家裝修', paid_by: 'Kigo', paid_for: 'Both', is_reviewed: true, category_id: 'cat2', categories: { name: '居家生活', icon: 'home', color: '#3b82f6' } },
+            { id: '3', date: '2026-03-08', amount: 320, store_name: '7-11', project_label: '一般帳務', paid_by: 'PY', paid_for: 'PY', is_reviewed: true, category_id: 'cat1', categories: { name: '餐飲食品', icon: 'utensils', color: '#ef4444' } },
+            { id: '4', date: '2026-03-09', amount: 12000, store_name: '全國電子', project_label: '一般帳務', paid_by: 'PY', paid_for: 'Kigo', is_reviewed: true, category_id: 'cat3', categories: { name: '電子產品', icon: 'cpu', color: '#8b5cf6' } },
+            { id: '5', date: '2026-03-10', amount: 500, store_name: '星巴克', project_label: '一般帳務', paid_by: 'Kigo', paid_for: 'Both', is_reviewed: false, category_id: 'cat1', categories: { name: '餐飲食品', icon: 'utensils', color: '#ef4444' } }
+        ];
+        return mockExpenses as any[];
+    }
+
     let query = supabase
         .from('expenses')
         .select('*, categories:expense_categories(*)')
@@ -38,6 +49,14 @@ export async function getExpenses(filters?: {
 }
 
 export async function getCategories() {
+    if (process.env.NEXT_PUBLIC_DEMO_MODE === 'true') {
+        return [
+            { id: 'cat1', name: '餐飲食品', icon: 'utensils', color: '#ef4444' },
+            { id: 'cat2', name: '居家生活', icon: 'home', color: '#3b82f6' },
+            { id: 'cat3', name: '電子產品', icon: 'cpu', color: '#8b5cf6' },
+            { id: 'cat4', name: '交通運輸', icon: 'car', color: '#10b981' }
+        ] as ExpenseCategory[];
+    }
     const { data, error } = await supabase.from('expense_categories').select('*').order('name');
     if (error) throw error;
     return data as ExpenseCategory[];
@@ -137,6 +156,19 @@ export async function confirmExpenses(ids: string[], commonUpdates: Partial<Expe
  * Balance = (PY_Credit - PY_Debit) - (Existing Settlements)
  */
 export async function getSplitSettlement(project_label?: string, goal_id?: string, startDate?: string, endDate?: string) {
+    if (process.env.NEXT_PUBLIC_DEMO_MODE === 'true') {
+        const currentBalance = 5875; // Pre-calculated mock balance
+        return {
+            py_credit: 12625,
+            py_debit: 6750,
+            net_balance: currentBalance,
+            base_balance: 5875,
+            settled_total: 0,
+            summary: "Kigo 應給付 PY",
+            abs_balance: 5875
+        };
+    }
+
     // 1. Get raw expenses data
     let query = supabase.from('expenses').select('amount, paid_by, paid_for, is_reviewed');
     
@@ -193,6 +225,11 @@ export async function getSplitSettlement(project_label?: string, goal_id?: strin
 }
 
 export async function getSettlementHistory(project_label?: string, goal_id?: string) {
+    if (process.env.NEXT_PUBLIC_DEMO_MODE === 'true') {
+        return [
+            { id: 's1', settlement_date: '2026-02-28', amount: 2500, payer: 'Kigo', payee: 'PY', project_label: '一般帳務', notes: '2月生活費結清', created_at: new Date().toISOString() }
+        ] as Settlement[];
+    }
     let query = supabase.from('settlements').select('*').order('settlement_date', { ascending: false });
     if (project_label && project_label !== 'all') query = query.eq('project_label', project_label);
     if (goal_id) query = query.eq('goal_id', goal_id);
