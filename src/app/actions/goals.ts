@@ -32,7 +32,7 @@ export async function getGoalsWithProgress() {
 
     // Parallelize all 4 initial queries
     const [goalsRes, snapshotsRes, expRes] = await Promise.all([
-        supabase.from('goals').select(`*, goal_asset_mapping (asset_id)`).order('priority', { ascending: true }),
+        supabase.from('goals').select(`*, goal_asset_mapping (asset_id)`).order('category', { ascending: false }).order('priority', { ascending: true }),
         supabase.from('snapshots').select('id').not('period_name', 'like', 'ARCHIVE%').order('created_at', { ascending: false }).limit(1),
         supabase.from('expenses').select('goal_id, amount').eq('is_reviewed', true).not('goal_id', 'is', null)
     ]);
@@ -80,6 +80,13 @@ export async function getGoalsWithProgress() {
             progress: Math.min(progress, 100),
             meta: { cash_balance: current_funding, spent_balance: spentAmount }
         };
+    }).sort((a: any, b: any) => {
+        // Primary sort: Category (Upcoming first)
+        const catA = a.category === 'upcoming_expense' ? 1 : 0;
+        const catB = b.category === 'upcoming_expense' ? 1 : 0;
+        if (catA !== catB) return catB - catA;
+        // Secondary sort: Priority
+        return (a.priority ?? 0) - (b.priority ?? 0);
     });
 }
 

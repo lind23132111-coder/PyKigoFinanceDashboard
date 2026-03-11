@@ -117,17 +117,31 @@ export default function GoalTracker() {
     };
 
     const handleMoveGoal = async (goalId: string, direction: 'up' | 'down') => {
-        const index = goals.findIndex(g => g.id === goalId);
-        if (index === -1) return;
+        const goal = goals.find(g => g.id === goalId);
+        if (!goal) return;
+
+        const categoryGoals = goals.filter(g =>
+            (goal.category === 'upcoming_expense' && g.category === 'upcoming_expense') ||
+            ((goal.category === 'long_term' || !goal.category) && (g.category === 'long_term' || !g.category))
+        );
+
+        const intraIndex = categoryGoals.findIndex(g => g.id === goalId);
+        if (intraIndex === -1) return;
+
+        let swapWithId: string | null = null;
+        if (direction === 'up' && intraIndex > 0) {
+            swapWithId = categoryGoals[intraIndex - 1].id;
+        } else if (direction === 'down' && intraIndex < categoryGoals.length - 1) {
+            swapWithId = categoryGoals[intraIndex + 1].id;
+        }
+
+        if (!swapWithId) return;
 
         const newGoals = [...goals];
-        if (direction === 'up' && index > 0) {
-            [newGoals[index - 1], newGoals[index]] = [newGoals[index], newGoals[index - 1]];
-        } else if (direction === 'down' && index < newGoals.length - 1) {
-            [newGoals[index], newGoals[index + 1]] = [newGoals[index + 1], newGoals[index]];
-        } else {
-            return;
-        }
+        const indexA = newGoals.findIndex(g => g.id === goalId);
+        const indexB = newGoals.findIndex(g => g.id === swapWithId);
+
+        [newGoals[indexA], newGoals[indexB]] = [newGoals[indexB], newGoals[indexA]];
 
         // Optimistic update
         setGoals(newGoals);
