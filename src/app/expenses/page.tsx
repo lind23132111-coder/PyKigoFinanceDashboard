@@ -90,8 +90,8 @@ export default function ExpensesPage() {
 
     // Memoized stats calculation
     const currentMonthExpenses = React.useMemo(() =>
-        expenses.reduce((sum, e) => sum + e.amount, 0),
-        [expenses]);
+        stats?.currentMonth?.total || 0,
+        [stats?.currentMonth?.total]);
 
     // Accurate daily average calculation based on selected range
     const daysCount = React.useMemo(() => {

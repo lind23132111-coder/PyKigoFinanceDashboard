@@ -172,7 +172,8 @@ export function useExpenses() {
                     startDate,
                     endDate,
                     activeTab === 'all' ? undefined : (isProjectTab ? undefined : activeTab),
-                    filterMode
+                    filterMode,
+                    isProjectTab ? activeTab : undefined
                 ))
             ]);
 

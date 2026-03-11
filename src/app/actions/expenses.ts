@@ -563,30 +563,14 @@ export async function processAIImport(content: string, type: 'text' | 'csv' | 'c
 /**
  * Get expense statistics for a specific period and category breakdown
  */
-export async function getExpenseStats(startDate: string, endDate: string, project_label?: string, compareMode: 'month' | 'quarter' | 'year' = 'month') {
+export async function getExpenseStats(
+    startDate: string,
+    endDate: string,
+    project_label?: string,
+    compareMode: 'month' | 'quarter' | 'year' = 'month',
+    goal_id?: string
+) {
     const isDemo = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
-
-    // Calculate previous period dates for comparison
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const durationMs = end.getTime() - start.getTime() + 86400000; // inclusive
-
-    let prevStart: Date;
-    let prevEnd: Date;
-
-    if (compareMode === 'month') {
-        prevStart = new Date(start.getFullYear(), start.getMonth() - 1, 1);
-        prevEnd = new Date(start.getFullYear(), start.getMonth(), 0);
-    } else if (compareMode === 'quarter') {
-        prevStart = new Date(start.getFullYear(), start.getMonth() - 3, 1);
-        prevEnd = new Date(start.getFullYear(), start.getMonth(), 0);
-    } else { // year
-        prevStart = new Date(start.getFullYear() - 1, 0, 1);
-        prevEnd = new Date(start.getFullYear() - 1, 11, 31);
-    }
-
-    const prevStartStr = prevStart.toISOString().split('T')[0];
-    const prevEndStr = prevEnd.toISOString().split('T')[0];
 
     if (isDemo) {
         return {
@@ -602,60 +586,91 @@ export async function getExpenseStats(startDate: string, endDate: string, projec
                 ]
             },
             prevMonth: { total: 12500 },
+            allTimeTotal: 45000,
             comparison: 14.1
         };
     }
 
     try {
-        const { data: categories } = await supabase.from('expense_categories').select('*');
-        const catMap = new Map(categories?.map(c => [c.id, c]));
+        const categories = await getCategories();
+        const catMap = new Map((categories as ExpenseCategory[]).map(c => [c.id, c]));
 
-        // Current Period
-        let currentQuery = supabase.from('expenses').select('amount, category_id').gte('date', startDate).lte('date', endDate).eq('is_reviewed', true);
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+
+        let prevStart: Date;
+        let prevEnd: Date;
+
+        if (compareMode === 'month') {
+            prevStart = new Date(start.getFullYear(), start.getMonth() - 1, 1);
+            prevEnd = new Date(start.getFullYear(), start.getMonth(), 0);
+        } else if (compareMode === 'quarter') {
+            prevStart = new Date(start.getFullYear(), start.getMonth() - 3, 1);
+            prevEnd = new Date(start.getFullYear(), start.getMonth(), 0);
+        } else { // year
+            prevStart = new Date(start.getFullYear() - 1, 0, 1);
+            prevEnd = new Date(start.getFullYear() - 1, 11, 31);
+        }
+
+        const prevStartStr = prevStart.toISOString().split('T')[0];
+        const prevEndStr = prevEnd.toISOString().split('T')[0];
+
+        // Current Period Query
+        let currentQuery = supabase.from('expenses').select('amount, category_id').eq('is_reviewed', true);
+        if (startDate && endDate) {
+            currentQuery = currentQuery.gte('date', startDate).lte('date', endDate);
+        }
         if (project_label && project_label !== 'all') currentQuery = currentQuery.eq('project_label', project_label);
+        if (goal_id) currentQuery = currentQuery.eq('goal_id', goal_id);
 
         // All-Time Total for Goal Progress
         let allTimeQuery = supabase.from('expenses').select('amount').eq('is_reviewed', true);
         if (project_label && project_label !== 'all') allTimeQuery = allTimeQuery.eq('project_label', project_label);
+        if (goal_id) allTimeQuery = allTimeQuery.eq('goal_id', goal_id);
+
+        // Previous Period Query
+        let prevQuery = supabase.from('expenses').select('amount').gte('date', prevStartStr).lte('date', prevEndStr).eq('is_reviewed', true);
+        if (project_label && project_label !== 'all') prevQuery = prevQuery.eq('project_label', project_label);
+        if (goal_id) prevQuery = prevQuery.eq('goal_id', goal_id);
 
         const [currentRes, allTimeRes, prevRes] = await Promise.all([
             currentQuery,
             allTimeQuery,
-            supabase.from('expenses').select('amount').gte('date', prevStartStr).lte('date', prevEndStr).eq('is_reviewed', true).filter(
-                project_label && project_label !== 'all' ? 'project_label' : 'id',
-                project_label && project_label !== 'all' ? 'eq' : 'neq',
-                project_label && project_label !== 'all' ? project_label : '00000000-0000-0000-0000-000000000000'
-            )
+            prevQuery
         ]);
 
-        const { data: currentData } = currentRes;
-        const { data: allTimeData } = allTimeRes;
-        const { data: prevData } = prevRes;
+        const currentData = currentRes.data || [];
+        const allTimeData = allTimeRes.data || [];
+        const prevData = prevRes.data || [];
 
-        const currentTotal = currentData?.reduce((s, e) => s + (Number(e.amount) || 0), 0) || 0;
-        const allTimeTotal = allTimeData?.reduce((s, e) => s + (Number(e.amount) || 0), 0) || 0;
-        const prevTotal = prevData?.reduce((s, e) => s + (Number(e.amount) || 0), 0) || 0;
+        const currentTotal = currentData.reduce((s: number, e: { amount: number }) => s + (Number(e.amount) || 0), 0);
+        const allTimeTotal = allTimeData.reduce((s: number, e: { amount: number }) => s + (Number(e.amount) || 0), 0);
+        const prevTotal = prevData.reduce((s: number, e: { amount: number }) => s + (Number(e.amount) || 0), 0);
 
-        const categoryGroups = new Map();
-        currentData?.forEach(e => {
+        const categoryGroups = new Map<string, { name: string, amount: number, color: string }>();
+        currentData.forEach((e: { amount: number, category_id: string }) => {
             const cat = catMap.get(e.category_id);
             const name = cat?.name || '其他';
             const color = cat?.color || '#94a3b8';
             const amount = Number(e.amount) || 0;
-            if (categoryGroups.has(name)) categoryGroups.get(name).amount += amount;
-            else categoryGroups.set(name, { name, amount, color });
+            const existing = categoryGroups.get(name);
+            if (existing) {
+                existing.amount += amount;
+            } else {
+                categoryGroups.set(name, { name, amount, color });
+            }
         });
 
         const categoryStats = Array.from(categoryGroups.values()).sort((a, b) => b.amount - a.amount);
         const comparison = prevTotal === 0 ? 0 : ((currentTotal - prevTotal) / prevTotal) * 100;
 
         return {
-            currentMonth: { total: currentTotal, startDate, endDate, categories: categoryStats, month: startDate.slice(0, 7) },
+            currentMonth: { total: currentTotal, startDate, endDate, categories: categoryStats, month: startDate?.slice(0, 7) || "" },
             prevMonth: { total: prevTotal },
             allTimeTotal,
             comparison: parseFloat(comparison.toFixed(1))
         };
-    } catch (err) {
+    } catch (err: any) {
         console.error("Stats Error:", err);
         throw err;
     }
