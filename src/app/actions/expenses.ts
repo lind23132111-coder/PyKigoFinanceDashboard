@@ -3,9 +3,9 @@
 import { supabase } from "@/lib/supabase";
 import { Expense, ExpenseCategory, Settlement } from "@/types/expenses";
 
-export async function getExpenses(filters?: { 
-    project_label?: string, 
-    goal_id?: string, 
+export async function getExpenses(filters?: {
+    project_label?: string,
+    goal_id?: string,
     is_reviewed?: boolean,
     startDate?: string,
     endDate?: string,
@@ -21,7 +21,7 @@ export async function getExpenses(filters?: {
             { id: '3', date: '2026-03-08', amount: 320, store_name: '7-11', project_label: 'general', goal_id: null, paid_by: 'PY', paid_for: 'PY', is_reviewed: true, is_automated: true, category_id: 'cat1', categories: { name: '餐飲食品', icon: 'utensils', color: '#ef4444' } },
             { id: '4', date: '2026-03-09', amount: 12000, store_name: '全國電子', project_label: 'general', goal_id: null, paid_by: 'PY', paid_for: 'Kigo', is_reviewed: true, is_automated: false, category_id: 'cat3', categories: { name: '電子產品', icon: 'cpu', color: '#8b5cf6' } },
             { id: '10', date: '2026-03-10', amount: 850, store_name: '星巴克 (已確認)', project_label: 'general', goal_id: null, paid_by: 'PY', paid_for: 'Both', is_reviewed: true, is_automated: true, category_id: 'cat1', categories: { name: '餐飲食品', icon: 'utensils', color: '#ef4444' } },
-            
+
             // Unreviewed (AI Inbox / Smart Input)
             { id: '5', date: '2026-03-10', amount: 500, store_name: '星巴克', project_label: 'general', goal_id: null, paid_by: 'Kigo', paid_for: 'Both', is_reviewed: false, is_automated: true, category_id: 'cat1', categories: { name: '餐飲食品', icon: 'utensils', color: '#ef4444' } },
             { id: '8', date: '2026-03-10', amount: 1580, store_name: '屈臣氏', project_label: 'general', goal_id: null, paid_by: 'PY', paid_for: 'Both', is_reviewed: false, is_automated: true, category_id: 'cat4', categories: { name: '個人護理', icon: 'heart', color: '#ec4899' } },
@@ -35,9 +35,9 @@ export async function getExpenses(filters?: {
             { id: 'jan1', date: '2026-01-10', amount: 3500, store_name: '壽司郎', project_label: 'general', goal_id: null, paid_by: 'PY', paid_for: 'Both', is_reviewed: true, is_automated: false, category_id: 'cat1', categories: { name: '餐飲食品', icon: 'utensils', color: '#ef4444' } },
             { id: 'jan2', date: '2026-01-25', amount: 48000, store_name: '長榮航空', project_label: 'general', goal_id: null, paid_by: 'Kigo', paid_for: 'Both', is_reviewed: true, is_automated: false, category_id: 'cat5', categories: { name: '交通旅遊', icon: 'plane', color: '#10b981' } }
         ];
-        
+
         let filtered = [...mockExpenses];
-        
+
         // Filter by review status
         if (filters?.is_reviewed !== undefined) {
             filtered = filtered.filter(e => e.is_reviewed === filters.is_reviewed);
@@ -64,7 +64,7 @@ export async function getExpenses(filters?: {
         // Apply sorting
         const sortBy = filters?.sortBy || 'date';
         const sortOrder = filters?.sortOrder || 'descending';
-        
+
         filtered.sort((a: any, b: any) => {
             const valA = a[sortBy];
             const valB = b[sortBy];
@@ -77,7 +77,7 @@ export async function getExpenses(filters?: {
         if (filters?.limit) {
             filtered = filtered.slice(0, filters.limit);
         }
-        
+
         return filtered as any[];
     }
 
@@ -168,7 +168,7 @@ export async function createExpense(expense: Partial<Expense>) {
     // Ensure amount is a number and valid
     const amount = Number(expense.amount);
     if (isNaN(amount)) throw new Error("Invalid amount");
-    
+
     // Sanitize UUIDs: convert empty strings to null
     const sanitizedExpense = {
         ...expense,
@@ -176,7 +176,7 @@ export async function createExpense(expense: Partial<Expense>) {
         goal_id: expense.goal_id === '' ? null : expense.goal_id,
         category_id: expense.category_id === '' ? null : expense.category_id
     };
-    
+
     const { data, error } = await supabase.from('expenses').insert(sanitizedExpense).select().single();
     if (error) throw error;
     return data as Expense;
@@ -220,9 +220,14 @@ export async function confirmExpenses(ids: string[], commonUpdates: Partial<Expe
     return data as Expense[];
 }
 
+export async function batchConfirmExpenses(ids: string[]) {
+    return confirmExpenses(ids, {});
+}
+
+
 export async function confirmExpensesBulk(items: { id: string, updates: Partial<Expense> }[]) {
     if (process.env.NEXT_PUBLIC_DEMO_MODE === 'true') return [];
-    
+
     // Supabase doesn't have a built-in multiple individual-updates-in-one-query without upserting full rows
     // Since these are already in DB, we'll use a transaction via RPC or just concurrent updates for now
     // For smaller batches, concurrent updates are fine
@@ -261,17 +266,17 @@ export async function getSplitSettlement(project_label?: string, goal_id?: strin
         if (project_label && project_label !== 'all') filtered = filtered.filter(e => e.project_label === project_label);
 
         let tpC_total = 0, tpD_total = 0;
-        
+
         // Demo logic: Card stats ignore ALL UI filters for persistent "debt reality"
         // Also strictly excludes unconfirmed items
         (mockExpenses as any[]).forEach(exp => {
-             if (!exp.is_reviewed) return; // Ignore unreviewed
-             
-             const amount = Number(exp.amount);
-             const pBy = String(exp.paid_by).toUpperCase();
-             const pFor = String(exp.paid_for).toUpperCase();
-             
-             if (pBy === 'PY') {
+            if (!exp.is_reviewed) return; // Ignore unreviewed
+
+            const amount = Number(exp.amount);
+            const pBy = String(exp.paid_by).toUpperCase();
+            const pFor = String(exp.paid_for).toUpperCase();
+
+            if (pBy === 'PY') {
                 if (pFor === 'KIGO') tpC_total += amount;
                 else if (pFor === 'BOTH') tpC_total += amount * 0.5;
             } else if (pBy === 'KIGO') {
@@ -282,7 +287,7 @@ export async function getSplitSettlement(project_label?: string, goal_id?: strin
 
         const currentBalance = tpC_total - tpD_total;
         return {
-            py_credit: tpC_total, 
+            py_credit: tpC_total,
             py_debit: tpD_total,
             net_balance: currentBalance,
             base_balance: currentBalance,
@@ -339,11 +344,11 @@ export async function getSplitSettlement(project_label?: string, goal_id?: strin
     });
 
     // 3. Card stats should be ALL-TIME and ONLY include reviewed items
-    const baseBalance = totalPYCredit_AllTime - totalPYDebit_AllTime; 
+    const baseBalance = totalPYCredit_AllTime - totalPYDebit_AllTime;
     const currentBalance = baseBalance + settledAmountByPY - settledAmountByKigo;
 
     return {
-        py_credit: totalPYCredit_AllTime, 
+        py_credit: totalPYCredit_AllTime,
         py_debit: totalPYDebit_AllTime,
         net_balance: currentBalance,
         base_balance: baseBalance,
@@ -353,9 +358,9 @@ export async function getSplitSettlement(project_label?: string, goal_id?: strin
     };
 }
 
-export async function getExpensesSummary(filters?: { 
-    project_label?: string, 
-    goal_id?: string, 
+export async function getExpensesSummary(filters?: {
+    project_label?: string,
+    goal_id?: string,
     is_reviewed?: boolean,
     startDate?: string,
     endDate?: string
@@ -406,6 +411,15 @@ export async function getSettlementHistory(project_label?: string, goal_id?: str
     return data as Settlement[];
 }
 
+export async function getSettlementStatus(project_label?: string, goal_id?: string) {
+    const [current, history] = await Promise.all([
+        getSplitSettlement(project_label, goal_id),
+        getSettlementHistory(project_label, goal_id)
+    ]);
+    return { current, history };
+}
+
+
 export async function createSettlement(settlement: Partial<Settlement>) {
     const { data, error } = await supabase.from('settlements').insert(settlement).select().single();
     if (error) throw error;
@@ -436,7 +450,7 @@ export async function createExpenses(expenses: Partial<Expense>[]) {
             import_info: "AI_BULK_IMPORT"
         }
     }));
-    
+
     const { data, error } = await supabase.from('expenses').insert(sanitized).select();
     if (error) throw error;
     return data as Expense[];
@@ -455,86 +469,214 @@ export async function processAIImport(content: string, type: 'text' | 'csv' | 'c
             { store_name: '7-11', amount: 85, date: new Date().toISOString().split('T')[0], category_name: '餐飲美食', category_id: 'cat1', is_duplicate: true }
         ];
     }
-    // 1. Get existing expenses for deduplication check (recent 60 days for better coverage)
-    const sixtyDaysAgo = new Date();
-    sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
-    
-    const { data: existingExpenses } = await supabase
-        .from('expenses')
-        .select('id, amount, date, store_name')
-        .gte('date', sixtyDaysAgo.toISOString().split('T')[0]);
+    // 1. Get existing expenses for deduplication check (recent 45 days is enough)
+    const fortyFiveDaysAgo = new Date();
+    fortyFiveDaysAgo.setDate(fortyFiveDaysAgo.getDate() - 45);
 
-    // 1.5 Get categories for classification
-    const { data: categories } = await supabase
-        .from('expense_categories')
-        .select('id, name');
+    const [{ data: existingExpenses }, { data: categories }] = await Promise.all([
+        supabase
+            .from('expenses')
+            .select('id, amount, date, store_name')
+            .gte('date', fortyFiveDaysAgo.toISOString().split('T')[0]),
+        supabase
+            .from('expense_categories')
+            .select('id, name')
+    ]);
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) throw new Error("GEMINI_API_KEY not found");
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
-    // 2. Construct Prompt
+    // 2. Construct Simplified Prompt (Parsing Only)
     const prompt = `
-        You are a financial assistant. Parse the following ${type} content into a JSON array of expense objects.
+        You are a financial parsing engine. Convert the following ${type} content into a JSON array of expense objects.
         Content: "${content}"
         
         Rules for each object:
-        - store_name: string (clean and consistent name)
+        - store_name: string (clean and consistent name, e.g., "7-11" instead of "7-11 台北店")
         - amount: number (must be >= 0)
         - date: string (ISO YYYY-MM-DD)
-        - category_name: string (Choose the most suitable from: ${categories?.map(c => c.name).join(', ')})
-        - is_duplicate: boolean (True if a SIGNIFICANTLY SIMILAR entry exists below)
-        - duplicate_id: string (The 'id' from Comparison Data if is_duplicate is true, else null)
+        - category_hint: string (Suggest a category like: ${categories?.map(c => c.name).join(', ')})
         
-        Deduplication Strategy:
-        Set is_duplicate = true if you detect an entry in "Comparison Data" that represents the same transaction.
-        Criteria:
-        1. Exact match: Same amount AND same date AND similar brand/store.
-        2. Near match: Same amount AND date within +/- 1 day AND similar brand/store.
-        
-        CRITICAL CONSISTENCY RULE: 
-        If is_duplicate is true, you MUST use the EXACT 'store_name' from the matching entry in "Comparison Data" for your result's 'store_name'. Do not invent a new clean name if one already exists for this store in history.
-        
-        Comparison Data (Existing recent entries):
-        ${JSON.stringify(existingExpenses)}
-
         Return ONLY the JSON array inside a code block.
     `;
 
     try {
         const result = await model.generateContent(prompt);
         const textResponse = result.response.text();
-        
+
         // Extract JSON from markdown code block
         const jsonMatch = textResponse.match(/\[[\s\S]*\]/);
         if (!jsonMatch) throw new Error("Could not find JSON array in AI response");
-        
+
         let parsedData = JSON.parse(jsonMatch[0]);
-        
-        // Ensure all objects have required fields and map categories
+
+        // 3. Server-Side Deduplication & Categorization
+        const recentHistory = existingExpenses || [];
+
         parsedData = parsedData.map((item: any) => {
-            const matchedCategory = categories?.find(c => c.name === item.category_name);
+            const amount = Math.abs(Number(item.amount)) || 0;
+            const itemDate = item.date || new Date().toISOString().split('T')[0];
+            const cleanName = (item.store_name || '未知商店').trim();
+
+            // Find matching category
+            const matchedCategory = categories?.find(c =>
+                c.name === item.category_hint ||
+                cleanName.includes(c.name)
+            );
+
+            // Deduplication Logic
+            const duplicate = recentHistory.find(prev => {
+                const sameAmount = Math.abs(prev.amount - amount) < 1; // Tolerance for decimals
+                const sameDate = prev.date === itemDate;
+                const prevName = (prev.store_name || "").toLowerCase();
+                const currName = cleanName.toLowerCase();
+                const similarName = prevName.includes(currName) || currName.includes(prevName);
+
+                return sameAmount && (sameDate || similarName) && (prev.date === itemDate || Math.abs(new Date(prev.date).getTime() - new Date(itemDate).getTime()) <= 86400000);
+            });
+
             return {
-                store_name: item.store_name || '未知商店',
-                amount: Number(item.amount) || 0,
-                date: item.date || new Date().toISOString().split('T')[0],
+                store_name: duplicate?.store_name || cleanName, // Use historical name if duplicate
+                amount,
+                date: itemDate,
                 category_id: matchedCategory?.id || null,
-                is_duplicate: !!item.is_duplicate,
-                metadata: { 
-                    original_text: content.substring(0, 500),
-                    ai_description: item.description,
-                    is_duplicate_ai: !!item.is_duplicate,
-                    ai_suggested_category: item.category_name,
-                    duplicate_of_id: item.duplicate_id || null
+                is_duplicate: !!duplicate,
+                metadata: {
+                    original_text: content.substring(0, 200),
+                    is_duplicate_logic: !!duplicate,
+                    duplicate_of_id: duplicate?.id || null,
+                    ai_suggested_category: item.category_hint
                 }
             };
         });
-        
+
         return parsedData;
     } catch (err: any) {
         console.error("AI Import Error:", err);
+        throw err;
+    }
+}
+
+/**
+ * Get expense statistics for a specific month and category breakdown
+ */
+export async function getExpenseStats(month: string, project_label?: string) {
+    const isDemo = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
+
+    // Parse current month and previous month
+    const [year, monthNum] = month.split('-').map(Number);
+    const date = new Date(year, monthNum - 1, 1);
+
+    const prevDate = new Date(year, monthNum - 2, 1);
+    const prevMonthStr = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}`;
+
+    // Start and end of current month
+    const startOfMonth = `${year}-${String(monthNum).padStart(2, '0')}-01`;
+    const lastDay = new Date(year, monthNum, 0).getDate();
+    const endOfMonth = `${year}-${String(monthNum).padStart(2, '0')}-${lastDay}`;
+
+    // Start and end of previous month
+    const prevYear = prevDate.getFullYear();
+    const prevMonthNum = prevDate.getMonth() + 1;
+    const prevStartOfMonth = `${prevYear}-${String(prevMonthNum).padStart(2, '0')}-01`;
+    const prevLastDay = new Date(prevYear, prevMonthNum, 0).getDate();
+    const prevEndOfMonth = `${prevYear}-${String(prevMonthNum).padStart(2, '0')}-${prevLastDay}`;
+
+    if (isDemo) {
+        // Simple mock stats for demo mode
+        return {
+            currentMonth: {
+                total: 14264,
+                month: month,
+                categories: [
+                    { name: '餐飲食品', amount: 6500, color: '#ef4444' },
+                    { name: '居家生活', amount: 4500, color: '#3b82f6' },
+                    { name: '電子產品', amount: 12000, color: '#8b5cf6' },
+                    { name: '其他', amount: 1264, color: '#94a3b8' }
+                ]
+            },
+            prevMonth: {
+                total: 12500,
+                month: prevMonthStr
+            },
+            comparison: 14.1 // % change
+        };
+    }
+
+    // Real DB fetching
+    try {
+        // Get categories first for mapping
+        const { data: categories } = await supabase.from('expense_categories').select('*');
+        const catMap = new Map(categories?.map(c => [c.id, c]));
+
+        // Fetch current month expenses
+        let currentQuery = supabase
+            .from('expenses')
+            .select('amount, category_id')
+            .gte('date', startOfMonth)
+            .lte('date', endOfMonth)
+            .eq('is_reviewed', true);
+
+        if (project_label && project_label !== 'all') {
+            currentQuery = currentQuery.eq('project_label', project_label);
+        }
+
+        const { data: currentData } = await currentQuery;
+
+        // Fetch previous month expenses (total only for comparison)
+        let prevQuery = supabase
+            .from('expenses')
+            .select('amount')
+            .gte('date', prevStartOfMonth)
+            .lte('date', prevEndOfMonth)
+            .eq('is_reviewed', true);
+
+        if (project_label && project_label !== 'all') {
+            prevQuery = prevQuery.eq('project_label', project_label);
+        }
+
+        const { data: prevData } = await prevQuery;
+
+        const currentTotal = currentData?.reduce((s, e) => s + (Number(e.amount) || 0), 0) || 0;
+        const prevTotal = prevData?.reduce((s, e) => s + (Number(e.amount) || 0), 0) || 0;
+
+        // Group by category
+        const categoryGroups = new Map();
+        currentData?.forEach(e => {
+            const cat = catMap.get(e.category_id);
+            const name = cat?.name || '其他';
+            const color = cat?.color || '#94a3b8';
+            const amount = Number(e.amount) || 0;
+
+            if (categoryGroups.has(name)) {
+                categoryGroups.get(name).amount += amount;
+            } else {
+                categoryGroups.set(name, { name, amount, color });
+            }
+        });
+
+        const categoryStats = Array.from(categoryGroups.values())
+            .sort((a, b) => b.amount - a.amount);
+
+        const comparison = prevTotal === 0 ? 0 : ((currentTotal - prevTotal) / prevTotal) * 100;
+
+        return {
+            currentMonth: {
+                total: currentTotal,
+                month: month,
+                categories: categoryStats
+            },
+            prevMonth: {
+                total: prevTotal,
+                month: prevMonthStr
+            },
+            comparison: parseFloat(comparison.toFixed(1))
+        };
+    } catch (err) {
+        console.error("Stats Error:", err);
         throw err;
     }
 }

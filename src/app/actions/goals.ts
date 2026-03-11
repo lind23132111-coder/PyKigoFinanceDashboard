@@ -83,6 +83,9 @@ export async function getGoalsWithProgress() {
     });
 }
 
+export const getGoals = getGoalsWithProgress;
+
+
 export async function createGoal(payload: { name: string, target_amount: number, category: string, target_date: string | null, asset_ids?: string[] }) {
     if (process.env.NEXT_PUBLIC_DEMO_MODE === "true") return { id: `demo-goal-${Date.now()}` };
 
