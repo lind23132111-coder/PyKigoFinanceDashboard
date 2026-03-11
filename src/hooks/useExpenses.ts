@@ -105,6 +105,10 @@ export function useExpenses() {
     const loadData = useCallback(async () => {
         if (!startDate || !endDate) return;
         setIsLoading(true);
+        // Clear stale data to prevent flickers of old projects
+        setExpenses([]);
+        setStats(null);
+
         try {
             const [
                 expensesData,

@@ -11,6 +11,7 @@ interface CategoryData {
 
 interface ExpenseCategoryChartProps {
     data: CategoryData[];
+    loading?: boolean;
 }
 
 const CustomTooltip = ({ active, payload }: any) => {
@@ -61,11 +62,23 @@ const CustomLegend = ({ payload }: any) => {
     );
 };
 
-export function ExpenseCategoryChart({ data }: ExpenseCategoryChartProps) {
+export function ExpenseCategoryChart({ data, loading }: ExpenseCategoryChartProps) {
     const chartData = useMemo(() => {
         if (!data || data.length === 0) return [];
         return data;
     }, [data]);
+
+    if (loading) {
+        return (
+            <div className="w-full h-full flex flex-col items-center justify-center animate-pulse">
+                <div className="w-48 h-48 rounded-full border-8 border-gray-100 border-t-indigo-100" />
+                <div className="mt-8 space-y-2 w-full max-w-[200px]">
+                    <div className="h-3 bg-gray-100 rounded-full w-full" />
+                    <div className="h-3 bg-gray-100 rounded-full w-2/3" />
+                </div>
+            </div>
+        );
+    }
 
     if (chartData.length === 0) {
         return (

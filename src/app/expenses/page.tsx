@@ -304,6 +304,7 @@ export default function ExpensesPage() {
                                     subtext={`期間：${startDate} 至 ${endDate}`}
                                     color="indigo"
                                     change={stats?.comparison !== undefined ? `${stats.comparison > 0 ? '+' : ''}${stats.comparison}%` : undefined}
+                                    loading={isLoading}
                                 />
                                 <StatCard
                                     icon={<BarChart3 className="w-6 h-6" />}
@@ -311,6 +312,7 @@ export default function ExpensesPage() {
                                     value={`NT$ ${Math.round(avgDaily).toLocaleString()}`}
                                     subtext={`基於本期間 ${daysCount} 天支出的平均值`}
                                     color="amber"
+                                    loading={isLoading}
                                 />
                             </>
                         )}
@@ -324,6 +326,7 @@ export default function ExpensesPage() {
                                     subtext={`距離目標還差 NT$ ${Math.max(0, (activeGoal.target_amount || 0) - goalProjectExpenses).toLocaleString()}`}
                                     progress={goalProgress}
                                     project
+                                    loading={isLoading}
                                 />
                             </div>
                         ) : (
@@ -349,7 +352,10 @@ export default function ExpensesPage() {
                                         </div>
                                     </div>
                                     <div className="w-full md:w-[280px] h-[300px] flex items-center justify-center">
-                                        <ExpenseCategoryChart data={stats?.currentMonth?.categories || []} />
+                                        <ExpenseCategoryChart
+                                            data={stats?.currentMonth?.categories || []}
+                                            loading={isLoading}
+                                        />
                                     </div>
                                 </div>
                             </div>
