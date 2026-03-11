@@ -266,8 +266,9 @@ export function AllExpensesModal({
     const [allExpenses, setAllExpenses] = useState<Expense[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [search, setSearch] = useState("");
-    const [startDate, setStartDate] = useState(initialStartDate || "");
-    const [endDate, setEndDate] = useState(initialEndDate || "");
+    const isProject = activeTab !== 'all' && activeTab !== 'general';
+    const [startDate, setStartDate] = useState(isProject ? "" : (initialStartDate || ""));
+    const [endDate, setEndDate] = useState(isProject ? "" : (initialEndDate || ""));
     const [sortBy, setSortBy] = useState<'date' | 'updated_at'>('date');
     const [filterGoalId, setFilterGoalId] = useState(activeTab === 'all' || activeTab === 'general' ? "" : activeTab);
     const [showUnconfirmedOnly, setShowUnconfirmedOnly] = useState(false);
@@ -399,7 +400,14 @@ export function AllExpensesModal({
                             <Target className="w-4 h-4 text-gray-400" />
                             <select
                                 value={filterGoalId}
-                                onChange={(e) => setFilterGoalId(e.target.value)}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    setFilterGoalId(val);
+                                    if (val && val !== 'general') {
+                                        setStartDate("");
+                                        setEndDate("");
+                                    }
+                                }}
                                 className="bg-transparent text-[11px] font-black text-gray-900 outline-none w-32 uppercase cursor-pointer"
                             >
                                 <option value="">所有專案</option>
