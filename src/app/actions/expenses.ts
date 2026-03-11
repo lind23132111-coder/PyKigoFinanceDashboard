@@ -561,36 +561,39 @@ export async function processAIImport(content: string, type: 'text' | 'csv' | 'c
 }
 
 /**
- * Get expense statistics for a specific month and category breakdown
+ * Get expense statistics for a specific period and category breakdown
  */
-export async function getExpenseStats(month: string, project_label?: string) {
+export async function getExpenseStats(startDate: string, endDate: string, project_label?: string, compareMode: 'month' | 'quarter' | 'year' = 'month') {
     const isDemo = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
 
-    // Parse current month and previous month
-    const [year, monthNum] = month.split('-').map(Number);
-    const date = new Date(year, monthNum - 1, 1);
+    // Calculate previous period dates for comparison
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const durationMs = end.getTime() - start.getTime() + 86400000; // inclusive
 
-    const prevDate = new Date(year, monthNum - 2, 1);
-    const prevMonthStr = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}`;
+    let prevStart: Date;
+    let prevEnd: Date;
 
-    // Start and end of current month
-    const startOfMonth = `${year}-${String(monthNum).padStart(2, '0')}-01`;
-    const lastDay = new Date(year, monthNum, 0).getDate();
-    const endOfMonth = `${year}-${String(monthNum).padStart(2, '0')}-${lastDay}`;
+    if (compareMode === 'month') {
+        prevStart = new Date(start.getFullYear(), start.getMonth() - 1, 1);
+        prevEnd = new Date(start.getFullYear(), start.getMonth(), 0);
+    } else if (compareMode === 'quarter') {
+        prevStart = new Date(start.getFullYear(), start.getMonth() - 3, 1);
+        prevEnd = new Date(start.getFullYear(), start.getMonth(), 0);
+    } else { // year
+        prevStart = new Date(start.getFullYear() - 1, 0, 1);
+        prevEnd = new Date(start.getFullYear() - 1, 11, 31);
+    }
 
-    // Start and end of previous month
-    const prevYear = prevDate.getFullYear();
-    const prevMonthNum = prevDate.getMonth() + 1;
-    const prevStartOfMonth = `${prevYear}-${String(prevMonthNum).padStart(2, '0')}-01`;
-    const prevLastDay = new Date(prevYear, prevMonthNum, 0).getDate();
-    const prevEndOfMonth = `${prevYear}-${String(prevMonthNum).padStart(2, '0')}-${prevLastDay}`;
+    const prevStartStr = prevStart.toISOString().split('T')[0];
+    const prevEndStr = prevEnd.toISOString().split('T')[0];
 
     if (isDemo) {
-        // Simple mock stats for demo mode
         return {
             currentMonth: {
                 total: 14264,
-                month: month,
+                startDate,
+                endDate,
                 categories: [
                     { name: '餐飲食品', amount: 6500, color: '#ef4444' },
                     { name: '居家生活', amount: 4500, color: '#3b82f6' },
@@ -598,81 +601,44 @@ export async function getExpenseStats(month: string, project_label?: string) {
                     { name: '其他', amount: 1264, color: '#94a3b8' }
                 ]
             },
-            prevMonth: {
-                total: 12500,
-                month: prevMonthStr
-            },
-            comparison: 14.1 // % change
+            prevMonth: { total: 12500 },
+            comparison: 14.1
         };
     }
 
-    // Real DB fetching
     try {
-        // Get categories first for mapping
         const { data: categories } = await supabase.from('expense_categories').select('*');
         const catMap = new Map(categories?.map(c => [c.id, c]));
 
-        // Fetch current month expenses
-        let currentQuery = supabase
-            .from('expenses')
-            .select('amount, category_id')
-            .gte('date', startOfMonth)
-            .lte('date', endOfMonth)
-            .eq('is_reviewed', true);
-
-        if (project_label && project_label !== 'all') {
-            currentQuery = currentQuery.eq('project_label', project_label);
-        }
-
+        // Current Period
+        let currentQuery = supabase.from('expenses').select('amount, category_id').gte('date', startDate).lte('date', endDate).eq('is_reviewed', true);
+        if (project_label && project_label !== 'all') currentQuery = currentQuery.eq('project_label', project_label);
         const { data: currentData } = await currentQuery;
 
-        // Fetch previous month expenses (total only for comparison)
-        let prevQuery = supabase
-            .from('expenses')
-            .select('amount')
-            .gte('date', prevStartOfMonth)
-            .lte('date', prevEndOfMonth)
-            .eq('is_reviewed', true);
-
-        if (project_label && project_label !== 'all') {
-            prevQuery = prevQuery.eq('project_label', project_label);
-        }
-
+        // Previous Period
+        let prevQuery = supabase.from('expenses').select('amount').gte('date', prevStartStr).lte('date', prevEndStr).eq('is_reviewed', true);
+        if (project_label && project_label !== 'all') prevQuery = prevQuery.eq('project_label', project_label);
         const { data: prevData } = await prevQuery;
 
         const currentTotal = currentData?.reduce((s, e) => s + (Number(e.amount) || 0), 0) || 0;
         const prevTotal = prevData?.reduce((s, e) => s + (Number(e.amount) || 0), 0) || 0;
 
-        // Group by category
         const categoryGroups = new Map();
         currentData?.forEach(e => {
             const cat = catMap.get(e.category_id);
             const name = cat?.name || '其他';
             const color = cat?.color || '#94a3b8';
             const amount = Number(e.amount) || 0;
-
-            if (categoryGroups.has(name)) {
-                categoryGroups.get(name).amount += amount;
-            } else {
-                categoryGroups.set(name, { name, amount, color });
-            }
+            if (categoryGroups.has(name)) categoryGroups.get(name).amount += amount;
+            else categoryGroups.set(name, { name, amount, color });
         });
 
-        const categoryStats = Array.from(categoryGroups.values())
-            .sort((a, b) => b.amount - a.amount);
-
+        const categoryStats = Array.from(categoryGroups.values()).sort((a, b) => b.amount - a.amount);
         const comparison = prevTotal === 0 ? 0 : ((currentTotal - prevTotal) / prevTotal) * 100;
 
         return {
-            currentMonth: {
-                total: currentTotal,
-                month: month,
-                categories: categoryStats
-            },
-            prevMonth: {
-                total: prevTotal,
-                month: prevMonthStr
-            },
+            currentMonth: { total: currentTotal, startDate, endDate, categories: categoryStats, month: startDate.slice(0, 7) },
+            prevMonth: { total: prevTotal },
             comparison: parseFloat(comparison.toFixed(1))
         };
     } catch (err) {

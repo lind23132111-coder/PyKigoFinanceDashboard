@@ -7,7 +7,8 @@ import {
     ChevronRight,
     Calendar,
     X,
-    PenLine
+    PenLine,
+    Target
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Expense } from "@/types/expenses";
@@ -77,6 +78,10 @@ export const ExpenseItemCard = memo(function ExpenseItemCard({
         if (onStageUpdate) {
             onStageUpdate({ [field]: value });
         }
+        // Auto-select if in batch mode and not already selected
+        if (isBatchMode && !isSelected && onToggleSelection) {
+            onToggleSelection();
+        }
     };
 
     const handleConfirmSingle = async () => {
@@ -116,24 +121,24 @@ export const ExpenseItemCard = memo(function ExpenseItemCard({
                     </div>
                     <div>
                         <div className="flex items-center gap-2">
-                            <div className="font-black text-gray-900 text-sm tracking-tight truncate max-w-[120px]">
+                            <div className="font-black text-gray-900 text-base md:text-lg tracking-tight truncate max-w-[160px]">
                                 {item.store_name}
                             </div>
                             {isUnconfirmed && (
-                                <span className="bg-amber-100 text-amber-700 text-[8px] font-black px-1.5 py-0.5 rounded-full tracking-wider uppercase">待確認</span>
+                                <span className="bg-amber-100 text-amber-700 text-[10px] font-black px-1.5 py-0.5 rounded-full tracking-wider uppercase">待確認</span>
                             )}
                         </div>
-                        <div className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{item.date}</div>
+                        <div className="text-[11px] md:text-xs font-black text-gray-400 uppercase tracking-widest">{item.date}</div>
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
-                    <div className="font-black text-gray-900 text-base tracking-tight">-NT$ {item.amount.toLocaleString()}</div>
+                    <div className="font-black text-gray-900 text-lg md:text-xl tracking-tight">-NT$ {item.amount.toLocaleString()}</div>
                     {!isBatchMode && onDelete && (
                         <button
                             onClick={(e) => { e.stopPropagation(); onDelete(item.id); }}
                             className="p-2 text-gray-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl opacity-0 group-hover:opacity-100 transition-all"
                         >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <Trash2 className="w-4 h-4" />
                         </button>
                     )}
                 </div>
@@ -142,22 +147,22 @@ export const ExpenseItemCard = memo(function ExpenseItemCard({
             <div className="relative z-10 space-y-3" onClick={(e) => e.stopPropagation()}>
                 <div className="grid grid-cols-2 gap-2">
                     <div className="flex flex-col bg-gray-50/50 p-2 rounded-xl border border-gray-100/50">
-                        <span className="text-[7px] font-black text-gray-400 uppercase tracking-widest mb-1">Project</span>
+                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Project</span>
                         <select
                             value={currentFields.goal_id}
                             onChange={(e) => handleFieldChange('goal_id', e.target.value)}
-                            className="bg-transparent text-[9px] font-black text-indigo-600 outline-none cursor-pointer"
+                            className="bg-transparent text-xs font-black text-indigo-600 outline-none cursor-pointer"
                         >
                             <option value="">🏠 HOME</option>
                             {goals.map((g: any) => <option key={g.id} value={g.id}>🎯 {g.name}</option>)}
                         </select>
                     </div>
                     <div className="flex flex-col bg-gray-50/50 p-2 rounded-xl border border-gray-100/50">
-                        <span className="text-[7px] font-black text-gray-400 uppercase tracking-widest mb-1">Category</span>
+                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Category</span>
                         <select
                             value={currentFields.category_id}
                             onChange={(e) => handleFieldChange('category_id', e.target.value)}
-                            className="bg-transparent text-[9px] font-black text-gray-600 outline-none cursor-pointer"
+                            className="bg-transparent text-xs font-black text-gray-600 outline-none cursor-pointer"
                         >
                             <option value="">UNCATEGORIZED</option>
                             {categories.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -167,11 +172,11 @@ export const ExpenseItemCard = memo(function ExpenseItemCard({
 
                 <div className="grid grid-cols-2 gap-2">
                     <div className="flex flex-col bg-gray-50/50 p-2 rounded-xl border border-gray-100/50">
-                        <span className="text-[7px] font-black text-gray-400 uppercase tracking-widest mb-1">Paid By</span>
+                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Paid By</span>
                         <select
                             value={currentFields.paid_by}
                             onChange={(e) => handleFieldChange('paid_by', e.target.value)}
-                            className="bg-transparent text-[9px] font-black text-emerald-600 outline-none cursor-pointer"
+                            className="bg-transparent text-xs font-black text-emerald-600 outline-none cursor-pointer"
                         >
                             <option value="PY">PY</option>
                             <option value="Kigo">Kigo</option>
@@ -179,11 +184,11 @@ export const ExpenseItemCard = memo(function ExpenseItemCard({
                         </select>
                     </div>
                     <div className="flex flex-col bg-gray-50/50 p-2 rounded-xl border border-gray-100/50">
-                        <span className="text-[7px] font-black text-gray-400 uppercase tracking-widest mb-1">For</span>
+                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">For</span>
                         <select
                             value={currentFields.paid_for}
                             onChange={(e) => handleFieldChange('paid_for', e.target.value)}
-                            className="bg-transparent text-[9px] font-black text-slate-500 outline-none cursor-pointer uppercase"
+                            className="bg-transparent text-xs font-black text-slate-500 outline-none cursor-pointer uppercase"
                         >
                             <option value="Both">BOTH</option>
                             <option value="PY">PY</option>
@@ -212,33 +217,33 @@ export function BatchActionsBar({ selectedCount, onConfirm, onDelete, onCancel }
     if (selectedCount === 0) return null;
 
     return (
-        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[90] animate-in slide-in-from-bottom-10 duration-500">
-            <div className="bg-slate-900/90 backdrop-blur-2xl px-10 py-6 rounded-[2.5rem] shadow-2xl border border-white/10 flex items-center gap-10">
-                <div className="flex flex-col">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">已選取項目</span>
-                    <span className="text-2xl font-black text-white leading-none">{selectedCount} <span className="text-xs text-slate-500">Items</span></span>
+        <div className="fixed bottom-6 md:bottom-10 left-1/2 -translate-x-1/2 z-[90] animate-in slide-in-from-bottom-10 duration-500 w-[95%] md:w-auto">
+            <div className="bg-slate-900/90 backdrop-blur-2xl px-6 md:px-10 py-3 md:py-4 rounded-[2rem] md:rounded-[2.5rem] shadow-2xl border border-white/10 flex flex-col md:flex-row items-center gap-4 md:gap-10">
+                <div className="flex items-center gap-6 md:gap-0 md:flex-col shrink-0">
+                    <span className="text-[8px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest md:mb-1">已選取</span>
+                    <span className="text-[15px] md:text-xl font-black text-white leading-none">{selectedCount} <span className="text-[10px] text-slate-500 uppercase">Items</span></span>
                 </div>
 
-                <div className="h-8 w-px bg-white/10" />
+                <div className="hidden md:block h-8 w-px bg-white/10" />
 
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 md:gap-4 w-full md:w-auto">
                     <button
                         onClick={onCancel}
-                        className="px-6 py-3 rounded-2xl text-xs font-black text-slate-400 hover:text-white transition-colors"
+                        className="flex-1 md:flex-none px-4 md:px-6 py-2 md:py-3 rounded-xl md:rounded-2xl text-[10px] md:text-xs font-black text-slate-400 hover:text-white transition-colors border border-white/5 md:border-none"
                     >
                         取消
                     </button>
                     <button
                         onClick={onDelete}
-                        className="px-6 py-3 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 rounded-2xl text-xs font-black transition-all border border-rose-500/20"
+                        className="flex-1 md:flex-none px-4 md:px-6 py-2 md:py-3 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 rounded-xl md:rounded-2xl text-[10px] md:text-xs font-black transition-all border border-rose-500/20"
                     >
-                        批次刪除
+                        刪除
                     </button>
                     <button
                         onClick={onConfirm}
-                        className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xs font-black transition-all shadow-xl shadow-indigo-500/20 flex items-center gap-2"
+                        className="flex-[2] md:flex-none px-6 md:px-8 py-2 md:py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl md:rounded-2xl text-[10px] md:text-xs font-black transition-all shadow-xl shadow-indigo-500/20 flex items-center justify-center gap-2"
                     >
-                        確認變更並儲存 <ChevronRight className="w-4 h-4" />
+                        確認變更 <ChevronRight className="w-4 h-4" />
                     </button>
                 </div>
             </div>
@@ -263,7 +268,8 @@ export function AllExpensesModal({
     const [search, setSearch] = useState("");
     const [startDate, setStartDate] = useState(initialStartDate || "");
     const [endDate, setEndDate] = useState(initialEndDate || "");
-    const [sortBy, setSortBy] = useState<'date' | 'updated_at'>('updated_at');
+    const [sortBy, setSortBy] = useState<'date' | 'updated_at'>('date');
+    const [filterGoalId, setFilterGoalId] = useState(activeTab === 'all' || activeTab === 'general' ? "" : activeTab);
     const [showUnconfirmedOnly, setShowUnconfirmedOnly] = useState(false);
 
     // Batch States
@@ -273,15 +279,15 @@ export function AllExpensesModal({
 
     useEffect(() => {
         loadAll();
-    }, [activeTab, startDate, endDate, showUnconfirmedOnly]);
+    }, [activeTab, startDate, endDate, showUnconfirmedOnly, filterGoalId]);
 
     const loadAll = async () => {
         setIsLoading(true);
         try {
-            const isGoalTab = activeTab !== 'all' && activeTab !== 'general';
+            const currentGoalId = filterGoalId || undefined;
             const data = await getExpenses({
-                project_label: activeTab === 'all' ? undefined : (isGoalTab ? undefined : activeTab),
-                goal_id: isGoalTab ? activeTab : undefined,
+                project_label: currentGoalId ? undefined : (activeTab === 'general' ? 'general' : undefined),
+                goal_id: currentGoalId,
                 is_reviewed: showUnconfirmedOnly ? false : undefined, // Fetch both if not filtering
                 sortBy: sortBy,
                 sortOrder: 'descending',
@@ -356,21 +362,29 @@ export function AllExpensesModal({
     );
 
     return (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xl z-[100] flex items-center justify-center p-4 py-10 md:p-8 animate-in fade-in duration-300">
-            <div className="bg-white/95 backdrop-blur-2xl w-full max-w-6xl h-full rounded-[3rem] shadow-2xl border border-white/20 flex flex-col overflow-hidden relative">
-                <div className="p-8 border-b border-gray-100 flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-white/50 relative z-10">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xl z-[100] flex items-center justify-center p-0 md:p-8 animate-in fade-in duration-300">
+            <div className="bg-white/95 backdrop-blur-2xl w-full max-w-7xl h-full md:h-[90vh] rounded-none md:rounded-[3rem] shadow-2xl border border-white/20 flex flex-col overflow-hidden relative">
+                {/* Fixed Close Button */}
+                <button
+                    onClick={onClose}
+                    className="absolute top-4 right-4 md:top-8 md:right-8 z-[110] p-2 md:p-3 bg-gray-50/80 backdrop-blur-md text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-xl md:rounded-2xl transition-all border border-gray-100 shadow-sm"
+                >
+                    <X className="w-5 h-5 md:w-6 md:h-6" />
+                </button>
+
+                <div className="p-4 md:p-8 pr-16 md:pr-24 border-b border-gray-100 flex flex-col lg:flex-row lg:items-center justify-between gap-4 md:gap-6 bg-white/50 relative z-10">
                     <div>
-                        <h2 className="text-3xl font-black text-gray-900 tracking-tighter flex items-center gap-3">
-                            <Receipt className="w-8 h-8 text-indigo-600" />
+                        <h2 className="text-2xl md:text-3xl font-black text-gray-900 tracking-tighter flex items-center gap-3">
+                            <Receipt className="w-6 h-6 md:w-8 md:h-8 text-indigo-600" />
                             支出明細管理
                         </h2>
                         <div className="flex items-center gap-4 mt-1">
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Transaction Management</p>
+                            <p className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest hidden sm:block">Transaction Management</p>
                             <div className="flex items-center gap-2">
                                 <button
                                     onClick={() => setShowUnconfirmedOnly(!showUnconfirmedOnly)}
                                     className={cn(
-                                        "px-3 py-1 rounded-lg text-[9px] font-black transition-all border",
+                                        "px-2 md:px-3 py-1 rounded-lg text-[8px] md:text-[9px] font-black transition-all border",
                                         showUnconfirmedOnly ? "bg-amber-500 border-amber-500 text-white" : "bg-white border-gray-200 text-gray-400 hover:text-gray-900"
                                     )}
                                 >
@@ -379,7 +393,7 @@ export function AllExpensesModal({
                                 <button
                                     onClick={() => setIsBatchMode(!isBatchMode)}
                                     className={cn(
-                                        "px-3 py-1 rounded-lg text-[9px] font-black transition-all border",
+                                        "px-2 md:px-3 py-1 rounded-lg text-[8px] md:text-[9px] font-black transition-all border",
                                         isBatchMode ? "bg-indigo-600 border-indigo-600 text-white" : "bg-white border-gray-200 text-gray-400 hover:text-gray-900"
                                     )}
                                 >
@@ -389,7 +403,20 @@ export function AllExpensesModal({
                         </div>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-4">
+                    <div className="flex flex-wrap items-center gap-2 md:gap-4">
+                        <div className="flex items-center gap-2 bg-gray-50 p-2 px-4 rounded-2xl border-2 border-transparent focus-within:border-indigo-100 transition-all">
+                            <Target className="w-4 h-4 text-gray-400" />
+                            <select
+                                value={filterGoalId}
+                                onChange={(e) => setFilterGoalId(e.target.value)}
+                                className="bg-transparent text-[11px] font-black text-gray-900 outline-none w-32 uppercase cursor-pointer"
+                            >
+                                <option value="">所有專案</option>
+                                <option value="general">🏠 日常支出</option>
+                                {goals.map((g: any) => <option key={g.id} value={g.id}>🎯 {g.name}</option>)}
+                            </select>
+                        </div>
+
                         <div className="flex items-center gap-2 bg-gray-50 p-2 px-4 rounded-2xl border-2 border-transparent focus-within:border-indigo-100 transition-all">
                             <Calendar className="w-4 h-4 text-gray-400" />
                             <input
@@ -425,17 +452,10 @@ export function AllExpensesModal({
                                 type="text"
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
-                                placeholder="搜索..."
+                                placeholder="搜索商家或類別..."
                                 className="pl-11 pr-6 py-3 bg-gray-50 border-2 border-transparent focus:border-indigo-100 focus:bg-white rounded-2xl text-[11px] font-black text-gray-900 w-48 transition-all outline-none"
                             />
                         </div>
-
-                        <button
-                            onClick={onClose}
-                            className="p-3 bg-gray-50 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-2xl transition-all border border-gray-100"
-                        >
-                            <X className="w-6 h-6" />
-                        </button>
                     </div>
                 </div>
 

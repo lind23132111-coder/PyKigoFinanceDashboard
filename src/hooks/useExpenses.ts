@@ -39,9 +39,13 @@ export function useExpenses() {
     const [editingSettlement, setEditingSettlement] = useState<Settlement | null>(null);
 
     // Filter states
+    const [filterMode, setFilterMode] = useState<'month' | 'quarter' | 'year'>('month');
+    const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7)); // YYYY-MM
+    const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
+    const [selectedQuarter, setSelectedQuarter] = useState(Math.floor(new Date().getMonth() / 3) + 1); // 1-4
+
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
-    const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7)); // YYYY-MM
     const [stats, setStats] = useState<any>(null);
     const [showUnconfirmedOnly, setShowUnconfirmedOnly] = useState(false);
 
@@ -50,11 +54,37 @@ export function useExpenses() {
     const [stagedUpdates, setStagedUpdates] = useState<Record<string, Partial<Expense>>>({});
     const [isBatchMode, setIsBatchMode] = useState(false);
 
+    // Derived Date Ranges
+    useEffect(() => {
+        if (filterMode === 'month') {
+            const [y, m] = selectedMonth.split('-').map(Number);
+            const start = `${selectedMonth}-01`;
+            const last = new Date(y, m, 0).getDate();
+            const end = `${selectedMonth}-${String(last).padStart(2, '0')}`;
+            setStartDate(start);
+            setEndDate(end);
+        } else if (filterMode === 'quarter') {
+            const year = parseInt(selectedYear);
+            const startMonth = (selectedQuarter - 1) * 3 + 1;
+            const endMonth = selectedQuarter * 3;
+            const start = `${year}-${String(startMonth).padStart(2, '0')}-01`;
+            const lastDay = new Date(year, endMonth, 0).getDate();
+            const end = `${year}-${String(endMonth).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+            setStartDate(start);
+            setEndDate(end);
+        } else if (filterMode === 'year') {
+            setStartDate(`${selectedYear}-01-01`);
+            setEndDate(`${selectedYear}-12-31`);
+        }
+    }, [filterMode, selectedMonth, selectedYear, selectedQuarter]);
+
+    // Hook logic to detect when to ignore standard filters (Project Tabs)
+    const isProjectTab = activeTab !== 'all' && activeTab !== 'general';
+
     const loadData = useCallback(async () => {
+        if (!startDate || !endDate) return;
         setIsLoading(true);
         try {
-            const isGoalTab = activeTab !== 'all' && activeTab !== 'general';
-
             const [
                 expensesData,
                 unreviewedData,
@@ -65,19 +95,20 @@ export function useExpenses() {
                 statsData
             ] = await Promise.all([
                 getExpenses({
-                    project_label: activeTab === 'all' ? undefined : (isGoalTab ? undefined : activeTab),
-                    goal_id: isGoalTab ? activeTab : undefined,
+                    project_label: activeTab === 'all' ? undefined : (isProjectTab ? undefined : activeTab),
+                    goal_id: isProjectTab ? activeTab : undefined,
                     is_reviewed: true,
-                    startDate: isGoalTab ? undefined : (startDate || undefined),
-                    endDate: isGoalTab ? undefined : (endDate || undefined)
+                    // Use standard date range only if NOT in project tab UI
+                    startDate: isProjectTab ? undefined : (startDate || undefined),
+                    endDate: isProjectTab ? undefined : (endDate || undefined)
                 }),
                 getExpenses({ is_reviewed: false, limit: 100 }),
                 getExpenses({
-                    project_label: activeTab === 'all' ? undefined : (isGoalTab ? undefined : activeTab),
-                    goal_id: isGoalTab ? activeTab : undefined,
+                    project_label: activeTab === 'all' ? undefined : (isProjectTab ? undefined : activeTab),
+                    goal_id: isProjectTab ? activeTab : undefined,
                     is_reviewed: showUnconfirmedOnly ? false : undefined, // Fetch both if not filtering
-                    startDate: isGoalTab ? undefined : (startDate || undefined),
-                    endDate: isGoalTab ? undefined : (endDate || undefined),
+                    startDate: isProjectTab ? undefined : (startDate || undefined),
+                    endDate: isProjectTab ? undefined : (endDate || undefined),
                     limit: 24,
                     sortBy: 'date',
                     sortOrder: 'descending'
@@ -85,7 +116,7 @@ export function useExpenses() {
                 getCategories(),
                 getGoals(),
                 import("@/app/actions/expenses").then(m => m.getSettlementStatus()),
-                import("@/app/actions/expenses").then(m => m.getExpenseStats(selectedMonth, activeTab === 'all' ? undefined : (isGoalTab ? undefined : activeTab)))
+                import("@/app/actions/expenses").then(m => m.getExpenseStats(startDate, endDate, activeTab === 'all' ? undefined : (isProjectTab ? undefined : activeTab), filterMode))
             ]);
 
             setExpenses(expensesData);
@@ -101,7 +132,7 @@ export function useExpenses() {
         } finally {
             setIsLoading(false);
         }
-    }, [activeTab, startDate, endDate, selectedMonth, showUnconfirmedOnly]);
+    }, [activeTab, startDate, endDate, showUnconfirmedOnly, filterMode]);
 
     useEffect(() => {
         loadData();
@@ -294,8 +325,10 @@ export function useExpenses() {
         setActiveTab,
 
         // Stats
-        selectedMonth,
-        setSelectedMonth,
+        filterMode, setFilterMode,
+        selectedMonth, setSelectedMonth,
+        selectedYear, setSelectedYear,
+        selectedQuarter, setSelectedQuarter,
         stats,
 
         // Unified List & Batch Actions

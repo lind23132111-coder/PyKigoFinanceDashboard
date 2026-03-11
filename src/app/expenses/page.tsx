@@ -71,8 +71,10 @@ export default function ExpensesPage() {
         handleSaveSettlement,
 
         // Stats
-        selectedMonth,
-        setSelectedMonth,
+        filterMode, setFilterMode,
+        selectedMonth, setSelectedMonth,
+        selectedYear, setSelectedYear,
+        selectedQuarter, setSelectedQuarter,
         stats,
 
         // Unified List & Batch Actions
@@ -87,7 +89,26 @@ export default function ExpensesPage() {
 
     // Stats calculation
     const currentMonthExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
-    const avgDaily = currentMonthExpenses / (new Date().getDate() || 1);
+
+    // Accurate daily average calculation based on selected range
+    const getDaysInRange = (start: string, end: string) => {
+        if (!start || !end) return 1;
+        const s = new Date(start);
+        const e = new Date(end);
+        const diff = Math.ceil((e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+
+        // If the selected range includes "today", we only average up to today for a more realistic estimate
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (s <= today && e >= today) {
+            return Math.ceil((today.getTime() - s.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+        }
+
+        return diff || 1;
+    };
+
+    const daysCount = getDaysInRange(startDate, endDate);
+    const avgDaily = currentMonthExpenses / daysCount;
 
     // Goal progress (if activeTab is a goal)
     const activeGoal = goals.find(g => g.id === activeTab) || null;
@@ -111,19 +132,19 @@ export default function ExpensesPage() {
                     <p className="text-sm font-bold text-gray-400 uppercase tracking-widest pl-1">Smart Financial Tracking & Settlement</p>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-4">
+                <div className="flex flex-wrap items-center gap-3 md:gap-4">
                     <button
                         onClick={() => setShowImportModal(true)}
-                        className="flex items-center gap-2.5 px-6 py-4 bg-amber-500 hover:bg-amber-600 text-white rounded-[1.5rem] font-black text-sm transition-all shadow-xl shadow-amber-100 border border-amber-400 active:scale-95 group"
+                        className="flex items-center gap-2 md:gap-2.5 px-4 md:px-6 py-3 md:py-4 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl md:rounded-[1.5rem] font-black text-xs md:text-sm transition-all shadow-xl shadow-amber-100 border border-amber-400 active:scale-95 group flex-1 md:flex-none"
                     >
                         <Zap className="w-4 h-4 text-amber-200 group-hover:rotate-12 transition-transform" />
                         AI 智慧匯入
                     </button>
                     <button
                         onClick={() => setShowModal(true)}
-                        className="flex items-center gap-2.5 px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-[1.5rem] font-black text-sm transition-all shadow-xl shadow-indigo-100 border border-indigo-500 active:scale-95 group"
+                        className="flex items-center gap-2 md:gap-2.5 px-6 md:px-8 py-3 md:py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl md:rounded-[1.5rem] font-black text-xs md:text-sm transition-all shadow-xl shadow-indigo-100 border border-indigo-500 active:scale-95 group flex-1 md:flex-none"
                     >
-                        <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" />
+                        <Plus className="w-4 h-4 md:w-5 md:h-5 group-hover:rotate-90 transition-transform" />
                         手動記帳
                     </button>
                 </div>
@@ -162,44 +183,110 @@ export default function ExpensesPage() {
                             </div>
                         </div>
 
-                        {/* Row 2: Month Picker & Detail Action */}
-                        <div className="flex items-center justify-between bg-white/40 p-3 rounded-3xl border border-gray-100 shadow-sm backdrop-blur-sm">
-                            <div className="flex items-center gap-3 bg-white border border-gray-100 p-1.5 px-4 rounded-2xl shadow-sm">
-                                <Calendar className="w-4 h-4 text-indigo-500" />
-                                <div className="flex flex-col">
-                                    <span className="text-[8px] font-black text-gray-400 leading-tight uppercase tracking-widest">Select Month</span>
-                                    <input
-                                        type="month"
-                                        value={selectedMonth}
-                                        onChange={(e) => setSelectedMonth(e.target.value)}
-                                        className="bg-transparent border-none pr-3 text-sm font-black text-slate-900 outline-none cursor-pointer leading-tight uppercase"
-                                    />
+                        {/* Row 2: Date Mode & Range Picker - Hide when in project view */}
+                        {!isProjectTab && (
+                            <div className="flex flex-col md:flex-row md:items-center justify-between bg-white/40 p-3 rounded-[2rem] border border-gray-100 shadow-sm backdrop-blur-sm gap-4 animate-in fade-in slide-in-from-top-2">
+                                <div className="flex items-center gap-2 bg-gray-100/50 p-1 rounded-2xl">
+                                    {[
+                                        { id: 'month', label: '月' },
+                                        { id: 'quarter', label: '季' },
+                                        { id: 'year', label: '年' }
+                                    ].map(mode => (
+                                        <button
+                                            key={mode.id}
+                                            onClick={() => setFilterMode(mode.id as any)}
+                                            className={cn(
+                                                "px-4 py-1.5 rounded-xl text-[10px] font-black transition-all",
+                                                filterMode === mode.id ? "bg-white text-indigo-600 shadow-sm" : "text-gray-400 hover:text-gray-600"
+                                            )}
+                                        >
+                                            {mode.label}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                <div className="flex items-center gap-3 bg-white border border-gray-100 p-1.5 px-4 rounded-2xl shadow-sm flex-1 md:flex-none">
+                                    <Calendar className="w-4 h-4 text-indigo-500" />
+                                    <div className="flex items-center gap-4">
+                                        {filterMode === 'month' && (
+                                            <div className="flex flex-col">
+                                                <span className="text-[8px] font-black text-gray-400 leading-tight uppercase tracking-widest">Select Month</span>
+                                                <input
+                                                    type="month"
+                                                    value={selectedMonth}
+                                                    onChange={(e) => setSelectedMonth(e.target.value)}
+                                                    className="bg-transparent border-none pr-3 text-sm font-black text-slate-900 outline-none cursor-pointer leading-tight uppercase"
+                                                />
+                                            </div>
+                                        )}
+                                        {filterMode === 'quarter' && (
+                                            <>
+                                                <div className="flex flex-col">
+                                                    <span className="text-[8px] font-black text-gray-400 leading-tight uppercase tracking-widest">Year</span>
+                                                    <select
+                                                        value={selectedYear}
+                                                        onChange={(e) => setSelectedYear(e.target.value)}
+                                                        className="bg-transparent border-none text-sm font-black text-slate-900 outline-none cursor-pointer leading-tight"
+                                                    >
+                                                        {[2024, 2025, 2026].map(y => <option key={y} value={y.toString()}>{y}</option>)}
+                                                    </select>
+                                                </div>
+                                                <div className="w-px h-6 bg-gray-100" />
+                                                <div className="flex flex-col">
+                                                    <span className="text-[8px] font-black text-gray-400 leading-tight uppercase tracking-widest">Quarter</span>
+                                                    <select
+                                                        value={selectedQuarter}
+                                                        onChange={(e) => setSelectedQuarter(parseInt(e.target.value))}
+                                                        className="bg-transparent border-none text-sm font-black text-slate-900 outline-none cursor-pointer leading-tight uppercase"
+                                                    >
+                                                        {[1, 2, 3, 4].map(q => <option key={q} value={q}>Q{q}</option>)}
+                                                    </select>
+                                                </div>
+                                            </>
+                                        )}
+                                        {filterMode === 'year' && (
+                                            <div className="flex flex-col">
+                                                <span className="text-[8px] font-black text-gray-400 leading-tight uppercase tracking-widest">Select Year</span>
+                                                <select
+                                                    value={selectedYear}
+                                                    onChange={(e) => setSelectedYear(e.target.value)}
+                                                    className="bg-transparent border-none text-sm font-black text-slate-900 outline-none cursor-pointer leading-tight"
+                                                >
+                                                    {[2024, 2025, 2026].map(y => <option key={y} value={y.toString()}>{y} 年度</option>)}
+                                                </select>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="pr-4 text-right hidden xl:block">
+                                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Dashboard Statistics</div>
+                                    <div className="text-[9px] font-bold text-slate-300">Flexible Timeframe Analysis</div>
                                 </div>
                             </div>
-
-                            <div className="pr-4 text-right hidden md:block">
-                                <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Dashboard Statistics</div>
-                                <div className="text-[9px] font-bold text-slate-300">Live Financial Overview</div>
-                            </div>
-                        </div>
+                        )}
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <StatCard
-                            icon={<TrendingUp className="w-6 h-6" />}
-                            label="本月累積支出"
-                            value={`NT$ ${currentMonthExpenses.toLocaleString()}`}
-                            subtext={`${new Date(selectedMonth).getMonth() + 1}月總計消費金額`}
-                            color="indigo"
-                            change={!isProjectTab && stats?.comparison !== undefined ? `${stats.comparison > 0 ? '+' : ''}${stats.comparison}%` : undefined}
-                        />
-                        <StatCard
-                            icon={<BarChart3 className="w-6 h-6" />}
-                            label="日均支出預估"
-                            value={`NT$ ${Math.round(avgDaily).toLocaleString()}`}
-                            subtext="基於本月目前天數計算"
-                            color="amber"
-                        />
+                        {!isProjectTab && (
+                            <>
+                                <StatCard
+                                    icon={<TrendingUp className="w-6 h-6" />}
+                                    label={`${filterMode === 'month' ? '本月' : filterMode === 'quarter' ? '本季' : '本年'}累積支出`}
+                                    value={`NT$ ${currentMonthExpenses.toLocaleString()}`}
+                                    subtext={`期間：${startDate} 至 ${endDate}`}
+                                    color="indigo"
+                                    change={stats?.comparison !== undefined ? `${stats.comparison > 0 ? '+' : ''}${stats.comparison}%` : undefined}
+                                />
+                                <StatCard
+                                    icon={<BarChart3 className="w-6 h-6" />}
+                                    label={`${filterMode === 'month' ? '日均' : filterMode === 'quarter' ? '季日均' : '年日均'}支出估算`}
+                                    value={`NT$ ${Math.round(avgDaily).toLocaleString()}`}
+                                    subtext={`基於本期間 ${daysCount} 天支出的平均值`}
+                                    color="amber"
+                                />
+                            </>
+                        )}
 
                         {activeGoal ? (
                             <div className="md:col-span-2">
@@ -224,13 +311,13 @@ export default function ExpensesPage() {
                                         </div>
                                         <div className="space-y-6">
                                             <div className="flex flex-col">
-                                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">家庭日常支出</span>
+                                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{filterMode === 'month' ? '單月' : filterMode === 'quarter' ? '單季' : '年度'}日常生活支出</span>
                                                 <div className="text-3xl font-black text-slate-900 tracking-tighter">
                                                     NT$ {expenses.filter(e => !e.goal_id).reduce((sum, e) => sum + (Number(e.amount) || 0), 0).toLocaleString()}
                                                 </div>
                                             </div>
                                             <p className="text-xs font-medium text-slate-400 leading-relaxed">
-                                                展示此月份各類別的支出比例，協助您掌握預算流向。您可以切換上方月份查看不同時期的消費習慣。
+                                                展示此{filterMode === 'month' ? '月份' : filterMode === 'quarter' ? '季度' : '年度'}各類別的支出比例，協助您掌握預算流向。您可以切換上方{filterMode === 'month' ? '月、季、年' : '切換條件'}查看不同時期的消費習慣。
                                             </p>
                                         </div>
                                     </div>
