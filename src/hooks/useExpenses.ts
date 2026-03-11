@@ -169,8 +169,8 @@ export function useExpenses() {
                     isProjectTab ? activeTab : undefined
                 )),
                 import("@/app/actions/expenses").then(m => m.getExpenseStats(
-                    startDate,
-                    endDate,
+                    isProjectTab ? "" : startDate,
+                    isProjectTab ? "" : endDate,
                     activeTab === 'all' ? undefined : (isProjectTab ? undefined : activeTab),
                     filterMode,
                     isProjectTab ? activeTab : undefined

@@ -595,25 +595,27 @@ export async function getExpenseStats(
         const categories = await getCategories();
         const catMap = new Map((categories as ExpenseCategory[]).map(c => [c.id, c]));
 
-        const start = new Date(startDate);
-        const end = new Date(endDate);
+        const start = startDate ? new Date(startDate) : null;
+        const end = endDate ? new Date(endDate) : null;
 
-        let prevStart: Date;
-        let prevEnd: Date;
+        let prevStart: Date | null = null;
+        let prevEnd: Date | null = null;
 
-        if (compareMode === 'month') {
-            prevStart = new Date(start.getFullYear(), start.getMonth() - 1, 1);
-            prevEnd = new Date(start.getFullYear(), start.getMonth(), 0);
-        } else if (compareMode === 'quarter') {
-            prevStart = new Date(start.getFullYear(), start.getMonth() - 3, 1);
-            prevEnd = new Date(start.getFullYear(), start.getMonth(), 0);
-        } else { // year
-            prevStart = new Date(start.getFullYear() - 1, 0, 1);
-            prevEnd = new Date(start.getFullYear() - 1, 11, 31);
+        if (start && end) {
+            if (compareMode === 'month') {
+                prevStart = new Date(start.getFullYear(), start.getMonth() - 1, 1);
+                prevEnd = new Date(start.getFullYear(), start.getMonth(), 0);
+            } else if (compareMode === 'quarter') {
+                prevStart = new Date(start.getFullYear(), start.getMonth() - 3, 1);
+                prevEnd = new Date(start.getFullYear(), start.getMonth(), 0);
+            } else { // year
+                prevStart = new Date(start.getFullYear() - 1, 0, 1);
+                prevEnd = new Date(start.getFullYear() - 1, 11, 31);
+            }
         }
 
-        const prevStartStr = prevStart.toISOString().split('T')[0];
-        const prevEndStr = prevEnd.toISOString().split('T')[0];
+        const prevStartStr = prevStart?.toISOString().split('T')[0];
+        const prevEndStr = prevEnd?.toISOString().split('T')[0];
 
         // Current Period Query
         let currentQuery = supabase.from('expenses').select('amount, category_id').eq('is_reviewed', true);
@@ -629,14 +631,17 @@ export async function getExpenseStats(
         if (goal_id) allTimeQuery = allTimeQuery.eq('goal_id', goal_id);
 
         // Previous Period Query
-        let prevQuery = supabase.from('expenses').select('amount').gte('date', prevStartStr).lte('date', prevEndStr).eq('is_reviewed', true);
-        if (project_label && project_label !== 'all') prevQuery = prevQuery.eq('project_label', project_label);
-        if (goal_id) prevQuery = prevQuery.eq('goal_id', goal_id);
+        let prevRes: any = { data: [] };
+        if (prevStartStr && prevEndStr) {
+            let prevQuery = supabase.from('expenses').select('amount').gte('date', prevStartStr).lte('date', prevEndStr).eq('is_reviewed', true);
+            if (project_label && project_label !== 'all') prevQuery = prevQuery.eq('project_label', project_label);
+            if (goal_id) prevQuery = prevQuery.eq('goal_id', goal_id);
+            prevRes = await prevQuery;
+        }
 
-        const [currentRes, allTimeRes, prevRes] = await Promise.all([
+        const [currentRes, allTimeRes] = await Promise.all([
             currentQuery,
-            allTimeQuery,
-            prevQuery
+            allTimeQuery
         ]);
 
         const currentData = currentRes.data || [];

@@ -267,8 +267,8 @@ export function AllExpensesModal({
     const [isLoading, setIsLoading] = useState(true);
     const [search, setSearch] = useState("");
     const isProject = activeTab !== 'all' && activeTab !== 'general';
-    const [startDate, setStartDate] = useState(isProject ? "" : (initialStartDate || ""));
-    const [endDate, setEndDate] = useState(isProject ? "" : (initialEndDate || ""));
+    const [startDate, setStartDate] = useState("");
+    const [endDate, setEndDate] = useState("");
     const [sortBy, setSortBy] = useState<'date' | 'updated_at'>('date');
     const [filterGoalId, setFilterGoalId] = useState(activeTab === 'all' || activeTab === 'general' ? "" : activeTab);
     const [showUnconfirmedOnly, setShowUnconfirmedOnly] = useState(false);
