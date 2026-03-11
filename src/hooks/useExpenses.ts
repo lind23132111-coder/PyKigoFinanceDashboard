@@ -58,6 +58,7 @@ export function useExpenses() {
     const [endDate, setEndDate] = useState("");
     const [stats, setStats] = useState<any>(null);
     const [showUnconfirmedOnly, setShowUnconfirmedOnly] = useState(false);
+    const [paidForFilter, setPaidForFilter] = useState<string>('Both');
 
     // Batch Edit States
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -88,7 +89,6 @@ export function useExpenses() {
         }
     }, [filterMode, selectedMonth, selectedYear, selectedQuarter]);
 
-    // Hook logic to detect when to ignore standard filters (Project Tabs)
     const isProjectTab = activeTab !== 'all' && activeTab !== 'general';
 
     // Load static data once
@@ -127,7 +127,7 @@ export function useExpenses() {
     const loadData = useCallback(async (forceRefresh = false) => {
         if (!startDate || !endDate) return;
 
-        const cacheKey = `${activeTab}-${startDate}-${endDate}-${showUnconfirmedOnly}`;
+        const cacheKey = `${activeTab}-${startDate}-${endDate}-${showUnconfirmedOnly}-${paidForFilter}`;
         const cachedContent = cache.current[cacheKey];
 
         // If we have cached content and it's fresh (within 5 minutes), use it immediately
@@ -162,7 +162,8 @@ export function useExpenses() {
                     endDate: isProjectTab ? undefined : (endDate || undefined),
                     limit: 24,
                     sortBy: 'date',
-                    sortOrder: 'descending'
+                    sortOrder: 'descending',
+                    paid_for: paidForFilter
                 }),
                 import("@/app/actions/expenses").then(m => m.getSettlementStatus(
                     activeTab === 'all' ? undefined : (isProjectTab ? undefined : activeTab),
@@ -173,7 +174,8 @@ export function useExpenses() {
                     isProjectTab ? "" : endDate,
                     activeTab === 'all' ? undefined : (isProjectTab ? undefined : activeTab),
                     filterMode,
-                    isProjectTab ? activeTab : undefined
+                    isProjectTab ? activeTab : undefined,
+                    paidForFilter
                 ))
             ]);
 
@@ -195,7 +197,7 @@ export function useExpenses() {
         } finally {
             setIsLoading(false);
         }
-    }, [activeTab, startDate, endDate, showUnconfirmedOnly, filterMode, isProjectTab]);
+    }, [activeTab, startDate, endDate, showUnconfirmedOnly, filterMode, isProjectTab, paidForFilter]);
 
     useEffect(() => {
         loadData();
@@ -400,6 +402,7 @@ export function useExpenses() {
         selectedIds, setSelectedIds, toggleSelection, toggleSelectAll,
         stagedUpdates, setStagedUpdates, handleStageUpdate,
         isBatchMode, setIsBatchMode,
+        paidForFilter, setPaidForFilter,
         handleBatchConfirmChanges,
 
         // Modal states

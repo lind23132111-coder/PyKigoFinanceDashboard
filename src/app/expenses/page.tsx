@@ -83,6 +83,7 @@ export default function ExpensesPage() {
         selectedIds, setSelectedIds, toggleSelection, toggleSelectAll,
         stagedUpdates, setStagedUpdates, handleStageUpdate,
         isBatchMode, setIsBatchMode,
+        paidForFilter, setPaidForFilter,
         handleBatchConfirmChanges
     } = useExpenses();
 
@@ -210,88 +211,105 @@ export default function ExpensesPage() {
                             </div>
                         </div>
 
-                        {/* Row 2: Date Mode & Range Picker - Hide when in project view */}
-                        {!isProjectTab && (
-                            <div className="flex flex-col md:flex-row md:items-center justify-between bg-white/40 p-3 rounded-[2rem] border border-gray-100 shadow-sm backdrop-blur-sm gap-4 animate-in fade-in slide-in-from-top-2">
-                                <div className="flex items-center gap-2 bg-gray-100/50 p-1 rounded-2xl">
+                        {/* Row 2: Shared Filters Row */}
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            {/* Paid For Filter - Always Visible */}
+                            <div className="bg-white/40 p-2 rounded-2xl border border-gray-100 shadow-sm backdrop-blur-sm flex items-center gap-2">
+                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-2">對象</span>
+                                <div className="flex items-center gap-1 bg-gray-100/50 p-1 rounded-xl">
                                     {[
-                                        { id: 'month', label: '月' },
-                                        { id: 'quarter', label: '季' },
-                                        { id: 'year', label: '年' }
-                                    ].map(mode => (
+                                        { id: 'Both', label: '全部' },
+                                        { id: 'PY', label: 'PY' },
+                                        { id: 'Kigo', label: 'Kigo' }
+                                    ].map(beneficiary => (
                                         <button
-                                            key={mode.id}
-                                            onClick={() => setFilterMode(mode.id as any)}
+                                            key={beneficiary.id}
+                                            onClick={() => setPaidForFilter(beneficiary.id)}
                                             className={cn(
-                                                "px-4 py-1.5 rounded-xl text-[10px] font-black transition-all",
-                                                filterMode === mode.id ? "bg-white text-indigo-600 shadow-sm" : "text-gray-400 hover:text-gray-600"
+                                                "px-4 py-1.5 rounded-lg text-[10px] font-black transition-all",
+                                                paidForFilter === beneficiary.id ? "bg-white text-indigo-600 shadow-sm" : "text-gray-400 hover:text-gray-600"
                                             )}
                                         >
-                                            {mode.label}
+                                            {beneficiary.label}
                                         </button>
                                     ))}
                                 </div>
+                            </div>
 
-                                <div className="flex items-center gap-3 bg-white border border-gray-100 p-1.5 px-4 rounded-2xl shadow-sm flex-1 md:flex-none">
-                                    <Calendar className="w-4 h-4 text-indigo-500" />
-                                    <div className="flex items-center gap-4">
-                                        {filterMode === 'month' && (
-                                            <div className="flex flex-col">
-                                                <span className="text-[8px] font-black text-gray-400 leading-tight uppercase tracking-widest">Select Month</span>
-                                                <input
-                                                    type="month"
-                                                    value={selectedMonth}
-                                                    onChange={(e) => setSelectedMonth(e.target.value)}
-                                                    className="bg-transparent border-none pr-3 text-sm font-black text-slate-900 outline-none cursor-pointer leading-tight uppercase"
-                                                />
-                                            </div>
-                                        )}
-                                        {filterMode === 'quarter' && (
-                                            <>
+                            {/* Date Mode & Range Picker - Hide only when in project view */}
+                            {!isProjectTab && (
+                                <div className="flex flex-col md:flex-row md:items-center justify-between bg-white/40 p-3 rounded-[2rem] border border-gray-100 shadow-sm backdrop-blur-sm gap-4 animate-in fade-in slide-in-from-top-2 flex-1">
+                                    <div className="flex items-center gap-2 bg-gray-100/50 p-1 rounded-2xl">
+                                        {[
+                                            { id: 'month', label: '月' },
+                                            { id: 'quarter', label: '季' },
+                                            { id: 'year', label: '年' }
+                                        ].map(mode => (
+                                            <button
+                                                key={mode.id}
+                                                onClick={() => setFilterMode(mode.id as any)}
+                                                className={cn(
+                                                    "px-4 py-1.5 rounded-xl text-[10px] font-black transition-all",
+                                                    filterMode === mode.id ? "bg-white text-indigo-600 shadow-sm" : "text-gray-400 hover:text-gray-600"
+                                                )}
+                                            >
+                                                {mode.label}
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    <div className="flex items-center gap-3 bg-white border border-gray-100 p-1.5 px-4 rounded-2xl shadow-sm flex-1 md:flex-none">
+                                        <Calendar className="w-4 h-4 text-indigo-500" />
+                                        <div className="flex items-center gap-4">
+                                            {filterMode === 'month' && (
                                                 <div className="flex flex-col">
-                                                    <span className="text-[8px] font-black text-gray-400 leading-tight uppercase tracking-widest">Year</span>
+                                                    <input
+                                                        type="month"
+                                                        value={selectedMonth}
+                                                        onChange={(e) => setSelectedMonth(e.target.value)}
+                                                        className="bg-transparent border-none pr-3 text-sm font-black text-slate-900 outline-none cursor-pointer leading-tight uppercase"
+                                                    />
+                                                </div>
+                                            )}
+                                            {filterMode === 'quarter' && (
+                                                <>
+                                                    <div className="flex flex-col">
+                                                        <select
+                                                            value={selectedYear}
+                                                            onChange={(e) => setSelectedYear(e.target.value)}
+                                                            className="bg-transparent border-none text-sm font-black text-slate-900 outline-none cursor-pointer leading-tight"
+                                                        >
+                                                            {[2024, 2025, 2026].map(y => <option key={y} value={y.toString()}>{y}</option>)}
+                                                        </select>
+                                                    </div>
+                                                    <div className="w-px h-6 bg-gray-100" />
+                                                    <div className="flex flex-col">
+                                                        <select
+                                                            value={selectedQuarter}
+                                                            onChange={(e) => setSelectedQuarter(parseInt(e.target.value))}
+                                                            className="bg-transparent border-none text-sm font-black text-slate-900 outline-none cursor-pointer leading-tight uppercase"
+                                                        >
+                                                            {[1, 2, 3, 4].map(q => <option key={q} value={q}>Q{q}</option>)}
+                                                        </select>
+                                                    </div>
+                                                </>
+                                            )}
+                                            {filterMode === 'year' && (
+                                                <div className="flex flex-col">
                                                     <select
                                                         value={selectedYear}
                                                         onChange={(e) => setSelectedYear(e.target.value)}
                                                         className="bg-transparent border-none text-sm font-black text-slate-900 outline-none cursor-pointer leading-tight"
                                                     >
-                                                        {[2024, 2025, 2026].map(y => <option key={y} value={y.toString()}>{y}</option>)}
+                                                        {[2024, 2025, 2026].map(y => <option key={y} value={y.toString()}>{y} 年度</option>)}
                                                     </select>
                                                 </div>
-                                                <div className="w-px h-6 bg-gray-100" />
-                                                <div className="flex flex-col">
-                                                    <span className="text-[8px] font-black text-gray-400 leading-tight uppercase tracking-widest">Quarter</span>
-                                                    <select
-                                                        value={selectedQuarter}
-                                                        onChange={(e) => setSelectedQuarter(parseInt(e.target.value))}
-                                                        className="bg-transparent border-none text-sm font-black text-slate-900 outline-none cursor-pointer leading-tight uppercase"
-                                                    >
-                                                        {[1, 2, 3, 4].map(q => <option key={q} value={q}>Q{q}</option>)}
-                                                    </select>
-                                                </div>
-                                            </>
-                                        )}
-                                        {filterMode === 'year' && (
-                                            <div className="flex flex-col">
-                                                <span className="text-[8px] font-black text-gray-400 leading-tight uppercase tracking-widest">Select Year</span>
-                                                <select
-                                                    value={selectedYear}
-                                                    onChange={(e) => setSelectedYear(e.target.value)}
-                                                    className="bg-transparent border-none text-sm font-black text-slate-900 outline-none cursor-pointer leading-tight"
-                                                >
-                                                    {[2024, 2025, 2026].map(y => <option key={y} value={y.toString()}>{y} 年度</option>)}
-                                                </select>
-                                            </div>
-                                        )}
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
-
-                                <div className="pr-4 text-right hidden xl:block">
-                                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Dashboard Statistics</div>
-                                    <div className="text-[9px] font-bold text-slate-300">Flexible Timeframe Analysis</div>
-                                </div>
-                            </div>
-                        )}
+                            )}
+                        </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

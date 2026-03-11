@@ -11,7 +11,8 @@ export async function getExpenses(filters?: {
     endDate?: string,
     sortBy?: string,
     sortOrder?: 'ascending' | 'descending',
-    limit?: number
+    limit?: number,
+    paid_for?: string
 }) {
     if (process.env.NEXT_PUBLIC_DEMO_MODE === 'true') {
         const mockExpenses = [
@@ -60,6 +61,9 @@ export async function getExpenses(filters?: {
         if (filters?.endDate) {
             filtered = filtered.filter(e => e.date <= filters.endDate!);
         }
+        if (filters?.paid_for && filters.paid_for !== 'Both') {
+            filtered = filtered.filter(e => e.paid_for === filters.paid_for);
+        }
 
         // Apply sorting
         const sortBy = filters?.sortBy || 'date';
@@ -97,6 +101,9 @@ export async function getExpenses(filters?: {
     }
     if (filters?.goal_id) {
         query = query.eq('goal_id', filters.goal_id);
+    }
+    if (filters?.paid_for && filters.paid_for !== 'Both') {
+        query = query.eq('paid_for', filters.paid_for);
     }
     if (filters?.is_reviewed !== undefined) {
         query = query.eq('is_reviewed', filters.is_reviewed);
@@ -568,7 +575,8 @@ export async function getExpenseStats(
     endDate: string,
     project_label?: string,
     compareMode: 'month' | 'quarter' | 'year' = 'month',
-    goal_id?: string
+    goal_id?: string,
+    paid_for?: string
 ) {
     const isDemo = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
 
@@ -624,11 +632,13 @@ export async function getExpenseStats(
         }
         if (project_label && project_label !== 'all') currentQuery = currentQuery.eq('project_label', project_label);
         if (goal_id) currentQuery = currentQuery.eq('goal_id', goal_id);
+        if (paid_for && paid_for !== 'Both') currentQuery = currentQuery.eq('paid_for', paid_for);
 
         // All-Time Total for Goal Progress
         let allTimeQuery = supabase.from('expenses').select('amount').eq('is_reviewed', true);
         if (project_label && project_label !== 'all') allTimeQuery = allTimeQuery.eq('project_label', project_label);
         if (goal_id) allTimeQuery = allTimeQuery.eq('goal_id', goal_id);
+        if (paid_for && paid_for !== 'Both') allTimeQuery = allTimeQuery.eq('paid_for', paid_for);
 
         // Previous Period Query
         let prevRes: any = { data: [] };
@@ -636,6 +646,7 @@ export async function getExpenseStats(
             let prevQuery = supabase.from('expenses').select('amount').gte('date', prevStartStr).lte('date', prevEndStr).eq('is_reviewed', true);
             if (project_label && project_label !== 'all') prevQuery = prevQuery.eq('project_label', project_label);
             if (goal_id) prevQuery = prevQuery.eq('goal_id', goal_id);
+            if (paid_for && paid_for !== 'Both') prevQuery = prevQuery.eq('paid_for', paid_for);
             prevRes = await prevQuery;
         }
 
