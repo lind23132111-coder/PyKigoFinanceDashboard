@@ -26,7 +26,8 @@ export function useExpenses() {
     const [goals, setGoals] = useState<any[]>([]);
     const [settlement, setSettlement] = useState<any>(null);
     const [settlementHistory, setSettlementHistory] = useState<Settlement[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(false);
+    const [isInitialLoading, setIsInitialLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('all');
 
     // Modal states
@@ -81,6 +82,26 @@ export function useExpenses() {
     // Hook logic to detect when to ignore standard filters (Project Tabs)
     const isProjectTab = activeTab !== 'all' && activeTab !== 'general';
 
+    // Load static data once
+    useEffect(() => {
+        const loadInitialData = async () => {
+            setIsInitialLoading(true);
+            try {
+                const [categoriesData, goalsData] = await Promise.all([
+                    getCategories(),
+                    getGoals()
+                ]);
+                setCategories(categoriesData);
+                setGoals(goalsData);
+            } catch (error) {
+                console.error("Failed to load initial data:", error);
+            } finally {
+                setIsInitialLoading(false);
+            }
+        };
+        loadInitialData();
+    }, []);
+
     const loadData = useCallback(async () => {
         if (!startDate || !endDate) return;
         setIsLoading(true);
@@ -89,8 +110,6 @@ export function useExpenses() {
                 expensesData,
                 unreviewedData,
                 mergedRecentData,
-                categoriesData,
-                goalsData,
                 settlementData,
                 statsData
             ] = await Promise.all([
@@ -98,7 +117,6 @@ export function useExpenses() {
                     project_label: activeTab === 'all' ? undefined : (isProjectTab ? undefined : activeTab),
                     goal_id: isProjectTab ? activeTab : undefined,
                     is_reviewed: true,
-                    // Use standard date range only if NOT in project tab UI
                     startDate: isProjectTab ? undefined : (startDate || undefined),
                     endDate: isProjectTab ? undefined : (endDate || undefined)
                 }),
@@ -106,24 +124,28 @@ export function useExpenses() {
                 getExpenses({
                     project_label: activeTab === 'all' ? undefined : (isProjectTab ? undefined : activeTab),
                     goal_id: isProjectTab ? activeTab : undefined,
-                    is_reviewed: showUnconfirmedOnly ? false : undefined, // Fetch both if not filtering
+                    is_reviewed: showUnconfirmedOnly ? false : undefined,
                     startDate: isProjectTab ? undefined : (startDate || undefined),
                     endDate: isProjectTab ? undefined : (endDate || undefined),
                     limit: 24,
                     sortBy: 'date',
                     sortOrder: 'descending'
                 }),
-                getCategories(),
-                getGoals(),
-                import("@/app/actions/expenses").then(m => m.getSettlementStatus()),
-                import("@/app/actions/expenses").then(m => m.getExpenseStats(startDate, endDate, activeTab === 'all' ? undefined : (isProjectTab ? undefined : activeTab), filterMode))
+                import("@/app/actions/expenses").then(m => m.getSettlementStatus(
+                    activeTab === 'all' ? undefined : (isProjectTab ? undefined : activeTab),
+                    isProjectTab ? activeTab : undefined
+                )),
+                import("@/app/actions/expenses").then(m => m.getExpenseStats(
+                    startDate,
+                    endDate,
+                    activeTab === 'all' ? undefined : (isProjectTab ? undefined : activeTab),
+                    filterMode
+                ))
             ]);
 
             setExpenses(expensesData);
             setUnreviewed(unreviewedData);
             setRecentExpenses(mergedRecentData);
-            setCategories(categoriesData);
-            setGoals(goalsData);
             setSettlement(settlementData.current);
             setSettlementHistory(settlementData.history);
             setStats(statsData);
@@ -132,7 +154,7 @@ export function useExpenses() {
         } finally {
             setIsLoading(false);
         }
-    }, [activeTab, startDate, endDate, showUnconfirmedOnly, filterMode]);
+    }, [activeTab, startDate, endDate, showUnconfirmedOnly, filterMode, isProjectTab]);
 
     useEffect(() => {
         loadData();
@@ -321,6 +343,7 @@ export function useExpenses() {
         settlement,
         settlementHistory,
         isLoading,
+        isInitialLoading,
         activeTab,
         setActiveTab,
 

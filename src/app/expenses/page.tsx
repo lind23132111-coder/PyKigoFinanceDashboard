@@ -42,6 +42,7 @@ export default function ExpensesPage() {
         settlement,
         settlementHistory,
         isLoading,
+        isInitialLoading,
         activeTab,
         setActiveTab,
 
@@ -87,14 +88,16 @@ export default function ExpensesPage() {
 
     const [isListExpanded, setIsListExpanded] = useState(false);
 
-    // Stats calculation
-    const currentMonthExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
+    // Memoized stats calculation
+    const currentMonthExpenses = React.useMemo(() =>
+        expenses.reduce((sum, e) => sum + e.amount, 0),
+        [expenses]);
 
     // Accurate daily average calculation based on selected range
-    const getDaysInRange = (start: string, end: string) => {
-        if (!start || !end) return 1;
-        const s = new Date(start);
-        const e = new Date(end);
+    const daysCount = React.useMemo(() => {
+        if (!startDate || !endDate) return 1;
+        const s = new Date(startDate);
+        const e = new Date(endDate);
         const diff = Math.ceil((e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24)) + 1;
 
         // If the selected range includes "today", we only average up to today for a more realistic estimate
@@ -105,19 +108,43 @@ export default function ExpensesPage() {
         }
 
         return diff || 1;
-    };
+    }, [startDate, endDate]);
 
-    const daysCount = getDaysInRange(startDate, endDate);
-    const avgDaily = currentMonthExpenses / daysCount;
+    const avgDaily = React.useMemo(() =>
+        currentMonthExpenses / daysCount,
+        [currentMonthExpenses, daysCount]);
 
     // Goal progress (if activeTab is a goal)
-    const activeGoal = goals.find(g => g.id === activeTab) || null;
+    const activeGoal = React.useMemo(() =>
+        goals.find(g => g.id === activeTab) || null,
+        [goals, activeTab]);
+
     const isProjectTab = activeTab !== 'all' && activeTab !== 'general';
-    const goalProjectExpenses = isProjectTab ? expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0) : 0;
-    const goalProgress = activeGoal ? (goalProjectExpenses / (activeGoal.target_amount || 1)) * 100 : 0;
+
+    const goalProjectExpenses = React.useMemo(() =>
+        isProjectTab ? expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0) : 0,
+        [isProjectTab, expenses]);
+
+    const goalProgress = React.useMemo(() =>
+        activeGoal ? (goalProjectExpenses / (activeGoal.target_amount || 1)) * 100 : 0,
+        [activeGoal, goalProjectExpenses]);
+
+    if (isInitialLoading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen bg-white">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+                    <p className="text-sm font-black text-indigo-900/40 uppercase tracking-widest">初始化數據中...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
-        <div className="max-w-[1600px] mx-auto p-4 md:p-10 space-y-10 font-sans pb-32">
+        <div className={cn(
+            "max-w-[1600px] mx-auto p-4 md:p-10 space-y-10 font-sans pb-32 transition-opacity duration-300",
+            isLoading ? "opacity-60 pointer-events-none" : "opacity-100"
+        )}>
             {/* Header Section */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-4">
                 <div className="space-y-3">
