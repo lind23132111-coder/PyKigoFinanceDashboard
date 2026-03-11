@@ -62,7 +62,7 @@ export function useExpenses() {
     // Batch Edit States
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [stagedUpdates, setStagedUpdates] = useState<Record<string, Partial<Expense>>>({});
-    const [isBatchMode, setIsBatchMode] = useState(false);
+    const [isBatchMode, setIsBatchMode] = useState(true);
 
     // Derived Date Ranges
     useEffect(() => {

@@ -275,7 +275,7 @@ export function AllExpensesModal({
     // Batch States
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [stagedUpdates, setStagedUpdates] = useState<Record<string, Partial<Expense>>>({});
-    const [isBatchMode, setIsBatchMode] = useState(false);
+    const [isBatchMode, setIsBatchMode] = useState(true);
 
     useEffect(() => {
         loadAll();
@@ -389,15 +389,6 @@ export function AllExpensesModal({
                                     )}
                                 >
                                     僅顯示待確認
-                                </button>
-                                <button
-                                    onClick={() => setIsBatchMode(!isBatchMode)}
-                                    className={cn(
-                                        "px-2 md:px-3 py-1 rounded-lg text-[8px] md:text-[9px] font-black transition-all border",
-                                        isBatchMode ? "bg-indigo-600 border-indigo-600 text-white" : "bg-white border-gray-200 text-gray-400 hover:text-gray-900"
-                                    )}
-                                >
-                                    批次模式
                                 </button>
                             </div>
                         </div>
