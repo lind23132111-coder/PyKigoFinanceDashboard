@@ -36,6 +36,7 @@ _註：本圖為實際 UI 介面展示 (使用模擬數據)。_
   - `ticker_symbol`, `note_content`, `target_buy_price`, `target_sell_price`, `confidence_level`.
 - **`strategy_targets`** (V1.2 新增): 定義各類別理想佔比與色彩。
 - **`goals`** & **`goal_asset_mapping`**: 特定財務目標（近期/長期）及其關聯資產。
+  - `priority`: (V2.2) 儲存使用者自訂的顯示順序。
 - **`user_goals`** (V1.2 新增): 總結性財務目標（如：月領 5 萬被動收入）。
 - **`expense_categories`** (V2.0): 定義消費分類（如：餐飲、交通、裝修）。
 - **`expenses`** (V2.0): 核心支出明細，支援 `paid_by` 與 `paid_for` 映射用於分帳結算。
@@ -69,6 +70,9 @@ _註：本圖為實際 UI 介面展示 (使用模擬數據)。_
 ### E. 目標管理強化 (Goal Management CRUD)
 從單純的「顯示」進化為「管理」：
 - **雙向編輯**：支援從 UI 修改目標細節與重新勾選關聯資產。
+- **權重與分層排序 (V2.2)**：
+  - 實作了 JS 層級的混合排序演算法：`Category (Upcoming > Long-term) -> Priority (ASC)`。
+  - 限制 UI 僅能在同一個類別內移動目標（Intra-category Reordering），確保分類結構穩定。
 - **級聯刪除 (Cascading Cleanup)**：刪除目標時，系統自動清理映射表，確保資料庫一致性。
 
 ### F. 響應式優化與混合佈局 (V1.1 - V1.3 Evolution)
@@ -100,6 +104,9 @@ _註：本圖為實際 UI 介面展示 (使用模擬數據)。_
 
 ### K. 全歷史明細過濾引擎 (All Expenses Filtering) (V2.1)
 - **多維度檢索**: 結合前端 `Search` 關鍵字與後端 `startDate/endDate` 參數。
+- **過濾隔離 (Filter Isolation) (V2.2.4)**:
+  - 針對 `isProjectTab` 或彈窗視角，強制將 `startDate/endDate` 設為空值（全歷史）。
+  - 對伺服器 Action `getExpenseStats` 進行改造，使其在未傳入日期時自動返回全時期總計而非空值。
 - **Demo 模擬支援**: 在 `getExpenses` Action 中實現了純 JS 版本的日期區間過濾邏輯，確保在無資料庫連接的展示環境下功能依然完整。
 - **Session-based 穿透**: 針對剛確認的支出實作了 session 快取機制，使其能暫時無視全域月份篩選器而顯示在列表頂部，提供操作即時回饋。
 
