@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, X, PiggyBank, Target, Trash2, Pencil } from "lucide-react";
-import { getGoalsWithProgress, createGoal, getActiveAssets, deleteGoal, updateGoal } from "@/app/actions/goals";
+import { Plus, X, PiggyBank, Target, Trash2, Pencil, ChevronUp, ChevronDown } from "lucide-react";
+import { getGoalsWithProgress, createGoal, getActiveAssets, deleteGoal, updateGoal, updateGoalsOrder } from "@/app/actions/goals";
 
 export default function GoalTracker() {
     const [goals, setGoals] = useState<any[]>([]);
@@ -116,6 +116,31 @@ export default function GoalTracker() {
         });
     };
 
+    const handleMoveGoal = async (goalId: string, direction: 'up' | 'down') => {
+        const index = goals.findIndex(g => g.id === goalId);
+        if (index === -1) return;
+
+        const newGoals = [...goals];
+        if (direction === 'up' && index > 0) {
+            [newGoals[index - 1], newGoals[index]] = [newGoals[index], newGoals[index - 1]];
+        } else if (direction === 'down' && index < newGoals.length - 1) {
+            [newGoals[index], newGoals[index + 1]] = [newGoals[index + 1], newGoals[index]];
+        } else {
+            return;
+        }
+
+        // Optimistic update
+        setGoals(newGoals);
+
+        try {
+            await updateGoalsOrder(newGoals.map(g => g.id));
+        } catch (error) {
+            console.error(error);
+            alert("順序更新失敗");
+            fetchGoalsAndAssets(); // Rollback
+        }
+    };
+
     if (!mounted) return <div className="animate-pulse space-y-8 p-4"><div className="h-32 bg-slate-200 rounded-2xl w-full"></div></div>;
 
     // Split goals into categories
@@ -141,6 +166,22 @@ export default function GoalTracker() {
                         <span className="text-xl">🎯</span> {goal.name}
                     </h3>
                     <div className="flex items-center gap-2">
+                        <div className="flex flex-col gap-0.5 mr-2 border-r border-slate-100 pr-2">
+                            <button
+                                onClick={() => handleMoveGoal(goal.id, 'up')}
+                                className="p-1 text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-all disabled:opacity-30"
+                                title="向上移動"
+                            >
+                                <ChevronUp className="w-4 h-4" />
+                            </button>
+                            <button
+                                onClick={() => handleMoveGoal(goal.id, 'down')}
+                                className="p-1 text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-all disabled:opacity-30"
+                                title="向下移動"
+                            >
+                                <ChevronDown className="w-4 h-4" />
+                            </button>
+                        </div>
                         <span className="text-xs font-semibold text-slate-400 bg-slate-100 px-3 py-1 rounded-md">
                             目標日: {goal.target_date || '未設定'}
                         </span>

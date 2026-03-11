@@ -68,14 +68,14 @@ export async function getGoalsWithProgress() {
         let current_funding = 0;
         const mappings = Array.isArray(goal.goal_asset_mapping) ? goal.goal_asset_mapping : [];
         mappings.forEach((m: any) => { current_funding += valueMap.get(m.asset_id) || 0; });
-        
+
         // Add reviewed expenses to total progress as per Issue #12
         const spentAmount = expenseMap.get(goal.id) || 0;
         const totalProgressAmount = current_funding + spentAmount;
-        
+
         const progress = goal.target_amount > 0 ? (totalProgressAmount / goal.target_amount) * 100 : 0;
-        return { 
-            ...goal, 
+        return {
+            ...goal,
             current_funding: totalProgressAmount, // This reflects the total 'allocated' amount (cash + spent)
             progress: Math.min(progress, 100),
             meta: { cash_balance: current_funding, spent_balance: spentAmount }
@@ -89,9 +89,25 @@ export const getGoals = getGoalsWithProgress;
 export async function createGoal(payload: { name: string, target_amount: number, category: string, target_date: string | null, asset_ids?: string[] }) {
     if (process.env.NEXT_PUBLIC_DEMO_MODE === "true") return { id: `demo-goal-${Date.now()}` };
 
+    // Get current max priority to place new goal at the end
+    const { data: maxPriorityData } = await supabase
+        .from('goals')
+        .select('priority')
+        .order('priority', { ascending: false })
+        .limit(1);
+
+    const nextPriority = (maxPriorityData?.[0]?.priority ?? -1) + 1;
+
     const { data: goalData, error: goalError } = await supabase
         .from('goals')
-        .insert({ name: payload.name, target_amount: payload.target_amount, category: payload.category || 'long_term', target_date: payload.target_date || null, status: 'on_track' })
+        .insert({
+            name: payload.name,
+            target_amount: payload.target_amount,
+            category: payload.category || 'long_term',
+            target_date: payload.target_date || null,
+            status: 'on_track',
+            priority: nextPriority
+        })
         .select().single();
 
     if (goalError) throw goalError;
@@ -174,4 +190,20 @@ export async function updateGoal(goalId: string, payload: { name: string, target
     }
 
     return { id: goalId };
+}
+
+export async function updateGoalsOrder(orderedIds: string[]) {
+    if (process.env.NEXT_PUBLIC_DEMO_MODE === "true") return true;
+
+    // Use a single transaction via bulk update or loop
+    // Supabase JS doesn't have a great "CASE WHEN" bulk update, so we'll do individual since usually few goals
+    const updates = orderedIds.map((id, index) =>
+        supabase.from('goals').update({ priority: index }).eq('id', id)
+    );
+
+    const results = await Promise.all(updates);
+    const firstError = results.find(r => r.error)?.error;
+    if (firstError) throw firstError;
+
+    return true;
 }
