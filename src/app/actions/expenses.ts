@@ -613,14 +613,27 @@ export async function getExpenseStats(startDate: string, endDate: string, projec
         // Current Period
         let currentQuery = supabase.from('expenses').select('amount, category_id').gte('date', startDate).lte('date', endDate).eq('is_reviewed', true);
         if (project_label && project_label !== 'all') currentQuery = currentQuery.eq('project_label', project_label);
-        const { data: currentData } = await currentQuery;
 
-        // Previous Period
-        let prevQuery = supabase.from('expenses').select('amount').gte('date', prevStartStr).lte('date', prevEndStr).eq('is_reviewed', true);
-        if (project_label && project_label !== 'all') prevQuery = prevQuery.eq('project_label', project_label);
-        const { data: prevData } = await prevQuery;
+        // All-Time Total for Goal Progress
+        let allTimeQuery = supabase.from('expenses').select('amount').eq('is_reviewed', true);
+        if (project_label && project_label !== 'all') allTimeQuery = allTimeQuery.eq('project_label', project_label);
+
+        const [currentRes, allTimeRes, prevRes] = await Promise.all([
+            currentQuery,
+            allTimeQuery,
+            supabase.from('expenses').select('amount').gte('date', prevStartStr).lte('date', prevEndStr).eq('is_reviewed', true).filter(
+                project_label && project_label !== 'all' ? 'project_label' : 'id',
+                project_label && project_label !== 'all' ? 'eq' : 'neq',
+                project_label && project_label !== 'all' ? project_label : '00000000-0000-0000-0000-000000000000'
+            )
+        ]);
+
+        const { data: currentData } = currentRes;
+        const { data: allTimeData } = allTimeRes;
+        const { data: prevData } = prevRes;
 
         const currentTotal = currentData?.reduce((s, e) => s + (Number(e.amount) || 0), 0) || 0;
+        const allTimeTotal = allTimeData?.reduce((s, e) => s + (Number(e.amount) || 0), 0) || 0;
         const prevTotal = prevData?.reduce((s, e) => s + (Number(e.amount) || 0), 0) || 0;
 
         const categoryGroups = new Map();
@@ -639,6 +652,7 @@ export async function getExpenseStats(startDate: string, endDate: string, projec
         return {
             currentMonth: { total: currentTotal, startDate, endDate, categories: categoryStats, month: startDate.slice(0, 7) },
             prevMonth: { total: prevTotal },
+            allTimeTotal,
             comparison: parseFloat(comparison.toFixed(1))
         };
     } catch (err) {

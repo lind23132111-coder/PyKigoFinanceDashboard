@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
     getExpenses,
     getCategories,
@@ -29,6 +29,15 @@ export function useExpenses() {
     const [isLoading, setIsLoading] = useState(false);
     const [isInitialLoading, setIsInitialLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('all');
+
+    // Cache for project switching
+    const cache = useRef<Record<string, {
+        expenses: Expense[],
+        settlement: any,
+        settlementHistory: Settlement[],
+        stats: any,
+        timestamp: number
+    }>>({});
 
     // Modal states
     const [showModal, setShowModal] = useState(false);
@@ -102,29 +111,49 @@ export function useExpenses() {
         loadInitialData();
     }, []);
 
-    const loadData = useCallback(async () => {
+    // Load unreviewed data once on mount or when specifically refreshed
+    useEffect(() => {
+        const loadUnreviewed = async () => {
+            try {
+                const unreviewedData = await getExpenses({ is_reviewed: false, limit: 100 });
+                setUnreviewed(unreviewedData);
+            } catch (error) {
+                console.error("Failed to load unreviewed:", error);
+            }
+        };
+        loadUnreviewed();
+    }, []);
+
+    const loadData = useCallback(async (forceRefresh = false) => {
         if (!startDate || !endDate) return;
+
+        const cacheKey = `${activeTab}-${startDate}-${endDate}-${showUnconfirmedOnly}`;
+        const cachedContent = cache.current[cacheKey];
+
+        // If we have cached content and it's fresh (within 5 minutes), use it immediately
+        if (!forceRefresh && cachedContent && (Date.now() - cachedContent.timestamp < 300000)) {
+            setExpenses(cachedContent.expenses);
+            setSettlement(cachedContent.settlement);
+            setSettlementHistory(cachedContent.settlementHistory);
+            setStats(cachedContent.stats);
+            setIsLoading(false);
+            // Optionally still refresh in background (SWR pattern)
+            // if we want to be data-correct without slowing down the user.
+            return;
+        }
+
         setIsLoading(true);
-        // Clear stale data to prevent flickers of old projects
-        setExpenses([]);
-        setStats(null);
+        if (forceRefresh) {
+            setExpenses([]);
+            setStats(null);
+        }
 
         try {
             const [
-                expensesData,
-                unreviewedData,
                 mergedRecentData,
                 settlementData,
                 statsData
             ] = await Promise.all([
-                getExpenses({
-                    project_label: activeTab === 'all' ? undefined : (isProjectTab ? undefined : activeTab),
-                    goal_id: isProjectTab ? activeTab : undefined,
-                    is_reviewed: true,
-                    startDate: isProjectTab ? undefined : (startDate || undefined),
-                    endDate: isProjectTab ? undefined : (endDate || undefined)
-                }),
-                getExpenses({ is_reviewed: false, limit: 100 }),
                 getExpenses({
                     project_label: activeTab === 'all' ? undefined : (isProjectTab ? undefined : activeTab),
                     goal_id: isProjectTab ? activeTab : undefined,
@@ -147,12 +176,19 @@ export function useExpenses() {
                 ))
             ]);
 
-            setExpenses(expensesData);
-            setUnreviewed(unreviewedData);
-            setRecentExpenses(mergedRecentData);
+            setExpenses(mergedRecentData);
             setSettlement(settlementData.current);
             setSettlementHistory(settlementData.history);
             setStats(statsData);
+
+            // Update cache
+            cache.current[cacheKey] = {
+                expenses: mergedRecentData,
+                settlement: settlementData.current,
+                settlementHistory: settlementData.history,
+                stats: statsData,
+                timestamp: Date.now()
+            };
         } catch (error) {
             console.error("Failed to load expenses:", error);
         } finally {
@@ -167,10 +203,10 @@ export function useExpenses() {
     const handleConfirm = useCallback(async (id: string, updates: Partial<Expense>) => {
         try {
             await updateExpense(id, { ...updates, is_reviewed: true });
-            await loadData();
+            await loadData(true);
         } catch (error) {
             console.error("Failed to confirm expense:", error);
-            await loadData();
+            await loadData(true);
         }
     }, [loadData]);
 
@@ -191,10 +227,10 @@ export function useExpenses() {
             setSelectedIds(new Set());
             setStagedUpdates({});
             setIsBatchMode(false);
-            await loadData();
+            await loadData(true);
         } catch (error) {
             console.error("Batch confirm failed:", error);
-            await loadData();
+            await loadData(true);
         } finally {
             setIsLoading(false);
         }
@@ -228,10 +264,10 @@ export function useExpenses() {
         if (items.length === 0) return;
         try {
             await confirmExpensesBulk(items);
-            await loadData();
+            await loadData(true);
         } catch (error) {
             console.error("Failed to batch confirm:", error);
-            await loadData();
+            await loadData(true);
         }
     }, [loadData]);
 
@@ -239,7 +275,7 @@ export function useExpenses() {
         if (!confirm("確定要刪除此筆記錄嗎？")) return;
         try {
             await deleteExpense(id);
-            await loadData();
+            await loadData(true);
         } catch (error) {
             console.error(error);
         }
@@ -253,7 +289,7 @@ export function useExpenses() {
             setIsLoading(true);
             await Promise.all(targetIds.map(id => deleteExpense(id)));
             setSelectedIds(new Set());
-            await loadData();
+            await loadData(true);
         } catch (error) {
             console.error(error);
         } finally {
@@ -264,7 +300,7 @@ export function useExpenses() {
     const handleCreateExpense = useCallback(async (payload: any) => {
         try {
             await createExpense({ ...payload, is_reviewed: true });
-            await loadData();
+            await loadData(true);
         } catch (error) {
             console.error(error);
             throw error;
@@ -274,7 +310,7 @@ export function useExpenses() {
     const handleCreateExpenses = useCallback(async (payloads: any[]) => {
         try {
             await createExpenses(payloads);
-            await loadData();
+            await loadData(true);
         } catch (error) {
             console.error(error);
         }
@@ -302,7 +338,7 @@ export function useExpenses() {
             onPhase?.('saving');
             await createExpenses(entries);
             onPhase?.('loading');
-            await loadData();
+            await loadData(true);
         } catch (error: any) {
             console.error("AI Import Error:", error);
             const msg = error?.message || "";
@@ -317,7 +353,7 @@ export function useExpenses() {
         if (!confirm("確定要刪除此筆結算紀錄嗎？")) return;
         try {
             await deleteSettlement(id);
-            await loadData();
+            await loadData(true);
         } catch (error) {
             console.error(error);
         }
@@ -331,7 +367,7 @@ export function useExpenses() {
                 await createSettlement(data);
             }
             setEditingSettlement(null);
-            await loadData();
+            await loadData(true);
         } catch (error) {
             console.error(error);
             throw error;

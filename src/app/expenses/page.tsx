@@ -122,8 +122,8 @@ export default function ExpensesPage() {
     const isProjectTab = activeTab !== 'all' && activeTab !== 'general';
 
     const goalProjectExpenses = React.useMemo(() =>
-        isProjectTab ? expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0) : 0,
-        [isProjectTab, expenses]);
+        stats?.allTimeTotal || 0,
+        [stats?.allTimeTotal]);
 
     const goalProgress = React.useMemo(() =>
         activeGoal ? (goalProjectExpenses / (activeGoal.target_amount || 1)) * 100 : 0,
