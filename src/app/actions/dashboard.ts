@@ -103,9 +103,9 @@ const DEMO_DASHBOARD_DATA = {
 const DEMO_REPORT_DATA = {
     summaryCards: [
         { title: "家庭總資產淨值", amount: 98420000, subtitle: "資料期數：2026/2", borderColor: "border-blue-500" },
-        { title: "PY 個人份額", amount: 44289000, subtitle: "分配佔比 45%", borderColor: "border-emerald-500" },
-        { title: "Kigo 個人份額", amount: 29526000, subtitle: "分配佔比 30%", borderColor: "border-amber-400" },
-        { title: "Both (共同帳戶)", amount: 24605000, subtitle: "分配佔比 25%", borderColor: "border-indigo-500" },
+        { title: "PY 資產總計", amount: 44289000, subtitle: "個人獨立帳戶合計", borderColor: "border-emerald-500" },
+        { title: "Kigo 資產總計", amount: 29526000, subtitle: "個人獨立帳戶合計", borderColor: "border-amber-400" },
+        { title: "Both (共同帳戶)", amount: 24605000, subtitle: "共同家用與投資", borderColor: "border-indigo-500" },
     ],
     assetItems: [
         { id: 1, owner: "PY", ownerColor: "bg-emerald-100 text-emerald-700", type: "RSU", name: "Global Tech RSU", originalAmount: "2,000 股 (@ $280.00 USD)", ntdAmount: 17715600, category: "Stocks" },
@@ -215,16 +215,35 @@ export async function getLatestDashboardData(): Promise<any> {
     };
 }
 
-export async function getReportData() {
-    if (process.env.NEXT_PUBLIC_DEMO_MODE === "true") return DEMO_REPORT_DATA;
+export async function getReportData(snapshotId?: string) {
+    if (process.env.NEXT_PUBLIC_DEMO_MODE === "true") {
+        return {
+            ...DEMO_REPORT_DATA,
+            availableSnapshots: [
+                { id: 'demo1', period_name: '2026/2', created_at: '2026-03-09T14:22:44Z' },
+                { id: 'demo2', period_name: '2025/5', created_at: '2025-05-31T23:59:59Z' },
+                { id: 'demo3', period_name: '2024/8', created_at: '2024-08-31T23:59:59Z' },
+                { id: 'demo4', period_name: '2024/5', created_at: '2024-05-31T23:59:59Z' },
+                { id: 'demo5', period_name: '2024/4', created_at: '2024-04-30T23:59:59Z' }
+            ]
+        };
+    }
 
     const { data: marketCache } = await supabase.from('market_cache').select('*');
-    const { data: snapshots } = await supabase
-        .from('snapshots').select('*')
+
+    // Get all snapshots for the selector
+    const { data: allSnapshots } = await supabase
+        .from('snapshots')
+        .select('id, period_name, created_at')
         .not('period_name', 'like', 'ARCHIVE%')
-        .order('created_at', { ascending: false }).limit(1);
-    
-    const latestSnapshot = snapshots?.[0];
+        .order('created_at', { ascending: false });
+
+    let latestSnapshot;
+    if (snapshotId) {
+        latestSnapshot = allSnapshots?.find(s => s.id === snapshotId);
+    } else {
+        latestSnapshot = allSnapshots?.[0];
+    }
 
     let records: any[] = [];
     if (latestSnapshot) {
@@ -271,11 +290,18 @@ export async function getReportData() {
     }));
 
     const summaryCards = [
-        { title: "家庭總資產淨值", amount: totalAmount, subtitle: `資料期數：${latestSnapshot?.period_name || '-'}`, borderColor: "border-blue-500" },
+        { title: "家庭總資產淨值", amount: totalAmount, subtitle: `期數：${latestSnapshot?.period_name || '-'}`, borderColor: "border-blue-500" },
         { title: "PY 資產總計", amount: ownerTotals.PY, subtitle: "個人獨立帳戶合計", borderColor: "border-emerald-500" },
         { title: "Kigo 資產總計", amount: ownerTotals.Kigo, subtitle: "個人獨立帳戶合計", borderColor: "border-amber-400" },
         { title: "Both (共同帳戶)", amount: ownerTotals.Both, subtitle: "共同家用與投資", borderColor: "border-indigo-500" },
     ];
 
-    return { summaryCards, assetItems, liveMarketData, periodName: latestSnapshot?.period_name || '-' };
+    return {
+        summaryCards,
+        assetItems,
+        liveMarketData,
+        periodName: latestSnapshot?.period_name || '-',
+        createdAt: latestSnapshot?.created_at,
+        availableSnapshots: allSnapshots || []
+    };
 }
