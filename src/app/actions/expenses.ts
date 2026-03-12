@@ -2,6 +2,7 @@
 
 import { supabase } from "@/lib/supabase";
 import { Expense, ExpenseCategory, Settlement } from "@/types/expenses";
+import { toHalfWidth } from "@/lib/utils";
 
 export async function getExpenses(filters?: {
     project_label?: string,
@@ -494,39 +495,15 @@ export async function processAIImport(content: string, type: 'text' | 'csv' | 'c
     if (!apiKey) throw new Error("GEMINI_API_KEY not found");
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite" });
 
-    // 2. Construct Simplified Prompt (Parsing Only)
-    const prompt = `
-        You are a financial parsing engine. Convert the following ${type} content into a JSON array of expense objects.
-        Content: "${content}"
-        
-        Rules for each object:
-        - store_name: string (clean and consistent name, e.g., "7-11" instead of "7-11 台北店")
-        - amount: number (must be >= 0)
-        - date: string (ISO YYYY-MM-DD)
-        - category_hint: string (Suggest a category like: ${categories?.map(c => c.name).join(', ')})
-        
-        Return ONLY the JSON array inside a code block.
-    `;
-
-    try {
-        const result = await model.generateContent(prompt);
-        const textResponse = result.response.text();
-
-        // Extract JSON from markdown code block
-        const jsonMatch = textResponse.match(/\[[\s\S]*\]/);
-        if (!jsonMatch) throw new Error("Could not find JSON array in AI response");
-
-        let parsedData = JSON.parse(jsonMatch[0]);
-
-        // 3. Server-Side Deduplication & Categorization
+    // Internal Helper: Process raw items (from AI or Regex) into finalized expense objects
+    const finalizeItems = (rawItems: any[]) => {
         const recentHistory = existingExpenses || [];
-
-        parsedData = parsedData.map((item: any) => {
-            const amount = Math.abs(Number(item.amount)) || 0;
+        return rawItems.map((item: any) => {
+            const amount = Math.abs(Number(typeof item.amount === 'string' ? item.amount.replace(/,/g, '') : item.amount)) || 0;
             const itemDate = item.date || new Date().toISOString().split('T')[0];
-            const cleanName = (item.store_name || '未知商店').trim();
+            const cleanName = toHalfWidth((item.store_name || '未知商店').trim());
 
             // Find matching category
             const matchedCategory = categories?.find(c =>
@@ -536,17 +513,18 @@ export async function processAIImport(content: string, type: 'text' | 'csv' | 'c
 
             // Deduplication Logic
             const duplicate = recentHistory.find(prev => {
-                const sameAmount = Math.abs(prev.amount - amount) < 1; // Tolerance for decimals
+                const sameAmount = Math.abs(prev.amount - amount) < 1;
                 const sameDate = prev.date === itemDate;
                 const prevName = (prev.store_name || "").toLowerCase();
                 const currName = cleanName.toLowerCase();
                 const similarName = prevName.includes(currName) || currName.includes(prevName);
+                const nearDate = Math.abs(new Date(prev.date).getTime() - new Date(itemDate).getTime()) <= 86400000;
 
-                return sameAmount && (sameDate || similarName) && (prev.date === itemDate || Math.abs(new Date(prev.date).getTime() - new Date(itemDate).getTime()) <= 86400000);
+                return sameAmount && (sameDate || (similarName && nearDate));
             });
 
             return {
-                store_name: duplicate?.store_name || cleanName, // Use historical name if duplicate
+                store_name: duplicate?.store_name || cleanName,
                 amount,
                 date: itemDate,
                 category_id: matchedCategory?.id || null,
@@ -555,15 +533,72 @@ export async function processAIImport(content: string, type: 'text' | 'csv' | 'c
                     original_text: content.substring(0, 200),
                     is_duplicate_logic: !!duplicate,
                     duplicate_of_id: duplicate?.id || null,
-                    ai_suggested_category: item.category_hint
+                    ai_suggested_category: item.category_hint,
+                    import_method: item.import_method || "AI"
                 }
             };
         });
+    };
 
-        return parsedData;
+    // Fallback Regex Parser for specific bank formats (YYYY/MM/DD \n Store \n Amount TWD)
+    const regexFallback = (text: string) => {
+        const bankRegex = /(\d{4}\/\d{2}\/\d{2})\n([^\n]+)\n([\d,]+)\s+TWD/g;
+        const items = [];
+        let match;
+        while ((match = bankRegex.exec(text)) !== null) {
+            items.push({
+                date: match[1].replace(/\//g, '-'),
+                store_name: match[2].trim(),
+                amount: match[3].replace(/,/g, ''),
+                category_hint: '未分類',
+                import_method: "REGEX_FALLBACK"
+            });
+        }
+        return items;
+    };
+
+    try {
+        // 2. Construct Simplified Prompt
+        const prompt = `
+            You are a financial parsing engine. Convert the following ${type} content into a JSON array of expense objects.
+            Content: "${content}"
+            
+            Rules for each object:
+            - store_name: string (clean and consistent name, e.g., "7-11" instead of "7-11 台北店")
+            - amount: number (must be >= 0)
+            - date: string (ISO YYYY-MM-DD)
+            - category_hint: string (Suggest a category from: ${categories?.map(c => c.name).join(', ')})
+            
+            Return ONLY the JSON array inside a code block.
+        `;
+
+        const result = await model.generateContent(prompt);
+        const textResponse = result.response.text();
+        const jsonMatch = textResponse.match(/\[[\s\S]*\]/);
+
+        if (!jsonMatch) {
+            // If AI fails to return JSON, try regex fallback
+            const fallbackItems = regexFallback(content);
+            if (fallbackItems.length > 0) return finalizeItems(fallbackItems);
+            throw new Error("Could not find JSON array in AI response and fallback parsing failed.");
+        }
+
+        const parsedData = JSON.parse(jsonMatch[0]);
+        return finalizeItems(parsedData);
+
     } catch (err: any) {
         console.error("AI Import Error:", err);
-        throw err;
+
+        // Final fallback on error (especially 429/500)
+        const fallbackItems = regexFallback(content);
+        if (fallbackItems.length > 0) {
+            console.log("Successfully used Regex fallback parser.");
+            return finalizeItems(fallbackItems);
+        }
+
+        // If even fallback fails, throw the original error (or detailed message)
+        const msg = err?.message || "Unknown AI error";
+        throw new Error(msg);
     }
 }
 

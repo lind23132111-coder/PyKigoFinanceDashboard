@@ -65,6 +65,7 @@ export const ExpenseItemCard = memo(function ExpenseItemCard({
 }) {
     const isUnconfirmed = !item.is_reviewed;
     const currentFields = {
+        store_name: item.store_name,
         category_id: item.category_id || '',
         paid_by: item.paid_by || 'PY',
         paid_for: item.paid_for || 'Both',
@@ -120,12 +121,20 @@ export const ExpenseItemCard = memo(function ExpenseItemCard({
                         <Receipt className="w-4 h-4 text-gray-300 group-hover:text-indigo-500" />
                     </div>
                     <div>
-                        <div className="flex items-center gap-2">
-                            <div className="font-black text-gray-900 text-base md:text-lg tracking-tight truncate max-w-[160px]">
-                                {item.store_name}
-                            </div>
+                        <div className="flex items-center gap-2 flex-grow">
+                            <input
+                                type="text"
+                                value={currentFields.store_name}
+                                onChange={(e) => handleFieldChange('store_name', e.target.value)}
+                                onClick={(e) => e.stopPropagation()}
+                                className={cn(
+                                    "font-black text-gray-900 text-base md:text-lg tracking-tight bg-transparent border-none focus:ring-1 focus:ring-indigo-500/30 rounded-lg px-2 -ml-2 w-full transition-all",
+                                    hasStagedChanges && stagedFields.store_name ? "text-indigo-600 bg-indigo-50/50" : ""
+                                )}
+                                placeholder="店家名稱"
+                            />
                             {isUnconfirmed && (
-                                <span className="bg-amber-100 text-amber-700 text-[10px] font-black px-1.5 py-0.5 rounded-full tracking-wider uppercase">待確認</span>
+                                <span className="bg-amber-100 text-amber-700 text-[10px] font-black px-1.5 py-0.5 rounded-full tracking-wider uppercase flex-shrink-0">待確認</span>
                             )}
                         </div>
                         <div className="text-[11px] md:text-xs font-black text-gray-400 uppercase tracking-widest">{item.date}</div>

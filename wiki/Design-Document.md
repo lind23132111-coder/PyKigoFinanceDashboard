@@ -108,8 +108,12 @@ _註：本圖為實際 UI 介面展示 (使用模擬數據)。_
   - 針對 `isProjectTab` 或彈窗視角，強制將 `startDate/endDate` 設為空值（全歷史）。
   - 對伺服器 Action `getExpenseStats` 進行改造，使其在未傳入日期時自動返回全時期總計而非空值。
 - **受益人與排版優化 (Paid For & Layout Opt) (V2.2.6)**:
-  - **參數穿透**: 更新 `getExpenses` 與 `getExpenseStats` 以支援 `paid_for` 參數，實現統計與清單的同步過濾。
-  - **效能優化**: 透過縮短標籤與移除冗餘 decorative text，提升了在行動裝置上的顯示空間，確保日期過濾器具有最高優先權。
+  - **過濾邏輯**：Server Actions (`getExpenses`, `getExpenseStats`) 接受 `paid_for` 參數，動態過濾 SQL 查詢或 Demo Mock 資料。
+移除冗餘 decorative text，提升了在行動裝置上的顯示空間，確保日期過濾器具有最高優先權。
+- **全形校正**：使用 `toHalfWidth` 工具函式，在數據存入資料庫前強制規範化店家名稱字符。
+- **解析備援策略**：`processAIImport` 實施了多層級解析：
+    1. 優先使用 `gemini-2.0-flash-lite` 進行通用語法解析。
+    2. 若遇到 429 Rate Limit 或解析錯誤，自動退避至內置的 Regex 規則引擎，處理標準銀行通知格式。
 - **Demo 模擬支援**: 在 `getExpenses` Action 中實現了純 JS 版本的日期區間過濾邏輯，確保在無資料庫連接的展示環境下功能依然完整。
 - **Session-based 穿透**: 針對剛確認的支出實作了 session 快取機制，使其能暫時無視全域月份篩選器而顯示在列表頂部，提供操作即時回饋。
 
