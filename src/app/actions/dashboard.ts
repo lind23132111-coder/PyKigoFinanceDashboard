@@ -221,7 +221,10 @@ export async function getReportData(snapshotId?: string) {
             ...DEMO_REPORT_DATA,
             availableSnapshots: [
                 { id: 'demo1', period_name: '2026/2', created_at: '2026-03-09T14:22:44Z' },
-                { id: 'demo2', period_name: '2025/12', created_at: '2025-12-31T23:59:59Z' }
+                { id: 'demo2', period_name: '2025/5', created_at: '2025-05-31T23:59:59Z' },
+                { id: 'demo3', period_name: '2024/8', created_at: '2024-08-31T23:59:59Z' },
+                { id: 'demo4', period_name: '2024/5', created_at: '2024-05-31T23:59:59Z' },
+                { id: 'demo5', period_name: '2024/4', created_at: '2024-04-30T23:59:59Z' }
             ]
         };
     }
