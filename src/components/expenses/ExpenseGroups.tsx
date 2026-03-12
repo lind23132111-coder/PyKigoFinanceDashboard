@@ -8,7 +8,8 @@ import {
     Calendar,
     X,
     PenLine,
-    Target
+    Target,
+    Settings2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Expense } from "@/types/expenses";
@@ -270,7 +271,8 @@ export function AllExpensesModal({
     onUpdate,
     activeTab,
     initialStartDate,
-    initialEndDate
+    initialEndDate,
+    onOpenCategoryMgmt
 }: any) {
     const [allExpenses, setAllExpenses] = useState<Expense[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -286,6 +288,12 @@ export function AllExpensesModal({
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [stagedUpdates, setStagedUpdates] = useState<Record<string, Partial<Expense>>>({});
     const [isBatchMode, setIsBatchMode] = useState(true);
+
+    // Sync from props when opening or props change
+    useEffect(() => {
+        if (initialStartDate) setStartDate(initialStartDate);
+        if (initialEndDate) setEndDate(initialEndDate);
+    }, [initialStartDate, initialEndDate]);
 
     useEffect(() => {
         loadAll();
@@ -509,6 +517,16 @@ export function AllExpensesModal({
                     <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
                         Total {filtered.length} Records {selectedIds.size > 0 && `| ${selectedIds.size} Selected`}
                     </div>
+                    <button
+                        onClick={() => {
+                            console.log("Button clicked!");
+                            onOpenCategoryMgmt();
+                        }}
+                        className="flex items-center gap-2 px-5 py-3 bg-gray-50 hover:bg-indigo-50 text-gray-400 hover:text-indigo-600 rounded-2xl font-black text-[11px] transition-all border border-transparent hover:border-indigo-100 group"
+                    >
+                        <Settings2 className="w-4 h-4 group-hover:rotate-90 transition-transform" />
+                        管理支出類別
+                    </button>
                 </div>
 
                 {isBatchMode && (

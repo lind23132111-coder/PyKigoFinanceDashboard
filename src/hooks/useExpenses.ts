@@ -93,18 +93,27 @@ export function useExpenses() {
 
     // Load static data once
     useEffect(() => {
+        console.log("DEBUG: loadInitialData starting");
         const loadInitialData = async () => {
             setIsInitialLoading(true);
+            const timeout = setTimeout(() => {
+                console.warn("DEBUG: Initial loading taking too long, forcing recovery");
+                setIsInitialLoading(false);
+            }, 10000); // 10s safety timeout
+
             try {
+                console.log("DEBUG: Fetching categories and goals");
                 const [categoriesData, goalsData] = await Promise.all([
                     getCategories(),
                     getGoals()
                 ]);
+                console.log("DEBUG: Initial data fetched", { categories: categoriesData.length, goals: goalsData.length });
                 setCategories(categoriesData);
                 setGoals(goalsData);
             } catch (error) {
-                console.error("Failed to load initial data:", error);
+                console.error("DEBUG: Failed to load initial data:", error);
             } finally {
+                clearTimeout(timeout);
                 setIsInitialLoading(false);
             }
         };
@@ -125,7 +134,11 @@ export function useExpenses() {
     }, []);
 
     const loadData = useCallback(async (forceRefresh = false) => {
-        if (!startDate || !endDate) return;
+        console.log("DEBUG: loadData starting", { activeTab, startDate, endDate, forceRefresh });
+        if (!startDate || !endDate) {
+            console.log("DEBUG: loadData skipped - missing dates");
+            return;
+        }
 
         const cacheKey = `${activeTab}-${startDate}-${endDate}-${showUnconfirmedOnly}-${paidForFilter}`;
         const cachedContent = cache.current[cacheKey];

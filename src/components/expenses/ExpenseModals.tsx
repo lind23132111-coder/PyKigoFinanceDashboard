@@ -27,7 +27,7 @@ import {
 } from "@/app/actions/expenses";
 
 import { StatCard } from "./StatCard";
-import { ExpenseItemCard } from "./ExpenseGroups";
+import { ExpenseItemCard, AllExpensesModal } from "./ExpenseGroups";
 import { SettlementHistoryModal, PartialSettlementModal } from "./SettlementSummary";
 
 /**
@@ -131,7 +131,7 @@ export function CategoryManagementModal({
     };
 
     return (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-gray-950/20 backdrop-blur-[2px] p-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[150] flex items-center justify-center bg-gray-950/20 backdrop-blur-[2px] p-4 animate-in fade-in duration-200">
             <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-gray-100 flex flex-col scale-in duration-200 overflow-hidden max-h-[90vh]">
                 <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
                     <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
@@ -297,7 +297,7 @@ export function ExpenseEntryModal({ onClose, categories, goals, onSubmit, onSubm
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[150] flex items-center justify-center bg-gray-900/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
             <div className="bg-white w-full max-w-xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] scale-in duration-300">
                 <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
                     <div className="flex items-center gap-3">
@@ -483,7 +483,7 @@ export function ImportDataModal({
     };
 
     return (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[70] flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[150] flex items-center justify-center p-4">
             <div className="bg-white rounded-[32px] w-full max-w-xl overflow-hidden shadow-2xl border border-gray-100 flex flex-col animate-in zoom-in duration-300">
                 <div className="p-8 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-amber-50 to-orange-50">
                     <div className="flex items-center gap-4">
@@ -597,6 +597,49 @@ export function ExpenseModals({
 }: any) {
     return (
         <>
+
+            {showHistoryModal && (
+                <SettlementHistoryModal
+                    history={settlementHistory}
+                    onClose={() => setShowHistoryModal(false)}
+                    onDelete={handleDeleteSettlement}
+                    onEdit={(item) => {
+                        setEditingSettlement(item);
+                        setShowPartialSettlementModal(true);
+                    }}
+                />
+            )}
+
+            {showPartialSettlementModal && (
+                <PartialSettlementModal
+                    settlement={editingSettlement || settlement}
+                    activeTab={activeTab}
+                    goals={goals}
+                    onClose={() => {
+                        setShowPartialSettlementModal(false);
+                        setEditingSettlement(null);
+                    }}
+                    onSubmit={handleSaveSettlement}
+                    isEditing={!!editingSettlement}
+                />
+            )}
+
+            {showAllExpensesModal && (
+                <AllExpensesModal
+                    onClose={() => setShowAllExpensesModal(false)}
+                    categories={categories}
+                    goals={goals}
+                    onUpdate={onUpdate}
+                    activeTab={activeTab}
+                    initialStartDate={startDate}
+                    initialEndDate={endDate}
+                    onOpenCategoryMgmt={() => {
+                        console.log("Opening Category Mgmt from AllExpensesModal");
+                        setShowCategoryMgmt(true);
+                    }}
+                />
+            )}
+
             {showModal && (
                 <ExpenseEntryModal
                     onClose={() => setShowModal(false)}
@@ -625,32 +668,6 @@ export function ExpenseModals({
                     categories={categories}
                     onClose={() => setShowCategoryMgmt(false)}
                     onUpdate={onUpdate}
-                />
-            )}
-
-            {showHistoryModal && (
-                <SettlementHistoryModal
-                    history={settlementHistory}
-                    onClose={() => setShowHistoryModal(false)}
-                    onDelete={handleDeleteSettlement}
-                    onEdit={(item) => {
-                        setEditingSettlement(item);
-                        setShowPartialSettlementModal(true);
-                    }}
-                />
-            )}
-
-            {showPartialSettlementModal && (
-                <PartialSettlementModal
-                    settlement={editingSettlement || settlement}
-                    activeTab={activeTab}
-                    goals={goals}
-                    onClose={() => {
-                        setShowPartialSettlementModal(false);
-                        setEditingSettlement(null);
-                    }}
-                    onSubmit={handleSaveSettlement}
-                    isEditing={!!editingSettlement}
                 />
             )}
         </>
