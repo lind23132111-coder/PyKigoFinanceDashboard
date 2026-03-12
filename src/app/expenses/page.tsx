@@ -454,19 +454,6 @@ export default function ExpensesPage() {
                 handleDeleteSettlement={handleDeleteSettlement}
                 handleSaveSettlement={handleSaveSettlement}
             />
-
-            {/* Extra Modals that might not be in ExpenseModals yet (AllExpensesModal) */}
-            {showAllExpensesModal && (
-                <AllExpensesModal
-                    onClose={() => setShowAllExpensesModal(false)}
-                    categories={categories}
-                    goals={goals}
-                    onUpdate={loadData}
-                    activeTab={activeTab}
-                    initialStartDate={startDate}
-                    initialEndDate={endDate}
-                />
-            )}
         </div>
     );
 }

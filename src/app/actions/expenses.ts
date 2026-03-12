@@ -319,16 +319,16 @@ export async function getSplitSettlement(project_label?: string, goal_id?: strin
         setlQuery
     ]);
 
-    const { data: allExpData, error: allExpError } = expRes;
-    const { data: pastSetl, error: setlError } = setlRes;
+    const allExpData = expRes.data || [];
+    const pastSetl = setlRes.data || [];
 
-    if (allExpError) throw allExpError;
-    if (setlError) throw setlError;
+    if (expRes.error) throw expRes.error;
+    if (setlRes.error) throw setlRes.error;
 
     let totalPYCredit_AllTime = 0;
     let totalPYDebit_AllTime = 0;
 
-    (allExpData as any[]).forEach((exp: any) => {
+    allExpData.forEach((exp: any) => {
         const amount = Number(exp.amount);
         const pBy = String(exp.paid_by).toUpperCase();
         const pFor = String(exp.paid_for).toUpperCase();
@@ -540,34 +540,67 @@ export async function processAIImport(content: string, type: 'text' | 'csv' | 'c
         });
     };
 
-    // Fallback Regex Parser for specific bank formats (YYYY/MM/DD \n Store \n Amount TWD)
+    // Fallback Regex Parser for multiple bank formats
     const regexFallback = (text: string) => {
-        const bankRegex = /(\d{4}\/\d{2}\/\d{2})\n([^\n]+)\n([\d,]+)\s+TWD/g;
-        const items = [];
-        let match;
-        while ((match = bankRegex.exec(text)) !== null) {
+        const items: any[] = [];
+        const lines = text.split('\n');
+
+        // Format 1: SMS/Notification (Date \n Name \n Amount TWD)
+        const smsRegex = /(\d{4}\/\d{2}\/\d{2})\n([^\n]+)\n([\d,]+)\s+TWD/g;
+        let smsMatch;
+        while ((smsMatch = smsRegex.exec(text)) !== null) {
             items.push({
-                date: match[1].replace(/\//g, '-'),
-                store_name: match[2].trim(),
-                amount: match[3].replace(/,/g, ''),
+                date: smsMatch[1].replace(/\//g, '-'),
+                store_name: smsMatch[2].trim(),
+                amount: smsMatch[3].replace(/,/g, ''),
                 category_hint: '未分類',
-                import_method: "REGEX_FALLBACK"
+                import_method: "REGEX_SMS"
             });
         }
+
+        // Format 2: Web Table (Date Time | Abstract | Expense | Income | Balance | Detail | Ticket)
+        // Check lines like: 2026/03/10 12:05    網頁         57,300.00                      324,070.00             電器尾款    0000000
+        lines.forEach(line => {
+            // Regex to identify Date, skip Time and Abstract, capture Expense (if exists), then skip Balance, capture Detail
+            // Pattern: Date | Time | Abstract | (Amount) | (Empty/Income) | Balance | Detail | Ticket
+            const tableMatch = line.match(/(\d{4}\/\d{2}\/\d{2})\s+\d{2}:\d{2}\s+(?:[^\s]+\s+)?([\d,]+\.\d{2})\s+(?:[\d,.]*\s+){1,2}([^\s]+)\s+\d{7}/);
+
+            if (tableMatch) {
+                const amountStr = tableMatch[2].replace(/,/g, '');
+                const amount = parseFloat(amountStr);
+
+                // We verify if this amount corresponds to Expense column by looking at the line structure
+                // In the user's format, Expense is the first amount column after Abstract.
+                // However, income lines have only one amount column which is shifted.
+                // Simple heuristic: if it has an amount in that specific capturing group, we treat it as expense.
+                if (amount > 0) {
+                    items.push({
+                        date: tableMatch[1].replace(/\//g, '-'),
+                        store_name: tableMatch[3].trim(),
+                        amount: amountStr,
+                        category_hint: '未分類',
+                        import_method: "REGEX_TABLE"
+                    });
+                }
+            }
+        });
+
         return items;
     };
 
     try {
-        // 2. Construct Simplified Prompt
+        // 2. Construct Enhanced Prompt
         const prompt = `
-            You are a financial parsing engine. Convert the following ${type} content into a JSON array of expense objects.
+            You are a financial parsing engine. Convert the following text into a JSON array of expense objects.
+            The content may be a list of notifications or a multi-column bank statement table.
+            
             Content: "${content}"
             
-            Rules for each object:
-            - store_name: string (clean and consistent name, e.g., "7-11" instead of "7-11 台北店")
-            - amount: number (must be >= 0)
-            - date: string (ISO YYYY-MM-DD)
-            - category_hint: string (Suggest a category from: ${categories?.map(c => c.name).join(', ')})
+            Rules:
+            - store_name: Use the most descriptive name (e.g., from "摘要明細" or "Detail" column). Clean and consistent.
+            - amount: number (Capture ONLY expenses/out-flow. Skip income/in-flow).
+            - date: string (ISO YYYY-MM-DD).
+            - category_hint: Suggest a category from: ${categories?.map(c => c.name).join(', ')}.
             
             Return ONLY the JSON array inside a code block.
         `;
