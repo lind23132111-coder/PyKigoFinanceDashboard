@@ -31,6 +31,9 @@ CREATE TABLE assets (
     currency TEXT NOT NULL DEFAULT 'TWD',
     ticker_symbol TEXT, -- e.g., 'NASDAQ:MU', 'TPE:0050'. Null for cash.
     is_active BOOLEAN NOT NULL DEFAULT true,
+    avg_cost NUMERIC DEFAULT 0,
+    dividend_yield NUMERIC DEFAULT 0,
+    strategy_category TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -88,6 +91,64 @@ CREATE TABLE goal_asset_mapping (
     PRIMARY KEY (goal_id, asset_id)
 );
 
+-- Strategy & Planning
+CREATE TABLE strategy_targets (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    category TEXT UNIQUE NOT NULL,
+    target_percentage NUMERIC NOT NULL CHECK (target_percentage >= 0 AND target_percentage <= 100),
+    color TEXT NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE TABLE user_goals (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    goal_name TEXT NOT NULL,
+    target_monthly_income NUMERIC NOT NULL,
+    currency TEXT DEFAULT 'TWD',
+    is_active BOOLEAN DEFAULT TRUE,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE TABLE strategy_notes (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    asset_id UUID NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
+    target_price NUMERIC,
+    exit_price NUMERIC,
+    conviction_level TEXT,
+    memo TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(asset_id)
+);
+
+-- Settlements & Expenses
+CREATE TABLE settlements (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    payer owner_enum NOT NULL,
+    receiver owner_enum NOT NULL,
+    amount NUMERIC NOT NULL,
+    date DATE NOT NULL DEFAULT CURRENT_DATE,
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE expenses (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    amount NUMERIC NOT NULL,
+    date DATE NOT NULL,
+    category TEXT NOT NULL,
+    description TEXT,
+    paid_by owner_enum NOT NULL,
+    paid_for owner_enum NOT NULL, 
+    source_app TEXT, 
+    raw_text TEXT,
+    is_duplicate BOOLEAN DEFAULT FALSE,
+    settlement_id UUID REFERENCES settlements(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- ---------------------------------------------------------------------
 -- 3. Row Level Security (RLS) Policies
 -- ---------------------------------------------------------------------
@@ -132,6 +193,33 @@ CREATE POLICY "Enable read access for all users" ON goal_asset_mapping FOR SELEC
 CREATE POLICY "Enable insert access for all users" ON goal_asset_mapping FOR INSERT WITH CHECK (true);
 CREATE POLICY "Enable update access for all users" ON goal_asset_mapping FOR UPDATE USING (true);
 
+ALTER TABLE strategy_targets ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Enable read access for all users" ON strategy_targets FOR SELECT USING (true);
+CREATE POLICY "Enable insert access for all users" ON strategy_targets FOR INSERT WITH CHECK (true);
+CREATE POLICY "Enable update access for all users" ON strategy_targets FOR UPDATE USING (true);
+
+ALTER TABLE user_goals ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Enable read access for all users" ON user_goals FOR SELECT USING (true);
+CREATE POLICY "Enable insert access for all users" ON user_goals FOR INSERT WITH CHECK (true);
+CREATE POLICY "Enable update access for all users" ON user_goals FOR UPDATE USING (true);
+
+ALTER TABLE strategy_notes ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Enable read access for all users" ON strategy_notes FOR SELECT USING (true);
+CREATE POLICY "Enable insert access for all users" ON strategy_notes FOR INSERT WITH CHECK (true);
+CREATE POLICY "Enable update access for all users" ON strategy_notes FOR UPDATE USING (true);
+
+ALTER TABLE settlements ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Enable read access for all users" ON settlements FOR SELECT USING (true);
+CREATE POLICY "Enable insert access for all users" ON settlements FOR INSERT WITH CHECK (true);
+CREATE POLICY "Enable update access for all users" ON settlements FOR UPDATE USING (true);
+CREATE POLICY "Enable delete access for all users" ON settlements FOR DELETE USING (true);
+
+ALTER TABLE expenses ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Enable read access for all users" ON expenses FOR SELECT USING (true);
+CREATE POLICY "Enable insert access for all users" ON expenses FOR INSERT WITH CHECK (true);
+CREATE POLICY "Enable update access for all users" ON expenses FOR UPDATE USING (true);
+CREATE POLICY "Enable delete access for all users" ON expenses FOR DELETE USING (true);
+
 -- ---------------------------------------------------------------------
 -- 4. Initial Seed Data
 -- ---------------------------------------------------------------------
@@ -148,3 +236,18 @@ INSERT INTO market_cache (symbol, price) VALUES
 ('USD/TWD', 32.5),
 ('JPY/TWD', 0.22)
 ON CONFLICT (symbol) DO NOTHING;
+
+-- Initial Strategy Targets
+INSERT INTO strategy_targets (category, target_percentage, color)
+VALUES 
+    ('核心持股 (大型股)', 45, '#10b981'),
+    ('成長動能 (科技股)', 30, '#6366f1'),
+    ('定存股 (領息資產)', 15, '#f59e0b'),
+    ('投機/現金資產', 10, '#94a3b8')
+ON CONFLICT (category) DO NOTHING;
+
+-- Initial User Goals
+INSERT INTO user_goals (goal_name, target_monthly_income)
+VALUES ('金融自由 (Passive Income)', 50000)
+ON CONFLICT DO NOTHING;
+

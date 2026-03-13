@@ -60,10 +60,10 @@
 ### 🔹 Milestone Maintenance: 環境分離與架構重構 (Env Separation & Refactor)
 *   **開發階段 (Phase 13)**: 強化開發安全性與代碼維護性。
 *   **實作亮點**:
-    *   **環境分離工程**: 實作 `.env.local` 導向開發用 Supabase 專案，徹底保護正式數據不受開發測試影響。
+    *   **環境分離工程 (Schema Sandbox)**: 實作 `.env.local` 與 `NEXT_PUBLIC_DB_SCHEMA=dev` 切換機制。將開發環境與正式環境收攏至單一 Supabase 專案中的 `dev` 與 `public` schema，徹底保護正式數據不受開發測試影響，同時節省雲端專案配額。
     *   **架構整理**: 將 SQL 初始化與 Mock 數據腳本遷移至 `supabase/scripts/`，移除 redundant 檔案與空目錄。
-    *   **統一客戶端**: 整合 `src/lib` 中的 Supabase Client，並全面更新專案匯入路徑，提升代碼健壯性。
-*   **Lesson Learnt**: 及時的技術債清償 (Refactoring) 與嚴謹的環境隔離，是專案從小型 side project 邁向穩定產品的必經過程。
+    *   **統一客戶端**: 整合 `src/lib` 中的 Supabase Client 提供 schema 動態切換能力，並全面更新專案匯入路徑，提升代碼健壯性。
+*   **Lesson Learnt**: 及時的技術債清償 (Refactoring) 與嚴謹的 Schema 隔離，是專案在有限資源（配額）下邁向安全穩定迭代的必經過程。
 
 ### 🔹 Milestone V2.0: 自動化記帳與 分帳結算 (AI Accounting & Split)
 *   **開發階段 (2026/03)**: 針對家庭日常支出與對帳痛點進行開發。

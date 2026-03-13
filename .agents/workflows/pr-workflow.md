@@ -38,7 +38,9 @@ git checkout -b <feature|fix|docs>/<short-description>
 
 ### Phase 4 — 驗證 (VERIFICATION)
 // turbo
-10. **環境隔離檢查**：確保本地 `.env.local` 連向 **DEV 專案**，避免污染正式數據。
+10. **環境隔離與 Schema 同步檢查**：
+    - 確保本地 `.env.local` 包含 `NEXT_PUBLIC_DB_SCHEMA=dev`。
+    - **⚠️ 關鍵 Schema 同步**：如果有任何新增表格或變更欄位的動作，必須確認 SQL Migration **在 `dev` 與 `public` 兩個 Schema 都成功執行**。
 11. **載入測試數據**：
     - 若需快速測試，執行 `supabase/scripts/dev_mock_data.sql`。
     - 若需與 Demo 版完全同步，執行 `supabase/scripts/dev_demo_mirror.sql` (高精確度鏡像)。
@@ -103,7 +105,8 @@ npm run dev
 | **架構清理** | 所有的 SQL 腳本應統一放置於 `supabase/scripts/`，並主動清理 GitHub root 的冗餘檔案。 |
 | **代碼一致性** | 統一使用 `@/lib/supabase` 作為 client 進入點，內建基礎 Error Handling 與 Demo 回退機制。 |
 | **Wiki 鏈結** | 檔案重新命名後（如 `_ultra.png`），必須同步搜尋並取代全 Wiki 文件中的引用字串。 |
-| **環境防護** | 開發新功能前，先確認 `.env.local` 內容。正式數據的操作絕對禁止出現在本地開發腳本中。 |
+| **環境防護 (Schema Sandbox)** | 正式與開發環境共用同一 Supabase 專案，但透過 `public` 與 `dev` schema 隔離。正式數據的操作絕對禁止出現在 `dev` 開發中；同樣地，Local 開發也嚴禁越過 `NEXT_PUBLIC_DB_SCHEMA=dev` 保護網直接操作 `public`。 |
+| **Schema 自動同步** | PR 被合併前，務必再三確認所有的資料庫變動 SQL 語法是否有在 `public` 和 `dev` 各跑一次，以維持兩邊結構同步。 |
 | **同步完整性** | 常見陷阱：PR 被合併後拉回 `main` 會導致 local 尚未 push 的重構被覆蓋。**務必在 Merge 前完成所有 Push**。 |
 
 ---

@@ -65,16 +65,16 @@ NEXT_PUBLIC_DEMO_MODE=true
 
 兩個 Project 共用同一份程式碼，GitHub Push 一次即同步完成兩端部署。注意 Demo 版會自動跳過密碼驗證頁面，方便公開分享。### 🔐 環境配置 (Environment Configuration)
 
-本專案採用 **開發 (Development)** 與 **生產 (Production)** 環境分離機制：
+本專案採用 **Schema Sandbox** 機制實現本機開發與生產環境的分離，共用同一個 Supabase 專案但保證資料庫完全隔離：
 
-1.  **本地開發環境 (`.env.local`)**：
-    *   預設連向開發用 Supabase 專案。
-    *   可自由進行測試、刪除數據，不影響正式環境。
-    *   使用 `v1_2_full_setup.sql` 進行初始化，`dev_demo_mirror.sql` 載入測試數據。
-
-2.  **生產環境 (Vercel)**：
-    *   連向正式 Supabase 專案。
+1.  **正式生產環境 (`public` schema)**：
+    *   預設 Vercel 部署連線至 `public` Schema。
     *   受 `SITE_PASSWORD` 保護。
+
+2.  **本地開發環境 (`dev` schema)**：
+    *   在 `.env.local` 加上 `NEXT_PUBLIC_DB_SCHEMA=dev` 切換至開發專用 Schema。
+    *   可自由增刪測試資料，不會影響正式環境數據。
+    *   使用 `schema.sql` 與 `setup_dev_schema.sql` 進行初始化結構，使用 `dev_demo_mirror.sql` 載入完整測試數據。
 
 ---
 

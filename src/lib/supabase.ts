@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 
 const isDemo = process.env.NEXT_PUBLIC_DEMO_MODE === 'true'
+const schema = process.env.NEXT_PUBLIC_DB_SCHEMA || 'public'
 
 // Provide dummy values for demo mode to prevent build-time crashes
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || (isDemo ? 'https://demo.supabase.co' : '')
@@ -13,6 +14,11 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 export const supabase = createClient(
-    supabaseUrl || 'https://placeholder.supabase.co', 
-    supabaseAnonKey || 'placeholder'
+    supabaseUrl || 'https://placeholder.supabase.co',
+    supabaseAnonKey || 'placeholder',
+    {
+        db: {
+            schema: schema
+        }
+    }
 )
