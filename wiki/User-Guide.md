@@ -130,6 +130,8 @@
 ---
 ---
 > [!NOTE]
-> **開發者筆記**：本專案已實現環境分離。開發環境所產生的任何「測試結算」或「假資料」均不會同步至正式版，請放心使用。
+> **開發者筆記**：本專案已實現環境分離（Schema Sandbox）。
+> 正式環境的所有資料儲存於 Supabase `public` schema，而開發與測試環境則隔離於 `dev` schema (`NEXT_PUBLIC_DB_SCHEMA=dev`)。因此，開發環境所產生的任何「測試結算」或「假資料」均不會同步至正式版，請放心使用。
+> ** Schema 同步**：若未來有新增或修改資料表欄位，務必確保 SQL 指令在 `public` 與 `dev` 兩個 Schema 都有執行，以保持結構一致。
 
 **Happy Financial Planning!**
