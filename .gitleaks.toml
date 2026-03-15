@@ -1,0 +1,30 @@
+# Gitleaks configuration for PyKigoFinanceDashboard
+# Docs: https://github.com/gitleaks/gitleaks
+
+title = "PyKigoFinanceDashboard Secret Scan"
+
+[extend]
+# Extend the default gitleaks config
+useDefault = true
+
+# ── Allowlist: known safe patterns that would trigger false positives ──
+[[rules.allowlist]]
+description = "Allow placeholder/demo/mock values"
+regexes = [
+  "placeholder\\.supabase\\.co",
+  "mock-project\\.supabase\\.co",
+  "demo\\.supabase\\.co",
+  "your-prod-project\\.supabase\\.co",
+  "your-prod-anon-key",
+  "your-gemini-api-key",
+  "your-prod-site-password",
+  "demo-key",
+  "mock-anon-key",
+]
+
+[[rules.allowlist]]
+description = "Allow environment variable references (not hardcoded values)"
+regexes = [
+  "process\\.env\\.",
+  "\\$\\{\\{\\s*secrets\\.",
+]
