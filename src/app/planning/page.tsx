@@ -10,7 +10,7 @@ import StockPlanningNotes from "@/components/dashboard/StockPlanningNotes";
 import { useLanguage } from "@/context/LanguageContext";
 
 export default function PlanningPage() {
-    const { t } = useLanguage();
+    const { t, lang } = useLanguage();
     const [planningData, setPlanningData] = useState<any>(null);
     const [actualAllocation, setActualAllocation] = useState<any[]>([]);
     const [selectedStock, setSelectedStock] = useState<string | null>(null);
@@ -20,8 +20,8 @@ export default function PlanningPage() {
 
     useEffect(() => {
         const load = async () => {
-            const plan = await getPlanningData();
-            const dash = await getLatestDashboardData();
+            const plan = await getPlanningData(lang);
+            const dash = await getLatestDashboardData(lang);
 
             setPlanningData(plan);
             setActualAllocation(dash.strategyAllocationData || []);
@@ -34,7 +34,7 @@ export default function PlanningPage() {
             setLoading(false);
         };
         load();
-    }, []);
+    }, [lang]);
 
     const handleCategoryChange = async (assetId: string, newCategory: string) => {
         try {

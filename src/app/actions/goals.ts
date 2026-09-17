@@ -19,6 +19,19 @@ const DEMO_GOALS = [
     }
 ];
 
+const DEMO_GOALS_EN = [
+    {
+        id: "demo-goal-1", name: "Home Renovation", target_amount: 1500000,
+        current_funding: 800000, progress: 53.3, category: "upcoming_expense", target_date: "2026-12-31",
+        meta: { spent_balance: 14500 }
+    },
+    {
+        id: "demo-goal-2", name: "Japan Ski Trip", target_amount: 200000,
+        current_funding: 150000, progress: 75.0, category: "upcoming_expense", target_date: "2026-02-28",
+        meta: { spent_balance: 0 }
+    }
+];
+
 const DEMO_ASSETS = [
     { id: "demo-asset-1", title: "Global Savings (USD)", owner: "PY", currency: "USD", asset_type: "cash" },
     { id: "demo-asset-2", title: "Family Trust (TWD)", owner: "Both", currency: "TWD", asset_type: "cash" }
@@ -27,8 +40,10 @@ const DEMO_ASSETS = [
 // ─────────────────────────────────────────────────────────────────
 // LIVE DATA FUNCTIONS
 // ─────────────────────────────────────────────────────────────────
-export async function getGoalsWithProgress() {
-    if (process.env.NEXT_PUBLIC_DEMO_MODE === "true") return DEMO_GOALS;
+export async function getGoalsWithProgress(lang?: string) {
+    if (process.env.NEXT_PUBLIC_DEMO_MODE === "true") {
+        return lang === 'en' ? DEMO_GOALS_EN : DEMO_GOALS;
+    }
 
     // Parallelize all 4 initial queries
     const [goalsRes, snapshotsRes, expRes] = await Promise.all([

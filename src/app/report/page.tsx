@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { useLanguage } from "@/context/LanguageContext";
 
 export default function ReportPage() {
-    const { t } = useLanguage();
+    const { t, lang } = useLanguage();
     const [activeTab, setActiveTab] = useState("All");
     const [reportData, setReportData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
@@ -16,7 +16,7 @@ export default function ReportPage() {
     const loadData = useCallback(async (isInitial = false) => {
         setLoading(true);
         try {
-            const data = await getReportData(isInitial ? undefined : selectedSnapshotId);
+            const data = await getReportData(isInitial ? undefined : selectedSnapshotId, lang);
             setReportData(data);
             if (isInitial && data.availableSnapshots?.length > 0) {
                 setSelectedSnapshotId(data.availableSnapshots[0].id);
@@ -26,11 +26,11 @@ export default function ReportPage() {
         } finally {
             setLoading(false);
         }
-    }, [selectedSnapshotId]);
+    }, [selectedSnapshotId, lang]);
 
     useEffect(() => {
         loadData(true);
-    }, []);
+    }, [lang]);
 
     // Selection handler
     const handleSnapshotChange = (id: string) => {

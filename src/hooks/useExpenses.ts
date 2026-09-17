@@ -18,7 +18,11 @@ import {
 import { getGoals } from "@/app/actions/goals";
 import { Expense, ExpenseCategory, Settlement } from "@/types/expenses";
 
+import { useLanguage } from "@/context/LanguageContext";
+
 export function useExpenses() {
+    const { lang } = useLanguage();
+    const isEn = lang === 'en';
     const [expenses, setExpenses] = useState<Expense[]>([]);
     const [unreviewed, setUnreviewed] = useState<Expense[]>([]);
     const [recentExpenses, setRecentExpenses] = useState<Expense[]>([]);
@@ -91,47 +95,43 @@ export function useExpenses() {
 
     const isProjectTab = activeTab !== 'all' && activeTab !== 'general';
 
-    // Load static data once
+    // Load static data once or on lang change
     useEffect(() => {
-        console.log("DEBUG: loadInitialData starting");
         const loadInitialData = async () => {
             setIsInitialLoading(true);
             const timeout = setTimeout(() => {
-                console.warn("DEBUG: Initial loading taking too long, forcing recovery");
                 setIsInitialLoading(false);
-            }, 10000); // 10s safety timeout
+            }, 10000);
 
             try {
-                console.log("DEBUG: Fetching categories and goals");
                 const [categoriesData, goalsData] = await Promise.all([
-                    getCategories(),
-                    getGoals()
+                    getCategories(lang),
+                    getGoals(lang)
                 ]);
-                console.log("DEBUG: Initial data fetched", { categories: categoriesData.length, goals: goalsData.length });
                 setCategories(categoriesData);
                 setGoals(goalsData);
             } catch (error) {
-                console.error("DEBUG: Failed to load initial data:", error);
+                console.error("Failed to load initial data:", error);
             } finally {
                 clearTimeout(timeout);
                 setIsInitialLoading(false);
             }
         };
         loadInitialData();
-    }, []);
+    }, [lang]);
 
-    // Load unreviewed data once on mount or when specifically refreshed
+    // Load unreviewed data
     useEffect(() => {
         const loadUnreviewed = async () => {
             try {
-                const unreviewedData = await getExpenses({ is_reviewed: false, limit: 100 });
+                const unreviewedData = await getExpenses({ is_reviewed: false, limit: 100 }, lang);
                 setUnreviewed(unreviewedData);
             } catch (error) {
                 console.error("Failed to load unreviewed:", error);
             }
         };
         loadUnreviewed();
-    }, []);
+    }, [lang]);
 
     const loadData = useCallback(async (forceRefresh = false) => {
         console.log("DEBUG: loadData starting", { activeTab, startDate, endDate, forceRefresh });
@@ -140,7 +140,7 @@ export function useExpenses() {
             return;
         }
 
-        const cacheKey = `${activeTab}-${startDate}-${endDate}-${showUnconfirmedOnly}-${paidForFilter}`;
+        const cacheKey = `${activeTab}-${startDate}-${endDate}-${showUnconfirmedOnly}-${paidForFilter}-${lang}`;
         const cachedContent = cache.current[cacheKey];
 
         // If we have cached content and it's fresh (within 5 minutes), use it immediately
@@ -150,8 +150,6 @@ export function useExpenses() {
             setSettlementHistory(cachedContent.settlementHistory);
             setStats(cachedContent.stats);
             setIsLoading(false);
-            // Optionally still refresh in background (SWR pattern)
-            // if we want to be data-correct without slowing down the user.
             return;
         }
 
@@ -177,18 +175,25 @@ export function useExpenses() {
                     sortBy: 'date',
                     sortOrder: 'descending',
                     paid_for: paidForFilter
-                }),
-                import("@/app/actions/expenses").then(m => m.getSettlementStatus(
+                }, lang),
+                import("@/app/actions/expenses").then(m => m.getSplitSettlement(
+                    activeTab === 'all' ? undefined : (isProjectTab ? undefined : activeTab),
+                    isProjectTab ? activeTab : undefined,
+                    undefined,
+                    undefined,
+                    lang
+                )).then(curr => import("@/app/actions/expenses").then(m => m.getSettlementHistory(
                     activeTab === 'all' ? undefined : (isProjectTab ? undefined : activeTab),
                     isProjectTab ? activeTab : undefined
-                )),
+                )).then(hist => ({ current: curr, history: hist }))),
                 import("@/app/actions/expenses").then(m => m.getExpenseStats(
                     isProjectTab ? "" : startDate,
                     isProjectTab ? "" : endDate,
                     activeTab === 'all' ? undefined : (isProjectTab ? undefined : activeTab),
                     filterMode,
                     isProjectTab ? activeTab : undefined,
-                    paidForFilter
+                    paidForFilter,
+                    lang
                 ))
             ]);
 
@@ -210,7 +215,7 @@ export function useExpenses() {
         } finally {
             setIsLoading(false);
         }
-    }, [activeTab, startDate, endDate, showUnconfirmedOnly, filterMode, isProjectTab, paidForFilter]);
+    }, [activeTab, startDate, endDate, showUnconfirmedOnly, filterMode, isProjectTab, paidForFilter, lang]);
 
     useEffect(() => {
         loadData();
@@ -288,19 +293,19 @@ export function useExpenses() {
     }, [loadData]);
 
     const handleDeleteExpense = useCallback(async (id: string) => {
-        if (!confirm("確定要刪除此筆記錄嗎？")) return;
+        if (!confirm(isEn ? "Are you sure you want to delete this record?" : "確定要刪除此筆記錄嗎？")) return;
         try {
             await deleteExpense(id);
             await loadData(true);
         } catch (error) {
             console.error(error);
         }
-    }, [loadData]);
+    }, [loadData, isEn]);
 
     const handleDeleteBulk = useCallback(async (ids?: string[]) => {
         const targetIds = ids || Array.from(selectedIds);
         if (targetIds.length === 0) return;
-        if (!confirm(`確定要刪除選取的 ${targetIds.length} 筆記錄嗎？`)) return;
+        if (!confirm(isEn ? `Are you sure you want to delete the selected ${targetIds.length} records?` : `確定要刪除選取的 ${targetIds.length} 筆記錄嗎？`)) return;
         try {
             setIsLoading(true);
             await Promise.all(targetIds.map(id => deleteExpense(id)));
@@ -311,7 +316,7 @@ export function useExpenses() {
         } finally {
             setIsLoading(false);
         }
-    }, [loadData, selectedIds]);
+    }, [loadData, selectedIds, isEn]);
 
     const handleCreateExpense = useCallback(async (payload: any) => {
         try {
@@ -337,7 +342,7 @@ export function useExpenses() {
             onPhase?.('analyzing');
             const parsed = await processAIImport(content, type);
             if (parsed.length === 0) {
-                alert("AI 未能識別任何支出項目，請確認內容格式。");
+                alert(isEn ? "AI could not identify any expenses. Please check the content format." : "AI 未能識別任何支出項目，請確認內容格式。");
                 return;
             }
 
@@ -359,21 +364,21 @@ export function useExpenses() {
             console.error("AI Import Error:", error);
             const msg = error?.message || "";
             if (msg.includes("429") || msg.includes("quota")) {
-                throw new Error("AI 服務額度已達上限或過於繁忙，目前無法解析。請稍候一分鐘再試，或是手動貼入較短的內容。");
+                throw new Error(isEn ? "AI service quota reached or busy. Please try again in a minute." : "AI 服務額度已達上限或過於繁忙，目前無法解析。請稍候一分鐘再試，或是手動貼入較短的內容。");
             }
-            throw new Error(msg || "AI 解析過程發生未知錯誤，請確認內容格式是否正確。");
+            throw new Error(msg || (isEn ? "An error occurred during AI parsing." : "AI 解析過程發生未知錯誤，請確認內容格式是否正確。"));
         }
-    }, [loadData]);
+    }, [loadData, isEn]);
 
     const handleDeleteSettlement = useCallback(async (id: string) => {
-        if (!confirm("確定要刪除此筆結算紀錄嗎？")) return;
+        if (!confirm(isEn ? "Are you sure you want to delete this settlement record?" : "確定要刪除此筆結算紀錄嗎？")) return;
         try {
             await deleteSettlement(id);
             await loadData(true);
         } catch (error) {
             console.error(error);
         }
-    }, [loadData]);
+    }, [loadData, isEn]);
 
     const handleSaveSettlement = useCallback(async (data: any) => {
         try {

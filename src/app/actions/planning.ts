@@ -13,6 +13,13 @@ const MOCK_STRATEGY_TARGETS: StrategyTarget[] = [
     { category: "投機/現金資產", target_percentage: 10, color: "#94a3b8" }
 ];
 
+const MOCK_STRATEGY_TARGETS_EN: StrategyTarget[] = [
+    { category: "Core Holdings (Mega-cap)", target_percentage: 45, color: "#10b981" },
+    { category: "Growth Momentum (Tech)", target_percentage: 30, color: "#6366f1" },
+    { category: "Dividend Stock (Yield)", target_percentage: 15, color: "#f59e0b" },
+    { category: "Speculative / Cash", target_percentage: 10, color: "#94a3b8" }
+];
+
 const MOCK_DIVIDEND_PROJECTIONS: ProjectedDividend[] = [
     { year: 2024, amount: 45000 },
     { year: 2025, amount: 52000 },
@@ -43,8 +50,27 @@ const DEMO_PLANNING_DATA = {
     ]
 };
 
-export async function getPlanningData() {
-    if (process.env.NEXT_PUBLIC_DEMO_MODE === "true") return DEMO_PLANNING_DATA;
+const DEMO_PLANNING_DATA_EN = {
+    strategyTargets: MOCK_STRATEGY_TARGETS_EN,
+    dividendProjections: MOCK_DIVIDEND_PROJECTIONS,
+    rebalancingThreshold: 5,
+    userGoal: { goal_name: 'Wings of Financial Freedom', target_monthly_income: 80000 },
+    availableStocks: [
+        { id: "demo-1", symbol: "NVDA", name: "Nvidia Corp", currentCategory: "Growth Momentum (Tech)", recommendedCategory: "Growth Momentum (Tech)" },
+        { id: "demo-2", symbol: "GOOGL", name: "Alphabet Inc", currentCategory: "Growth Momentum (Tech)", recommendedCategory: "Core Holdings (Mega-cap)" },
+        { id: "demo-3", symbol: "VOO", name: "Vanguard S&P 500 ETF", currentCategory: "Core Holdings (Mega-cap)", recommendedCategory: "Core Holdings (Mega-cap)" },
+        { id: "demo-5", symbol: "TSM", name: "Taiwan Semiconductor (TSM)", currentCategory: "Core Holdings (Mega-cap)", recommendedCategory: "Core Holdings (Mega-cap)" },
+        { id: "demo-8", symbol: "AAPL", name: "Apple Inc", currentCategory: "Core Holdings (Mega-cap)", recommendedCategory: "Core Holdings (Mega-cap)" },
+        { id: "demo-9", symbol: "MSFT", name: "Microsoft Corp", currentCategory: "Core Holdings (Mega-cap)", recommendedCategory: "Growth Momentum (Tech)" },
+        { id: "demo-6", symbol: "O", name: "Realty Income", currentCategory: "Dividend Stock (Yield)", recommendedCategory: "Dividend Stock (Yield)" },
+        { id: "demo-7", symbol: "SCHD", name: "Schwab US Dividend Equity", currentCategory: "Dividend Stock (Yield)", recommendedCategory: "Dividend Stock (Yield)" }
+    ]
+};
+
+export async function getPlanningData(lang?: string) {
+    if (process.env.NEXT_PUBLIC_DEMO_MODE === "true") {
+        return lang === 'en' ? DEMO_PLANNING_DATA_EN : DEMO_PLANNING_DATA;
+    }
 
     // 1. Fetch active stocks for selection
     const { data: stocks, error: stockError } = await supabase
@@ -119,75 +145,99 @@ export async function updateStrategyTarget(category: string, target_percentage: 
     return data;
 }
 
-export async function getStrategyNotes(tickerSymbol: string) {
+export async function getStrategyNotes(tickerSymbol: string, lang?: string) {
     if (process.env.NEXT_PUBLIC_DEMO_MODE === "true") {
-        const mockNotes: Record<string, any> = {
+        const mockNotesZh: Record<string, any> = {
             "NVDA": {
-                ticker_symbol: "NVDA",
-                target_buy_price: 110,
-                target_sell_price: 150,
-                confidence_level: 5,
+                ticker_symbol: "NVDA", target_buy_price: 110, target_sell_price: 150, confidence_level: 5,
                 note_content: "AI 晶片絕對領導者。Blackwell 架構效能大幅提升，毛利穩定。建議在季報公布前的拉回區間分批佈局。長期目標價看好 AI 基礎設施持續擴張。",
                 updated_at: new Date().toISOString()
             },
             "TSM": {
-                ticker_symbol: "TSM",
-                target_buy_price: 160,
-                target_sell_price: 200,
-                confidence_level: 5,
+                ticker_symbol: "TSM", target_buy_price: 160, target_sell_price: 200, confidence_level: 5,
                 note_content: "全球最先進製程代工，AI 核心供應商。CoWoS 產能供不應求。目前評價仍低於美系 AI 股，補漲空間大。適合做為核心持股長期動態調整。",
                 updated_at: new Date().toISOString()
             },
             "AAPL": {
-                ticker_symbol: "AAPL",
-                target_buy_price: 210,
-                target_sell_price: 250,
-                confidence_level: 4,
+                ticker_symbol: "AAPL", target_buy_price: 210, target_sell_price: 250, confidence_level: 4,
                 note_content: "Apple Intelligence 帶來的 iPhone 換機潮是 2024 下半年主旋律。服務收入成長抵銷硬體波動。現金流極強，回購政策支撐股價下檔。",
                 updated_at: new Date().toISOString()
             },
             "MSFT": {
-                ticker_symbol: "MSFT",
-                target_buy_price: 400,
-                target_sell_price: 480,
-                confidence_level: 5,
+                ticker_symbol: "MSFT", target_buy_price: 400, target_sell_price: 480, confidence_level: 5,
                 note_content: "雲端服務龍頭與 OpenAI 最大受益者。Copilot 貨幣化進程優於預期。企業端黏著度高，是防禦與成長兼具的頂級資產。",
                 updated_at: new Date().toISOString()
             },
             "GOOGL": {
-                ticker_symbol: "GOOGL",
-                target_buy_price: 150,
-                target_sell_price: 190,
-                confidence_level: 3,
+                ticker_symbol: "GOOGL", target_buy_price: 150, target_sell_price: 190, confidence_level: 3,
                 note_content: "搜尋廣告引擎穩定，但面臨 AI 競爭挑戰。Gemini 追趕速度尚可，YouTube 貢獻穩定成長。目前估值相對偏低，具備修復空間。",
                 updated_at: new Date().toISOString()
             },
             "VOO": {
-                ticker_symbol: "VOO",
-                target_buy_price: 480,
-                target_sell_price: null,
-                confidence_level: 5,
+                ticker_symbol: "VOO", target_buy_price: 480, target_sell_price: null, confidence_level: 5,
                 note_content: "S&P 500 指數基金。追隨美國國運，長期投資的首選。無需過度關注短線波动，定期定額投入即可實現資產穩定增值。",
                 updated_at: new Date().toISOString()
             },
             "O": {
-                ticker_symbol: "O",
-                target_buy_price: 50,
-                target_sell_price: 70,
-                confidence_level: 4,
+                ticker_symbol: "O", target_buy_price: 50, target_sell_price: 70, confidence_level: 4,
                 note_content: "Realty Income，月月配息的指標性 REITs。租客多為連鎖便利商店、連鎖影院等，現金流極其穩定。適動作為長期被動收入的基石。",
                 updated_at: new Date().toISOString()
             },
             "SCHD": {
-                ticker_symbol: "SCHD",
-                target_buy_price: 75,
-                target_sell_price: 90,
-                confidence_level: 5,
+                ticker_symbol: "SCHD", target_buy_price: 75, target_sell_price: 90, confidence_level: 5,
                 note_content: "高品質高股息 ETF。篩選標準嚴格，包含股東權益報酬率與股息成長。在市場波动中展現極強韌性，是存股族的首選之一。",
                 updated_at: new Date().toISOString()
             }
         };
-        return mockNotes[tickerSymbol] || { ticker_symbol: tickerSymbol, note_content: "Demo 模式：您可以嘗試修改筆記，但不會寫入資料庫。" };
+
+        const mockNotesEn: Record<string, any> = {
+            "NVDA": {
+                ticker_symbol: "NVDA", target_buy_price: 110, target_sell_price: 150, confidence_level: 5,
+                note_content: "Undisputed leader in AI chips. Blackwell architecture boosts performance with stable gross margins. Accumulate on pullbacks before earnings. Long-term outlook strongly bullish on AI infrastructure expansion.",
+                updated_at: new Date().toISOString()
+            },
+            "TSM": {
+                ticker_symbol: "TSM", target_buy_price: 160, target_sell_price: 200, confidence_level: 5,
+                note_content: "World's leading pure-play foundry and core AI enabler. CoWoS capacity remains fully booked. Valuation lags US AI tech peers with high catch-up upside. Ideal core holding.",
+                updated_at: new Date().toISOString()
+            },
+            "AAPL": {
+                ticker_symbol: "AAPL", target_buy_price: 210, target_sell_price: 250, confidence_level: 4,
+                note_content: "Apple Intelligence driving iPhone upgrade supercycle. Services revenue growth offsets hardware seasonality. Strong cash flows and buyback program floor downside.",
+                updated_at: new Date().toISOString()
+            },
+            "MSFT": {
+                ticker_symbol: "MSFT", target_buy_price: 400, target_sell_price: 480, confidence_level: 5,
+                note_content: "Cloud leader and prime beneficiary of OpenAI partnership. Copilot monetization exceeding expectations. High enterprise stickiness makes it a top growth & defensive asset.",
+                updated_at: new Date().toISOString()
+            },
+            "GOOGL": {
+                ticker_symbol: "GOOGL", target_buy_price: 150, target_sell_price: 190, confidence_level: 3,
+                note_content: "Search ad engine solid despite generative AI threats. Gemini iteration catching up fast, YouTube delivers steady revenue. Undervalued relative to peers.",
+                updated_at: new Date().toISOString()
+            },
+            "VOO": {
+                ticker_symbol: "VOO", target_buy_price: 480, target_sell_price: null, confidence_level: 5,
+                note_content: "S&P 500 ETF. Top choice for long-term compounding tracking US economic resilience. Dollar-cost average continuously without over-monitoring short-term noise.",
+                updated_at: new Date().toISOString()
+            },
+            "O": {
+                ticker_symbol: "O", target_buy_price: 50, target_sell_price: 70, confidence_level: 4,
+                note_content: "Realty Income, premier monthly dividend REIT. Tenant base consists of essential retail & net-lease properties. Extremely stable cash flow cornerstone for passive income.",
+                updated_at: new Date().toISOString()
+            },
+            "SCHD": {
+                ticker_symbol: "SCHD", target_buy_price: 75, target_sell_price: 90, confidence_level: 5,
+                note_content: "High-quality dividend equity ETF. Rigorous stock selection focusing on ROE and 10-year dividend growth. Exceptional market volatility resilience.",
+                updated_at: new Date().toISOString()
+            }
+        };
+
+        const mockNotes = lang === 'en' ? mockNotesEn : mockNotesZh;
+        return mockNotes[tickerSymbol] || {
+            ticker_symbol: tickerSymbol,
+            note_content: lang === 'en' ? "Demo Mode: You can edit notes, but changes will not be saved to server database." : "Demo 模式：您可以嘗試修改筆記，但不會寫入資料庫。"
+        };
     }
 
     const { data, error } = await supabase

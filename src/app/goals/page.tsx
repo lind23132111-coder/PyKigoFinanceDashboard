@@ -6,7 +6,7 @@ import { getGoalsWithProgress, createGoal, getActiveAssets, deleteGoal, updateGo
 import { useLanguage } from "@/context/LanguageContext";
 
 export default function GoalTracker() {
-    const { t } = useLanguage();
+    const { t, lang } = useLanguage();
     const [goals, setGoals] = useState<any[]>([]);
     const [activeAssets, setActiveAssets] = useState<any[]>([]);
     const [mounted, setMounted] = useState(false);
@@ -27,7 +27,7 @@ export default function GoalTracker() {
 
     const fetchGoalsAndAssets = async () => {
         const [goalsData, assetsData] = await Promise.all([
-            getGoalsWithProgress(),
+            getGoalsWithProgress(lang),
             getActiveAssets()
         ]);
         setGoals(goalsData);
@@ -37,7 +37,7 @@ export default function GoalTracker() {
     useEffect(() => {
         setMounted(true);
         fetchGoalsAndAssets();
-    }, []);
+    }, [lang]);
 
     const handleAddGoal = async (e: React.FormEvent) => {
         e.preventDefault();

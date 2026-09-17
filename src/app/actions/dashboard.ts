@@ -122,11 +122,45 @@ const DEMO_REPORT_DATA = {
     periodName: "2026/2"
 };
 
+const DEMO_DASHBOARD_DATA_EN = {
+    ...DEMO_DASHBOARD_DATA,
+    strategyAllocationData: [
+        { name: "Core Holdings (Mega-cap)", value: 48.0, raw_value: 47241600, color: "#10b981", originalKey: "Core Holdings (Mega-cap)" },
+        { name: "Growth Momentum (Tech)", value: 28.0, raw_value: 27557600, color: "#6366f1", originalKey: "Growth Momentum (Tech)" },
+        { name: "Dividend Stock (Yield)", value: 14.0, raw_value: 13778800, color: "#f59e0b", originalKey: "Dividend Stock (Yield)" },
+        { name: "Speculative / Cash", value: 10.0, raw_value: 9842000, color: "#94a3b8", originalKey: "Speculative / Cash" }
+    ]
+};
+
+const DEMO_REPORT_DATA_EN = {
+    summaryCards: [
+        { title: "Total Net Worth", amount: 98420000, subtitle: "Period: 2026/2", borderColor: "border-blue-500" },
+        { title: "PY Net Worth", amount: 44289000, subtitle: "Individual Accounts Total", borderColor: "border-emerald-500" },
+        { title: "Kigo Net Worth", amount: 29526000, subtitle: "Individual Accounts Total", borderColor: "border-amber-400" },
+        { title: "Both (Joint)", amount: 24605000, subtitle: "Joint Household & Investment", borderColor: "border-indigo-500" },
+    ],
+    assetItems: [
+        { id: 1, owner: "PY", ownerColor: "bg-emerald-100 text-emerald-700", type: "RSU", name: "Global Tech RSU", originalAmount: "2,000 shares (@ $280.00 USD)", ntdAmount: 17715600, category: "Stocks" },
+        { id: 2, owner: "Kigo", ownerColor: "bg-amber-100 text-amber-700", type: "Stock", name: "Semi Giant (2330)", originalAmount: "1,500 shares (@ $1,050.00 TWD)", ntdAmount: 1575000, category: "Stocks" },
+        { id: 3, owner: "Both", ownerColor: "bg-indigo-100 text-indigo-700", type: "Checking", name: "Family Reserve Fund", originalAmount: "$ 8,500,000 (TWD)", ntdAmount: 8500000, category: "Cash" }
+    ],
+    liveMarketData: [
+        { symbol: "MSFT", price: 420.5, type: "stock" },
+        { symbol: "GOOGL", price: 155.1, type: "stock" },
+        { symbol: "TSM", price: 145.2, type: "stock" },
+        { symbol: "USD/TWD", price: 31.6, type: "fx" },
+        { symbol: "JPY/TWD", price: 0.208, type: "fx" }
+    ],
+    periodName: "2026/2"
+};
+
 // ─────────────────────────────────────────────────────────────────
 // LIVE DATA FUNCTIONS
 // ─────────────────────────────────────────────────────────────────
-export async function getLatestDashboardData(): Promise<any> {
-    if (process.env.NEXT_PUBLIC_DEMO_MODE === "true") return DEMO_DASHBOARD_DATA;
+export async function getLatestDashboardData(lang?: string): Promise<any> {
+    if (process.env.NEXT_PUBLIC_DEMO_MODE === "true") {
+        return lang === 'en' ? DEMO_DASHBOARD_DATA_EN : DEMO_DASHBOARD_DATA;
+    }
 
     // 1. Fetch the recent snapshots for trend
     const { data: recentSnapshots, error: snapError } = await supabase
@@ -215,10 +249,10 @@ export async function getLatestDashboardData(): Promise<any> {
     };
 }
 
-export async function getReportData(snapshotId?: string) {
+export async function getReportData(snapshotId?: string, lang?: string) {
     if (process.env.NEXT_PUBLIC_DEMO_MODE === "true") {
         return {
-            ...DEMO_REPORT_DATA,
+            ...(lang === 'en' ? DEMO_REPORT_DATA_EN : DEMO_REPORT_DATA),
             availableSnapshots: [
                 { id: 'demo1', period_name: '2026/2', created_at: '2026-03-09T14:22:44Z' },
                 { id: 'demo2', period_name: '2025/5', created_at: '2025-05-31T23:59:59Z' },

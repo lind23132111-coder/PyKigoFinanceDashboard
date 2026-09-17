@@ -28,8 +28,13 @@ export const SettlementSummary = memo(function SettlementSummary({
     onOpenSettlement: () => void,
     onOpenHistory: () => void
 }) {
-    const { t } = useLanguage();
+    const { t, lang } = useLanguage();
+    const isEn = lang === 'en';
     if (!settlement) return null;
+
+    const statusTitle = settlement.net_balance === 0
+        ? (isEn ? 'Currently Settled' : '目前已結清')
+        : (settlement.net_balance < 0 ? (isEn ? 'PY Pending Payment' : 'PY 待支付') : (isEn ? 'Kigo Pending Payment' : 'Kigo 待支付'));
 
     return (
         <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white shadow-2xl shadow-indigo-900/40 relative overflow-hidden group">
@@ -46,7 +51,7 @@ export const SettlementSummary = memo(function SettlementSummary({
                     <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                         <div>
                             <h3 className="text-2xl md:text-3xl font-black tracking-tighter mb-1">
-                                {settlement.net_balance === 0 ? '目前已結清' : (settlement.net_balance < 0 ? 'PY 待支付' : 'Kigo 待支付')}
+                                {statusTitle}
                             </h3>
                             <div className="text-4xl md:text-5xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">
                                 ${settlement.abs_balance.toLocaleString()}
@@ -57,7 +62,7 @@ export const SettlementSummary = memo(function SettlementSummary({
                             <button
                                 onClick={onOpenHistory}
                                 className="p-3 bg-slate-800/80 hover:bg-slate-700/80 rounded-2xl transition-all border border-slate-700/50 text-slate-400 hover:text-white group/hist"
-                                title="查看歷史紀錄"
+                                title={isEn ? "View History" : "查看歷史紀錄"}
                             >
                                 <History className="w-5 h-5 group-hover/hist:rotate-[-45deg] transition-transform" />
                             </button>
@@ -74,11 +79,11 @@ export const SettlementSummary = memo(function SettlementSummary({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="bg-white/5 p-4 rounded-3xl border border-white/10 backdrop-blur-md">
-                        <div className="text-[10px] font-black text-slate-500 uppercase mb-1 tracking-widest text-center sm:text-left">PY 墊付</div>
+                        <div className="text-[10px] font-black text-slate-500 uppercase mb-1 tracking-widest text-center sm:text-left">{isEn ? 'PY Credit' : 'PY 墊付'}</div>
                         <div className="text-xl md:text-2xl font-black text-slate-100 text-center sm:text-left">${settlement.py_credit.toLocaleString()}</div>
                     </div>
                     <div className="bg-white/5 p-4 rounded-3xl border border-white/10 backdrop-blur-md">
-                        <div className="text-[10px] font-black text-slate-500 uppercase mb-1 tracking-widest text-center sm:text-left">Kigo 墊付</div>
+                        <div className="text-[10px] font-black text-slate-500 uppercase mb-1 tracking-widest text-center sm:text-left">{isEn ? 'Kigo Credit' : 'Kigo 墊付'}</div>
                         <div className="text-xl md:text-2xl font-black text-slate-100 text-center sm:text-left">${settlement.py_debit.toLocaleString()}</div>
                     </div>
                 </div>
@@ -120,6 +125,9 @@ export function SettlementHistoryModal({
     onDelete?: (id: string) => void,
     onEdit?: (item: any) => void
 }) {
+    const { lang } = useLanguage();
+    const isEn = lang === 'en';
+
     return (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[150] flex items-center justify-center p-4">
             <div className="bg-white rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl border border-gray-100 flex flex-col max-h-[80vh]">
@@ -129,8 +137,8 @@ export function SettlementHistoryModal({
                             <History className="w-5 h-5 text-indigo-600" />
                         </div>
                         <div>
-                            <h3 className="font-extrabold text-xl text-gray-900 tracking-tight">結算歷史紀錄</h3>
-                            <p className="text-xs text-gray-500 font-medium">記錄過往的所有全額與部分結算</p>
+                            <h3 className="font-extrabold text-xl text-gray-900 tracking-tight">{isEn ? 'Settlement History' : '結算歷史紀錄'}</h3>
+                            <p className="text-xs text-gray-500 font-medium">{isEn ? 'Historical records of all full and partial settlements' : '記錄過往的所有全額與部分結算'}</p>
                         </div>
                     </div>
                     <button onClick={onClose} className="p-2 hover:bg-white rounded-full transition-colors border border-transparent hover:border-gray-100 shadow-sm">
@@ -144,7 +152,7 @@ export function SettlementHistoryModal({
                             <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-dashed border-gray-200">
                                 <History className="w-8 h-8 text-gray-300" />
                             </div>
-                            <p className="text-gray-400 font-bold">尚無結算紀錄</p>
+                            <p className="text-gray-400 font-bold">{isEn ? 'No settlement history yet' : '尚無結算紀錄'}</p>
                         </div>
                     ) : (
                         history.map((item) => (
@@ -164,14 +172,14 @@ export function SettlementHistoryModal({
                                             </span>
                                         </div>
                                         <div className="text-xs font-semibold text-gray-400 mt-0.5">
-                                            {item.settlement_date} • {item.notes || '無備註'}
+                                            {item.settlement_date} • {item.notes || (isEn ? 'No notes' : '無備註')}
                                         </div>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <div className="text-right mr-2">
                                         <div className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest bg-indigo-50 px-2 py-1 rounded-lg">
-                                            {item.project_label === 'all' ? '全專案' : item.project_label}
+                                            {item.project_label === 'all' ? (isEn ? 'All Projects' : '全專案') : item.project_label}
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -199,7 +207,7 @@ export function SettlementHistoryModal({
                         onClick={onClose}
                         className="px-6 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-50 transition-all shadow-sm"
                     >
-                        關閉視窗
+                        {isEn ? 'Close' : '關閉視窗'}
                     </button>
                 </div>
             </div>
@@ -218,6 +226,8 @@ export function PartialSettlementModal({
     onSubmit,
     isEditing
 }: any) {
+    const { lang } = useLanguage();
+    const isEn = lang === 'en';
     const [amount, setAmount] = useState(isEditing ? (settlement.amount || 0) : (settlement.abs_balance || 0));
     const [notes, setNotes] = useState(settlement.notes || '');
     const [date, setDate] = useState(settlement.settlement_date || new Date().toISOString().split('T')[0]);
@@ -233,7 +243,7 @@ export function PartialSettlementModal({
 
     const handleSubmit = () => {
         if (amount <= 0 || (!isEditing && currentAbsBalance > 0 && amount > currentAbsBalance + 1)) {
-            alert('金額必須大於 0');
+            alert(isEn ? 'Amount must be greater than 0' : '金額必須大於 0');
             return;
         }
 
@@ -245,7 +255,7 @@ export function PartialSettlementModal({
             payee: isPYPaying ? 'Kigo' : 'PY',
             project_label: isGoalTab ? 'all' : activeTab,
             goal_id: isGoalTab ? activeTab : null,
-            notes: notes || (isEditing ? '' : (amount < currentAbsBalance ? '部份結算' : '全額結算'))
+            notes: notes || (isEditing ? '' : (amount < currentAbsBalance ? (isEn ? 'Partial Settlement' : '部份結算') : (isEn ? 'Full Settlement' : '全額結算')))
         });
     };
 
@@ -263,10 +273,10 @@ export function PartialSettlementModal({
                     </div>
 
                     <h3 className="text-2xl font-black text-gray-900 tracking-tight mb-2">
-                        {isEditing ? '編輯結算紀錄' : '執行分帳結算'}
+                        {isEditing ? (isEn ? 'Edit Settlement' : '編輯結算紀錄') : (isEn ? 'Execute Settlement' : '執行分帳結算')}
                     </h3>
                     <p className="text-gray-500 font-medium">
-                        {isEditing ? '修改過往的結算金額或備註' : '記錄雙方之間的代墊款項償還情況'}
+                        {isEditing ? (isEn ? 'Modify previous settlement amount or notes' : '修改過往的結算金額或備註') : (isEn ? 'Record settlement payments between members' : '記錄雙方之間的代墊款項償還情況')}
                     </p>
 
                     <div className="mt-8 space-y-6">
@@ -281,7 +291,7 @@ export function PartialSettlementModal({
                                 <div className="text-amber-800">
                                     <div className="text-[10px] font-black uppercase tracking-widest opacity-60">Payer</div>
                                     <div className="text-sm font-bold">
-                                        {isEditing ? `結算金額 $${settlement.amount.toLocaleString()}` : `目前總欠款 $${(settlement.abs_balance || 0).toLocaleString()}`}
+                                        {isEditing ? `${isEn ? 'Amount' : '結算金額'} $${settlement.amount.toLocaleString()}` : `${isEn ? 'Total Owed' : '目前總欠款'} $${(settlement.abs_balance || 0).toLocaleString()}`}
                                     </div>
                                 </div>
                             </div>
@@ -301,7 +311,7 @@ export function PartialSettlementModal({
                         </div>
 
                         <div>
-                            <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2 block">結算金額</label>
+                            <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2 block">{isEn ? 'Settlement Amount' : '結算金額'}</label>
                             <div className="relative">
                                 <div className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-gray-400 text-xl">$</div>
                                 <input
@@ -317,13 +327,13 @@ export function PartialSettlementModal({
                                         onClick={() => setAmount(settlement.abs_balance || 0)}
                                         className="text-[10px] font-black bg-white border border-gray-200 px-3 py-1 rounded-lg text-gray-500 hover:border-indigo-500 hover:text-indigo-600 transition-all shadow-sm"
                                     >
-                                        全額結算
+                                        {isEn ? 'Full Settle' : '全額結算'}
                                     </button>
                                     <button
                                         onClick={() => setAmount(Math.round((settlement.abs_balance || 0) / 2))}
                                         className="text-[10px] font-black bg-white border border-gray-200 px-3 py-1 rounded-lg text-gray-500 hover:border-indigo-500 hover:text-indigo-600 transition-all shadow-sm"
                                     >
-                                        結算一半
+                                        {isEn ? 'Settle Half' : '結算一半'}
                                     </button>
                                 </div>
                             )}
@@ -331,7 +341,7 @@ export function PartialSettlementModal({
 
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2 block">結算日期</label>
+                                <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2 block">{isEn ? 'Settlement Date' : '結算日期'}</label>
                                 <input
                                     type="date"
                                     value={date}
@@ -340,18 +350,18 @@ export function PartialSettlementModal({
                                 />
                             </div>
                             <div>
-                                <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2 block">結算範圍</label>
+                                <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2 block">{isEn ? 'Scope' : '結算範圍'}</label>
                                 <div className="bg-slate-100 rounded-xl py-2 px-3 text-sm font-bold text-slate-600 flex items-center gap-2">
-                                    <Layers className="w-3 h-3" /> {activeTab === 'all' ? '全帳本' : (activeTab === 'general' ? '日常家庭' : goals?.find((g: any) => g.id === activeTab)?.name)}
+                                    <Layers className="w-3 h-3" /> {activeTab === 'all' ? (isEn ? 'All Ledger' : '全帳本') : (activeTab === 'general' ? (isEn ? 'General' : '日常家庭') : goals?.find((g: any) => g.id === activeTab)?.name)}
                                 </div>
                             </div>
                         </div>
 
                         <div>
-                            <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2 block">備註</label>
+                            <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2 block">{isEn ? 'Notes' : '備註'}</label>
                             <input
                                 type="text"
-                                placeholder="例如：由轉帳支付..."
+                                placeholder={isEn ? "e.g. Paid via bank transfer..." : "例如：由轉帳支付..."}
                                 value={notes}
                                 onChange={(e) => setNotes(e.target.value)}
                                 className="w-full bg-gray-50 border-2 border-gray-100 rounded-xl py-2 px-4 font-bold text-gray-900 text-sm focus:border-indigo-500 transition-all outline-none"
@@ -365,13 +375,13 @@ export function PartialSettlementModal({
                         onClick={onClose}
                         className="flex-1 py-4 bg-gray-50 text-gray-500 rounded-2xl font-black text-sm hover:bg-gray-100 transition-all border border-gray-100"
                     >
-                        取消
+                        {isEn ? 'Cancel' : '取消'}
                     </button>
                     <button
                         onClick={handleSubmit}
                         className="flex-[2] py-4 bg-indigo-600 text-white rounded-2xl font-black text-sm hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 border border-indigo-500"
                     >
-                        確認結算
+                        {isEn ? 'Confirm Settlement' : '確認結算'}
                     </button>
                 </div>
             </div>

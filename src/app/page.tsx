@@ -31,7 +31,7 @@ export default function Dashboard() {
 
         const loadDashboard = async () => {
             try {
-                const data = await getLatestDashboardData() as DashboardData;
+                const data = await getLatestDashboardData(lang) as DashboardData;
                 setDashboardData(data);
                 if (data.latestSnapshot) {
                     setActiveSnapshotId(data.latestSnapshot.id);

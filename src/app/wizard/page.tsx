@@ -39,7 +39,7 @@ const getOwnerColor = (owner: string) => {
 };
 
 export default function QuarterlyWizard() {
-    const { t } = useLanguage();
+    const { t, lang } = useLanguage();
     const [activeTab, setActiveTab] = useState("All");
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
@@ -67,13 +67,13 @@ export default function QuarterlyWizard() {
     const [tickerError, setTickerError] = useState('');
 
     const handleDeleteAsset = async (id: string) => {
-        if (!confirm("確定要移除此資產嗎？(歷史紀錄仍會保留)")) return;
+        if (!confirm(lang === 'en' ? "Are you sure you want to remove this asset? (Historical data will be retained)" : "確定要移除此資產嗎？(歷史紀錄仍會保留)")) return;
         try {
             await toggleAssetActive(id, false);
             setStockAssets(prev => prev.filter(a => a.id !== id));
             setCashAccounts(prev => prev.filter(a => a.id !== id));
         } catch (e) {
-            alert("移除失敗");
+            alert(lang === 'en' ? "Failed to remove asset" : "移除失敗");
         }
     };
 
@@ -110,7 +110,7 @@ export default function QuarterlyWizard() {
                 setCashAccounts(prev => [...prev, mapped]);
             }
         } catch (e) {
-            alert("還原失敗");
+            alert(lang === 'en' ? "Failed to restore asset" : "還原失敗");
         }
     };
 
@@ -155,7 +155,9 @@ export default function QuarterlyWizard() {
         if ((newAsset.asset_type === 'stock' || newAsset.asset_type === 'rsu') && newAsset.ticker_symbol) {
             const isDuplicate = await checkDuplicateTicker(newAsset.ticker_symbol, newAsset.owner);
             if (isDuplicate) {
-                setTickerError(`「${newAsset.ticker_symbol}」已存在於 ${newAsset.owner} 的資產清單中，請勿重複新增。`);
+                setTickerError(lang === 'en'
+                    ? `"${newAsset.ticker_symbol}" already exists in ${newAsset.owner}'s assets.`
+                    : `「${newAsset.ticker_symbol}」已存在於 ${newAsset.owner} 的資產清單中，請勿重複新增。`);
                 return;
             }
         }
@@ -166,7 +168,9 @@ export default function QuarterlyWizard() {
         // Keyword Check
         const isTestName = /test|測試/i.test(newAsset.title);
         if (isTestName && !isDemo) {
-            const confirmSave = window.confirm("偵測到名稱包含「Test/測試」，您確定要將測試資料存入正式資料庫嗎？");
+            const confirmSave = window.confirm(lang === 'en'
+                ? "Detected 'Test' in name. Are you sure you want to save test data into the live database?"
+                : "偵測到名稱包含「Test/測試」，您確定要將測試資料存入正式資料庫嗎？");
             if (!confirmSave) return;
         }
 
@@ -182,7 +186,7 @@ export default function QuarterlyWizard() {
                     asset_type: newAsset.asset_type,
                     currency: newAsset.currency
                 };
-                alert("【演示模式】資料僅存於本地，未寫入資料庫。");
+                alert(lang === 'en' ? "[Demo Mode] Data saved locally only; server database bypassed." : "【演示模式】資料僅存於本地，未寫入資料庫。");
             } else {
                 added = await addNewAsset(newAsset) as any;
             }

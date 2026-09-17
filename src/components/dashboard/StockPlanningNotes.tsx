@@ -3,12 +3,15 @@
 import React, { useState, useEffect } from 'react';
 import { Save, AlertCircle, Info } from 'lucide-react';
 import { saveStrategyNote, getStrategyNotes } from '@/app/actions/planning';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface StockPlanningNotesProps {
     symbol: string;
 }
 
 export default function StockPlanningNotes({ symbol }: StockPlanningNotesProps) {
+    const { lang } = useLanguage();
+    const isEn = lang === 'en';
     const [notes, setNotes] = useState("");
     const [buyPrice, setBuyPrice] = useState<number | "">("");
     const [sellPrice, setSellPrice] = useState<number | "">("");
@@ -18,14 +21,13 @@ export default function StockPlanningNotes({ symbol }: StockPlanningNotesProps) 
 
     useEffect(() => {
         const load = async () => {
-            const data = await getStrategyNotes(symbol);
+            const data = await getStrategyNotes(symbol, lang);
             if (data) {
                 setNotes(data.note_content || "");
                 setBuyPrice(data.target_buy_price || "");
                 setSellPrice(data.target_sell_price || "");
                 setConfidence(data.confidence_level || 3);
             } else {
-                // Reset if not found
                 setNotes("");
                 setBuyPrice("");
                 setSellPrice("");
@@ -33,7 +35,7 @@ export default function StockPlanningNotes({ symbol }: StockPlanningNotesProps) 
             }
         };
         load();
-    }, [symbol]);
+    }, [symbol, lang]);
 
     const handleSave = async () => {
         setSaving(true);
@@ -45,9 +47,9 @@ export default function StockPlanningNotes({ symbol }: StockPlanningNotesProps) 
                 target_sell_price: sellPrice === "" ? null : Number(sellPrice),
                 confidence_level: confidence
             });
-            setMessage({ type: 'success', text: '策略已儲存' });
+            setMessage({ type: 'success', text: isEn ? 'Strategy Saved' : '策略已儲存' });
         } catch (e) {
-            setMessage({ type: 'error', text: '儲存失敗，請檢查資料庫連線' });
+            setMessage({ type: 'error', text: isEn ? 'Save failed, check DB connection' : '儲存失敗，請檢查資料庫連線' });
         }
         setSaving(false);
         setTimeout(() => setMessage(null), 3000);
@@ -57,7 +59,7 @@ export default function StockPlanningNotes({ symbol }: StockPlanningNotesProps) 
         <div className="space-y-4">
             <div className="flex items-center justify-between">
                 <h3 className="text-sm font-bold text-slate-400 border-l-4 border-brand-500 pl-3 uppercase tracking-wider">
-                    交易策略 (Trading Strategy)
+                    {isEn ? 'Trading Strategy' : '交易策略 (Trading Strategy)'}
                 </h3>
                 {message && (
                     <span className={`text-xs font-bold px-2 py-1 rounded ${message.type === 'success' ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}`}>
@@ -68,7 +70,7 @@ export default function StockPlanningNotes({ symbol }: StockPlanningNotesProps) 
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
-                    <label className="text-[10px] font-black text-slate-400 uppercase">目標買入價</label>
+                    <label className="text-[10px] font-black text-slate-400 uppercase">{isEn ? 'Target Buy Price' : '目標買入價'}</label>
                     <input
                         type="number"
                         value={buyPrice}
@@ -78,7 +80,7 @@ export default function StockPlanningNotes({ symbol }: StockPlanningNotesProps) 
                     />
                 </div>
                 <div className="space-y-1">
-                    <label className="text-[10px] font-black text-slate-400 uppercase">目標賣出價</label>
+                    <label className="text-[10px] font-black text-slate-400 uppercase">{isEn ? 'Target Sell Price' : '目標賣出價'}</label>
                     <input
                         type="number"
                         value={sellPrice}
@@ -90,7 +92,7 @@ export default function StockPlanningNotes({ symbol }: StockPlanningNotesProps) 
             </div>
 
             <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-400 uppercase">持股信心 (1-5)</label>
+                <label className="text-[10px] font-black text-slate-400 uppercase">{isEn ? 'Confidence Level (1-5)' : '持股信心 (1-5)'}</label>
                 <div className="flex gap-2">
                     {[1, 2, 3, 4, 5].map((level) => (
                         <button
@@ -108,13 +110,13 @@ export default function StockPlanningNotes({ symbol }: StockPlanningNotesProps) 
             </div>
 
             <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-400 uppercase">戰術筆記 (Notes)</label>
+                <label className="text-[10px] font-black text-slate-400 uppercase">{isEn ? 'Tactical Notes' : '戰術筆記 (Notes)'}</label>
                 <textarea
                     rows={3}
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     className="w-full bg-white/50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-brand-500 outline-none transition-all resize-none"
-                    placeholder="紀錄買賣邏輯、標的觀察或是止損計畫..."
+                    placeholder={isEn ? "Record buy/sell rationale, price levels, or exit plans..." : "紀錄買賣邏輯、標的觀察或是止損計畫..."}
                 />
             </div>
 
@@ -123,10 +125,10 @@ export default function StockPlanningNotes({ symbol }: StockPlanningNotesProps) 
                 disabled={saving}
                 className="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95 disabled:opacity-50"
             >
-                {saving ? "儲存中..." : (
+                {saving ? (isEn ? "Saving..." : "儲存中...") : (
                     <>
                         <Save className="w-4 h-4" />
-                        儲存策略變更
+                        {isEn ? "Save Strategy Changes" : "儲存策略變更"}
                     </>
                 )}
             </button>
@@ -134,7 +136,9 @@ export default function StockPlanningNotes({ symbol }: StockPlanningNotesProps) 
             <div className="p-3 bg-brand-50 border border-brand-100 rounded-lg flex gap-3 text-brand-700">
                 <Info className="w-4 h-4 shrink-0" />
                 <p className="text-[10px] leading-relaxed">
-                    筆記將與代號關連，即使在此頁面切換不同標的，系統也會自動帶入您先前儲存的對應策略。
+                    {isEn
+                        ? "Notes are linked to stock tickers. Switching tickers will automatically load your previously saved notes for that security."
+                        : "筆記將與代號關連，即使在此頁面切換不同標的，系統也會自動帶入您先前儲存的對應策略。"}
                 </p>
             </div>
         </div>

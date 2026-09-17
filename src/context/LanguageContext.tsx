@@ -26,10 +26,22 @@ function getNestedValue(obj: any, path: string): string | undefined {
 }
 
 export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const [lang, setLangState] = useState<Language>('zh');
+    const [lang, setLangState] = useState<Language>(() => {
+        if (typeof window !== 'undefined') {
+            const searchParams = new URLSearchParams(window.location.search);
+            const urlLang = searchParams.get('lang');
+            if (urlLang === 'en' || urlLang === 'zh') {
+                return urlLang as Language;
+            }
+            const savedLang = localStorage.getItem('app_lang') as Language;
+            if (savedLang === 'en' || savedLang === 'zh') {
+                return savedLang;
+            }
+        }
+        return 'zh';
+    });
 
     useEffect(() => {
-        // Read URL search params first
         const searchParams = new URLSearchParams(window.location.search);
         const urlLang = searchParams.get('lang');
 
