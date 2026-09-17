@@ -19,6 +19,7 @@
 | [**V2.1**](#v21-基礎設施強化與-ux-拋光-infra--ux-polish) | **基礎設施強化與 UX 拋光** | Token 優化、分層過濾佈局、異常中斷防護、結算歷史修復 | 4h |
 | [**V2.2**](#v22-靈活過濾與-ui-精煉-filter--ui-refinement) | **靈活過濾與 UI 精煉** | 季/年過濾模式、行動端易讀性優化、彈窗 UI 深度拋光、自動勾選功能 | 5h |
 | [**V2.2.9**](#v229-系統穩定度修復-stability-hotfix) | **系統穩定度修復** | 殭屍進程清理、載入安全超時、結算健壯性優化、日期同步修正 | 1h |
+| [**V2.3.0**](#v230-全站雙語化與模組鏡像-full-enzh-localization) | **全站雙語化與模組鏡像** | 全站 Demo Web 英文 Mock Data、UI 按鈕/彈窗/Alert 英文化、Docs 雙語對齊 | 3h |
 
 ---
 
@@ -97,10 +98,20 @@
     - **核心查詢優化**: 修改 `getReportData` 為 ID 基礎索引，提升報表切換速度。
 *   **Lesson Learnt**: 對於複雜的非同步載入架構，必須具備「容錯轉場」與「超時退出」機制，以確保最基本的用户體驗不會因單點失敗而永久鎖死。
 
+### 🔹 Milestone V2.3.0: 全站雙語化與模組鏡像 (Full EN/ZH Localization)
+*   **開發階段 (2026/09)**: 全面完成 Demo Web App、UI 操作介面與 GitHub Wiki 文件的中英文雙語化對齊。
+*   **實作亮點**:
+    - **同步語言初始化**: 優化 `LanguageContext`，在首頁渲染前同步解析 URL 參數 `?lang=en` 與 `localStorage`，徹底解決載入延遲與閃爍。
+    - **Server Actions 全數英文化**: 更新 `dashboard.ts`, `goals.ts`, `planning.ts`, `expenses.ts` 伺服器動作，確保在 `lang === 'en'` 下回傳完整的英文 Mock Data。
+    - **UI 按鈕、彈窗與 Alert 英文化**: 完成 `useExpenses.ts`, `SettlementSummary.tsx`, `StockPlanningNotes.tsx`, `wizard/page.tsx` 等全站 Client 頁面與瀏覽器 Confirm/Alert 提示訊息英文化。
+    - **Docs 下拉選單動態對齊**: 更新 `Navbar.tsx`，在 `?lang=en` 下導向英文版 Wiki (`User-Guide_en`, `Design-Document_en`, `Project-Work-Log_en`)。
+    - **GitHub & Wiki 雙語發布**: 撰寫 `README_en.md` 與 Wiki 全套英文檔，並執行 `sync-wiki.mjs` 發布至 GitHub Wiki。
+*   **Lesson Learnt**: 國際化 (i18n) 不僅僅是前端文字替換，包含 Server-Side Mock Data、瀏覽器提示彈窗與文件系統的同步更新，才能提供真正無縫且一致的專業體驗。
+
 ---
 
 ## 🌟 亮點總結 (Project Highlights)
-1.  **里程碑式 release**: 從 MVP (V1.0) 到體驗優化 (V1.1) 再到當前的策略指揮中心 (V1.2)，最終加入 V2.0 支出管理。
+1.  **里程碑式 release**: 從 MVP (V1.0) 到體驗優化 (V1.1) 再到當前的策略指揮中心 (V1.2)，最終加入 V2.0 支出管理與 V2.3 雙語切換。
 2.  **全自動化維運**: 報價同步、安全鎖定、Demo 分流均已自動化。
 3.  **現代化技術棧**: Next.js 16 Server Actions + TypeScript + Gemini AI。
 
@@ -112,4 +123,5 @@
 - [x] V2.1: 基礎設施強化與 UX 拋光完成。
 - [x] V2.2: 靈活過濾與 UI 精煉模組完成。
 - [x] V2.2.9: 系統穩定度與載入安全性修復完成。
+- [x] V2.3.0: 全站 Demo Web 雙語化與 GitHub Wiki 同步完成。
 - [ ] 規劃中：自動化投資回測引擎。

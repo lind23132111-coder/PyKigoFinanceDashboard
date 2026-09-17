@@ -19,6 +19,7 @@ This document records the key development milestones, architectural features, an
 | **V2.1** | **Infra & UX Polish** | Token optimization, Layered filter layout, Error boundary safeguards, Settlement history fixes | 4h |
 | **V2.2** | **Filter & UI Refinement** | Month/Quarter/Year filter modes, Mobile typography polish, Auto-check on edit | 5h |
 | **V2.2.9** | **Stability Hotfix** | Zombie process cleanup, 10s timeout protection, Settlement robustness, Date sync fixes | 1h |
+| **V2.3.0** | **Full EN/ZH Localization** | Full Demo Web app English mock data, UI buttons/modals/alerts localization, Docs sync | 3h |
 
 ---
 
@@ -32,6 +33,7 @@ This document records the key development milestones, architectural features, an
 - **V2.0 (AI Accounting & Split)**: Receipt import via Gemini, smart deduplication, net liability split settlement algorithm.
 - **V2.2 (Filter & UI Refinement)**: Month/Quarter/Year filter views, responsive typography adjustments, and batch editing.
 - **V2.2.9 (Stability Hotfix)**: 10s safe timeout protections for database requests, preventing UI freeze under bad network conditions.
+- **V2.3.0 (Full EN/ZH Localization)**: Full Demo Web App English mock data, synchronous i18n state hydration, UI button/modal translations, and automatic Docs Wiki links mapping.
 
 ---
 
@@ -43,4 +45,5 @@ This document records the key development milestones, architectural features, an
 - [x] V2.1: Infrastructure hardening & UX polish
 - [x] V2.2: Flexible period filters & UI refinement
 - [x] V2.2.9: System stability timeout hotfix
+- [x] V2.3.0: Full English demo web app & GitHub Wiki synchronization
 - [ ] Planned: Automated backtesting engine
