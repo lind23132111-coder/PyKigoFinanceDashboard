@@ -95,7 +95,7 @@ export async function getWizardInitData(): Promise<any> {
     return { mappedAssets, priceMap: Object.fromEntries(priceMap) };
 }
 
-export async function submitQuarterlySnapshot(cashInputs: CashInputDTO[], periodName: string = "2026/02") {
+export async function submitQuarterlySnapshot(cashInputs: CashInputDTO[], periodName: string = "2026/09") {
     if (process.env.NEXT_PUBLIC_DEMO_MODE === "true") {
         return { success: true, snapshot_id: "demo-submit-id" };
     }

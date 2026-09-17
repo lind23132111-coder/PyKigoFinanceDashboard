@@ -25,11 +25,10 @@ const DEMO_DASHBOARD_DATA = {
         { name: "Both", value: 25.0, raw_value: 24605000, color: "#6366f1", originalKey: "Both" }
     ],
     trendData: [
-        { id: "snap-1", name: "2024/4", assets: 4200, fullAssets: 4200, filteredAssets: 4200, color: "#94a3b8" },
-        { id: "snap-2", name: "2024/5", assets: 4850, fullAssets: 4850, filteredAssets: 4850, color: "#94a3b8" },
-        { id: "snap-3", name: "2024/8", assets: 6200, fullAssets: 6200, filteredAssets: 6200, color: "#94a3b8" },
-        { id: "snap-4", name: "2025/5", assets: 8400, fullAssets: 8400, filteredAssets: 8400, color: "#94a3b8" },
-        { id: "demo-snap-v3", name: "2026/2", assets: 9842, fullAssets: 9842, filteredAssets: 9842, color: "#22c55e" }
+        { id: "snap-1", name: "2025/5", assets: 4850, fullAssets: 4850, filteredAssets: 4850, color: "#94a3b8" },
+        { id: "snap-2", name: "2025/11", assets: 6200, fullAssets: 6200, filteredAssets: 6200, color: "#94a3b8" },
+        { id: "snap-3", name: "2026/3", assets: 8400, fullAssets: 8400, filteredAssets: 8400, color: "#94a3b8" },
+        { id: "demo-snap-v3", name: "2026/9", assets: 9842, fullAssets: 9842, filteredAssets: 9842, color: "#22c55e" }
     ],
     strategyAllocationData: [
         { name: "核心持股 (大型股)", value: 48.0, raw_value: 47241600, color: "#10b981", originalKey: "核心持股 (大型股)" },
@@ -37,10 +36,10 @@ const DEMO_DASHBOARD_DATA = {
         { name: "定存股 (領息資產)", value: 14.0, raw_value: 13778800, color: "#f59e0b", originalKey: "定存股 (領息資產)" },
         { name: "投機/現金資產", value: 10.0, raw_value: 9842000, color: "#94a3b8", originalKey: "投機/現金資產" }
     ],
-    latestSnapshot: { id: "demo-snap-v3", period_name: "2026/2", created_at: new Date().toISOString() },
+    latestSnapshot: { id: "demo-snap-v3", period_name: "2026/9", created_at: new Date().toISOString() },
     snapshotDetails: {
         "demo-snap-v3": {
-            period_name: "2026/2",
+            period_name: "2026/9",
             totalNetWorth: 98420000,
             rawRecords: [
                 { id: "r1", total_twd_value: 17715600, assets: { currency: "USD", asset_type: "rsu", owner: "PY" } },
@@ -51,8 +50,8 @@ const DEMO_DASHBOARD_DATA = {
                 { id: "r6", total_twd_value: 1968400, assets: { currency: "TWD", asset_type: "cash", owner: "Both" } }
             ]
         },
-        "snap-4": {
-            period_name: "2025/5",
+        "snap-3": {
+            period_name: "2026/3",
             totalNetWorth: 84000000,
             rawRecords: [
                 { id: "s4-1", total_twd_value: 50000000, assets: { currency: "USD", asset_type: "stock", owner: "PY" } },
@@ -61,8 +60,8 @@ const DEMO_DASHBOARD_DATA = {
                 { id: "s4-4", total_twd_value: 9000000, assets: { currency: "USD", asset_type: "stock", owner: "Kigo" } }
             ]
         },
-        "snap-3": {
-            period_name: "2024/8",
+        "snap-2": {
+            period_name: "2025/11",
             totalNetWorth: 62000000,
             rawRecords: [
                 { id: "s3-1", total_twd_value: 35000000, assets: { currency: "USD", asset_type: "stock", owner: "PY" } },
@@ -71,22 +70,13 @@ const DEMO_DASHBOARD_DATA = {
                 { id: "s3-4", total_twd_value: 5000000, assets: { currency: "JPY", asset_type: "fixed_deposit", owner: "Kigo" } }
             ]
         },
-        "snap-2": {
-            period_name: "2024/5",
+        "snap-1": {
+            period_name: "2025/5",
             totalNetWorth: 48500000,
             rawRecords: [
                 { id: "s2-1", total_twd_value: 28000000, assets: { currency: "USD", asset_type: "stock", owner: "PY" } },
                 { id: "s2-2", total_twd_value: 10500000, assets: { currency: "TWD", asset_type: "cash", owner: "Both" } },
                 { id: "s2-3", total_twd_value: 10000000, assets: { currency: "USD", asset_type: "rsu", owner: "PY" } }
-            ]
-        },
-        "snap-1": {
-            period_name: "2024/4",
-            totalNetWorth: 42000000,
-            rawRecords: [
-                { id: "s1-1", total_twd_value: 25000000, assets: { currency: "USD", asset_type: "stock", owner: "PY" } },
-                { id: "s1-2", total_twd_value: 10000000, assets: { currency: "TWD", asset_type: "cash", owner: "Both" } },
-                { id: "s1-3", total_twd_value: 7000000, assets: { currency: "USD", asset_type: "rsu", owner: "PY" } }
             ]
         }
     },
@@ -102,7 +92,7 @@ const DEMO_DASHBOARD_DATA = {
 
 const DEMO_REPORT_DATA = {
     summaryCards: [
-        { title: "家庭總資產淨值", amount: 98420000, subtitle: "資料期數：2026/2", borderColor: "border-blue-500" },
+        { title: "家庭總資產淨值", amount: 98420000, subtitle: "資料期數：2026/9", borderColor: "border-blue-500" },
         { title: "PY 資產總計", amount: 44289000, subtitle: "個人獨立帳戶合計", borderColor: "border-emerald-500" },
         { title: "Kigo 資產總計", amount: 29526000, subtitle: "個人獨立帳戶合計", borderColor: "border-amber-400" },
         { title: "Both (共同帳戶)", amount: 24605000, subtitle: "共同家用與投資", borderColor: "border-indigo-500" },
@@ -119,7 +109,7 @@ const DEMO_REPORT_DATA = {
         { symbol: "USD/TWD", price: 31.6, type: "fx" },
         { symbol: "JPY/TWD", price: 0.208, type: "fx" }
     ],
-    periodName: "2026/2"
+    periodName: "2026/9"
 };
 
 const DEMO_DASHBOARD_DATA_EN = {
@@ -134,7 +124,7 @@ const DEMO_DASHBOARD_DATA_EN = {
 
 const DEMO_REPORT_DATA_EN = {
     summaryCards: [
-        { title: "Total Net Worth", amount: 98420000, subtitle: "Period: 2026/2", borderColor: "border-blue-500" },
+        { title: "Total Net Worth", amount: 98420000, subtitle: "Period: 2026/9", borderColor: "border-blue-500" },
         { title: "PY Net Worth", amount: 44289000, subtitle: "Individual Accounts Total", borderColor: "border-emerald-500" },
         { title: "Kigo Net Worth", amount: 29526000, subtitle: "Individual Accounts Total", borderColor: "border-amber-400" },
         { title: "Both (Joint)", amount: 24605000, subtitle: "Joint Household & Investment", borderColor: "border-indigo-500" },
@@ -151,7 +141,7 @@ const DEMO_REPORT_DATA_EN = {
         { symbol: "USD/TWD", price: 31.6, type: "fx" },
         { symbol: "JPY/TWD", price: 0.208, type: "fx" }
     ],
-    periodName: "2026/2"
+    periodName: "2026/9"
 };
 
 // ─────────────────────────────────────────────────────────────────
@@ -254,11 +244,10 @@ export async function getReportData(snapshotId?: string, lang?: string) {
         return {
             ...(lang === 'en' ? DEMO_REPORT_DATA_EN : DEMO_REPORT_DATA),
             availableSnapshots: [
-                { id: 'demo1', period_name: '2026/2', created_at: '2026-03-09T14:22:44Z' },
-                { id: 'demo2', period_name: '2025/5', created_at: '2025-05-31T23:59:59Z' },
-                { id: 'demo3', period_name: '2024/8', created_at: '2024-08-31T23:59:59Z' },
-                { id: 'demo4', period_name: '2024/5', created_at: '2024-05-31T23:59:59Z' },
-                { id: 'demo5', period_name: '2024/4', created_at: '2024-04-30T23:59:59Z' }
+                { id: 'demo1', period_name: '2026/9', created_at: '2026-09-17T14:22:44Z' },
+                { id: 'demo2', period_name: '2026/3', created_at: '2026-03-31T23:59:59Z' },
+                { id: 'demo3', period_name: '2025/11', created_at: '2025-11-30T23:59:59Z' },
+                { id: 'demo4', period_name: '2025/5', created_at: '2025-05-31T23:59:59Z' }
             ]
         };
     }
