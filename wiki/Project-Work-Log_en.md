@@ -33,7 +33,7 @@ This document records the key development milestones, architectural features, an
 - **V2.0 (AI Accounting & Split)**: Receipt import via Gemini, smart deduplication, net liability split settlement algorithm.
 - **V2.2 (Filter & UI Refinement)**: Month/Quarter/Year filter views, responsive typography adjustments, and batch editing.
 - **V2.2.9 (Stability Hotfix)**: 10s safe timeout protections for database requests, preventing UI freeze under bad network conditions.
-- **V2.3.0 (Full EN/ZH Localization)**: Full Demo Web App English mock data, synchronous i18n state hydration, UI button/modal translations, and automatic Docs Wiki links mapping.
+- **V2.3.0 (Full EN/ZH Localization)**: Full Demo Web App English mock data, synchronous i18n state hydration, UI button/modal translations, and automatic Docs Wiki links mapping. *Lesson Learnt*: Net Dev Hours in AI Pair-Programming mode should reflect actual real-time execution and prompt alignment hours, accounting for AI acceleration rather than traditional inflated manual estimates.
 
 ---
 

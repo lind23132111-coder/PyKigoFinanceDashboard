@@ -106,7 +106,7 @@
     - **UI 按鈕、彈窗與 Alert 英文化**: 完成 `useExpenses.ts`, `SettlementSummary.tsx`, `StockPlanningNotes.tsx`, `wizard/page.tsx` 等全站 Client 頁面與瀏覽器 Confirm/Alert 提示訊息英文化。
     - **Docs 下拉選單動態對齊**: 更新 `Navbar.tsx`，在 `?lang=en` 下導向英文版 Wiki (`User-Guide_en`, `Design-Document_en`, `Project-Work-Log_en`)。
     - **GitHub & Wiki 雙語發布**: 撰寫 `README_en.md` 與 Wiki 全套英文檔，並執行 `sync-wiki.mjs` 發布至 GitHub Wiki。
-*   **Lesson Learnt**: 國際化 (i18n) 不僅僅是前端文字替換，包含 Server-Side Mock Data、瀏覽器提示彈窗與文件系統的同步更新，才能提供真正無縫且一致的專業體驗。
+*   **Lesson Learnt**: 國際化 (i18n) 不僅僅是前端文字替換，包含 Server-Side Mock Data、瀏覽器提示彈窗與文件系統的同步更新，才能提供真正無縫且一致的專業體驗。此外，在 AI 協作 (AI Pair Programming) 模式下，淨開發工時 (Net Dev Hours) 的計算應反應真實發生的實時溝通與對齊時間（如實估算 AI 產能放大後的實時工時），而非依循傳統純人工開發的膨脹估時。
 
 ---
 
