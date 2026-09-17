@@ -19,7 +19,7 @@ This document records the key development milestones, architectural features, an
 | **V2.1** | **Infra & UX Polish** | Token optimization, Layered filter layout, Error boundary safeguards, Settlement history fixes | 4h |
 | **V2.2** | **Filter & UI Refinement** | Month/Quarter/Year filter modes, Mobile typography polish, Auto-check on edit | 5h |
 | **V2.2.9** | **Stability Hotfix** | Zombie process cleanup, 10s timeout protection, Settlement robustness, Date sync fixes | 1h |
-| **V2.3.0** | **Full EN/ZH Localization** | Full Demo Web app English mock data, UI buttons/modals/alerts localization, Docs sync | 3h |
+| **V2.3.0** | **Full EN/ZH Localization** | Full Demo Web app English mock data, UI buttons/modals/alerts localization, Docs sync | 1.5h |
 
 ---
 

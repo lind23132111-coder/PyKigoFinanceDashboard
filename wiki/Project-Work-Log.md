@@ -19,7 +19,7 @@
 | [**V2.1**](#v21-基礎設施強化與-ux-拋光-infra--ux-polish) | **基礎設施強化與 UX 拋光** | Token 優化、分層過濾佈局、異常中斷防護、結算歷史修復 | 4h |
 | [**V2.2**](#v22-靈活過濾與-ui-精煉-filter--ui-refinement) | **靈活過濾與 UI 精煉** | 季/年過濾模式、行動端易讀性優化、彈窗 UI 深度拋光、自動勾選功能 | 5h |
 | [**V2.2.9**](#v229-系統穩定度修復-stability-hotfix) | **系統穩定度修復** | 殭屍進程清理、載入安全超時、結算健壯性優化、日期同步修正 | 1h |
-| [**V2.3.0**](#v230-全站雙語化與模組鏡像-full-enzh-localization) | **全站雙語化與模組鏡像** | 全站 Demo Web 英文 Mock Data、UI 按鈕/彈窗/Alert 英文化、Docs 雙語對齊 | 3h |
+| [**V2.3.0**](#v230-全站雙語化與模組鏡像-full-enzh-localization) | **全站雙語化與模組鏡像** | 全站 Demo Web 英文 Mock Data、UI 按鈕/彈窗/Alert 英文化、Docs 雙語對齊 | 1.5h |
 
 ---
 
