@@ -17,6 +17,7 @@ regexes = [
   "your-prod-project\\.supabase\\.co",
   "your-prod-anon-key",
   "your-gemini-api-key",
+  "your_key_here",
   "your-prod-site-password",
   "demo-key",
   "mock-anon-key",
