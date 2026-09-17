@@ -38,9 +38,9 @@ export default function Navbar() {
                                     <span className="hidden sm:inline">{t('nav.docs')}</span>
                                 </button>
                                 <div className="absolute right-0 mt-1 w-48 bg-white rounded-xl shadow-xl border border-slate-200 py-2 hidden group-hover/docs:block animate-in fade-in slide-in-from-top-2 duration-200">
-                                    <a href="https://github.com/lind23132111-coder/PyKigoFinanceDashboard/wiki/User-Guide" target="_blank" rel="noopener noreferrer" className="block px-4 py-2 text-sm text-slate-600 hover:bg-brand-50 hover:text-brand-600">{t('nav.userGuide')}</a>
-                                    <a href="https://github.com/lind23132111-coder/PyKigoFinanceDashboard/wiki/Design-Document" target="_blank" rel="noopener noreferrer" className="block px-4 py-2 text-sm text-slate-600 hover:bg-brand-50 hover:text-brand-600">{t('nav.designDoc')}</a>
-                                    <a href="https://github.com/lind23132111-coder/PyKigoFinanceDashboard/wiki/Project-Work-Log" target="_blank" rel="noopener noreferrer" className="block px-4 py-2 text-sm text-slate-600 hover:bg-brand-50 hover:text-brand-600">{t('nav.projectWorkLog')}</a>
+                                    <a href={`https://github.com/lind23132111-coder/PyKigoFinanceDashboard/wiki/User-Guide${lang === 'en' ? '_en' : ''}`} target="_blank" rel="noopener noreferrer" className="block px-4 py-2 text-sm text-slate-600 hover:bg-brand-50 hover:text-brand-600">{t('nav.userGuide')}</a>
+                                    <a href={`https://github.com/lind23132111-coder/PyKigoFinanceDashboard/wiki/Design-Document${lang === 'en' ? '_en' : ''}`} target="_blank" rel="noopener noreferrer" className="block px-4 py-2 text-sm text-slate-600 hover:bg-brand-50 hover:text-brand-600">{t('nav.designDoc')}</a>
+                                    <a href={`https://github.com/lind23132111-coder/PyKigoFinanceDashboard/wiki/Project-Work-Log${lang === 'en' ? '_en' : ''}`} target="_blank" rel="noopener noreferrer" className="block px-4 py-2 text-sm text-slate-600 hover:bg-brand-50 hover:text-brand-600">{t('nav.projectWorkLog')}</a>
                                 </div>
                             </div>
 
@@ -87,7 +87,7 @@ export default function Navbar() {
                     <MobileNavLink href={`/expenses?lang=${lang}`} icon={<ReceiptText className="w-4 h-4" />} label={t('nav.expenses')} />
                     <MobileNavLink href={`/wizard?lang=${lang}`} icon={<PlusCircle className="w-4 h-4" />} label={t('nav.wizard')} />
                     <MobileNavLink href={`/report?lang=${lang}`} icon={<FileText className="w-4 h-4" />} label={t('nav.report')} />
-                    <MobileNavLink href="https://github.com/lind23132111-coder/PyKigoFinanceDashboard/wiki/User-Guide" icon={<FileText className="w-4 h-4" />} label={t('nav.docs')} />
+                    <MobileNavLink href={`https://github.com/lind23132111-coder/PyKigoFinanceDashboard/wiki/User-Guide${lang === 'en' ? '_en' : ''}`} icon={<FileText className="w-4 h-4" />} label={t('nav.docs')} />
                 </div>
             </nav>
 
