@@ -1,6 +1,6 @@
 # PyKigo Finance Dashboard - User Operational Guide
 
-🌐 **Language / 語言**: [繁體中文](User-Guide.md) | **English**
+🌐 **Language / 語言**: [繁體中文](User-Guide) | **English**
 
 Welcome to your family financial command center! This guide will help you quickly master all core features and operations.
 
@@ -20,7 +20,7 @@ To protect your family's real financial privacy, the production environment incl
 
 The main dashboard delivers a 360-degree interactive overview of your net worth and asset breakdown.
 
-![Dashboard](images/dashboard_ultra.png)
+![Dashboard](https://raw.githubusercontent.com/wiki/lind23132111-coder/PyKigoFinanceDashboard/images/dashboard_ultra.png)
 
 - **AI Financial Insights (AI Insight)**:
   - Generates real-time advisory summaries based on your latest portfolio breakdown.
@@ -36,9 +36,9 @@ The main dashboard delivers a 360-degree interactive overview of your net worth 
 
 Give your savings and investments clear purpose and direction.
 
-![Goals](images/goal_ultra.png)
+![Goals](https://raw.githubusercontent.com/wiki/lind23132111-coder/PyKigoFinanceDashboard/images/goal_ultra.png)
 
-![Goals Input Detail](images/goal_detailed_ultra.png)
+![Goals Input Detail](https://raw.githubusercontent.com/wiki/lind23132111-coder/PyKigoFinanceDashboard/images/goal_detailed_ultra.png)
 
 - **Categorized Goal Management**: Create goals under **Short-term Major Expenses** (1-3 years) or **Long-term Wealth Planning** (3+ years).
 - **Custom Ordering**: Use the up/down arrows on each card to adjust priority order.
@@ -53,7 +53,8 @@ Give your savings and investments clear purpose and direction.
 
 Perform deep portfolio analysis, monitor allocation drift, and maintain investment discipline.
 
-![Strategy Desktop](images/strategy_ultra.png)
+![Strategy Desktop](https://raw.githubusercontent.com/wiki/lind23132111-coder/PyKigoFinanceDashboard/images/strategy_ultra.png)
+*Desktop view: Professional 3-column layout displaying holdings list, TradingView charts, and tactical notes.*
 
 - **Portfolio Rebalancing Matrix**:
   - **Target vs. Actual**: Compares target asset allocation against actual holdings.
@@ -71,7 +72,8 @@ Perform deep portfolio analysis, monitor allocation drift, and maintain investme
 
 Simplify daily bookkeeping and household expense splitting.
 
-![Expenses Desktop](images/expenses_ultra.png)
+![Expenses Desktop](https://raw.githubusercontent.com/wiki/lind23132111-coder/PyKigoFinanceDashboard/images/expenses_ultra.png)
+*V2.2 Configuration: Flexible time filtering & mobile optimization.*
 
 - **Flexible Time Period Filters**:
   - Toggle seamlessly between Month, Quarter, and Year views.
@@ -79,10 +81,14 @@ Simplify daily bookkeeping and household expense splitting.
 - **Beneficiary & Project Tabs**:
   - Filter transactions by project scope (*General Living*, *Home Renovation*) or beneficiary (*PY*, *Kigo*, *Both*).
 - **AI Smart Import Inbox**:
-  ![AI Input](images/expenses_input_ultra.png)
+  ![AI Input](https://raw.githubusercontent.com/wiki/lind23132111-coder/PyKigoFinanceDashboard/images/expenses_input_ultra.png)
+  ![Smart Input](https://raw.githubusercontent.com/wiki/lind23132111-coder/PyKigoFinanceDashboard/images/expenses_smartinput_ultra.png)
   - Paste text from e-invoices, upload PDF statements, or line logs. Gemini AI automatically parses dates, merchants, and amounts with smart deduplication.
+- **Transaction Workspace**:
+  ![All Expenses Modal](https://raw.githubusercontent.com/wiki/lind23132111-coder/PyKigoFinanceDashboard/images/expenses_v2.2_modal_desktop.png)
+  - Full-screen workspace with batch editing, auto-selection on edit, and search filters.
 - **Split Settlement & Net Balance Module**:
-  ![Split Settlement](images/expenses_AA_ultra.png)
+  ![Split Settlement](https://raw.githubusercontent.com/wiki/lind23132111-coder/PyKigoFinanceDashboard/images/expenses_AA_ultra.png)
   - Tracks prepayments between PY and Kigo using a **Net Liability** algorithm, showing exact net transfer amounts required.
 
 ---
@@ -91,7 +97,9 @@ Simplify daily bookkeeping and household expense splitting.
 
 Use the wizard for quarterly or monthly net worth updates.
 
-![Wizard](images/wizard_ultra.png)
+![Wizard](https://raw.githubusercontent.com/wiki/lind23132111-coder/PyKigoFinanceDashboard/images/wizard_ultra.png)
+
+![Wizard input detailed](https://raw.githubusercontent.com/wiki/lind23132111-coder/PyKigoFinanceDashboard/images/wizard_detailed_ultra.png)
 
 - **Step 1: Confirm Investment Holdings**: Review stock share counts pre-filled from your previous settlement, with live ticker lookup for TW, US, and JP stocks.
 - **Step 2: Update Bank Balances**: Enter online banking balances for cash and fixed deposit accounts.
@@ -103,7 +111,7 @@ Use the wizard for quarterly or monthly net worth updates.
 
 View and compare past settlement snapshots for tax filing or annual reviews.
 
-![Report](images/report_ultra.png)
+![Report](https://raw.githubusercontent.com/wiki/lind23132111-coder/PyKigoFinanceDashboard/images/report_ultra.png)
 
 - Select any historical snapshot period (e.g. `2026/2`) from the dropdown to inspect past asset balances, exchange rates, and ownership shares.
 

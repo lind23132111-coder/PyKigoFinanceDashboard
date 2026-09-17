@@ -1,6 +1,6 @@
 # PyKigo Finance Dashboard Project Work Log
 
-🌐 **Language / 語言**: [繁體中文](Project-Work-Log.md) | **English**
+🌐 **Language / 語言**: [繁體中文](Project-Work-Log) | **English**
 
 This document records the key development milestones, architectural features, and lessons learnt from project inception to date.
 

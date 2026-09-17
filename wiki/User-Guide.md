@@ -1,6 +1,6 @@
 # PyKigo Finance Dashboard - 使用者操作指南
 
-🌐 **Language / 語言**: **繁體中文** | [English](User-Guide_en.md)
+🌐 **Language / 語言**: **繁體中文** | [English](User-Guide_en)
 
 歡迎使用您的專屬財務戰情室！本指南將協助您快速上手各項核心功能。
 
@@ -14,7 +14,7 @@
 ## 1. 財務戰情室 (Financial Dashboard)
 儀表板提供全方位的資產視角。
 
-![Dashboard](images/dashboard_ultra.png)
+![Dashboard](https://raw.githubusercontent.com/wiki/lind23132111-coder/PyKigoFinanceDashboard/images/dashboard_ultra.png)
 
 - **AI 財務洞察 (AI Insight)**: 系統會根據最新數據自動產生一段分析。若您覺得 AI 說得不夠精確，可以在下方的回饋框輸入指令（例如：「請分析得更幽默一點」或「多關注我的美股分配」），點選「重新生成」。
 - **趨勢互動圖表**: 
@@ -25,9 +25,9 @@
 ## 2. 財務目標追蹤 (Goal Tracker)
 讓您的存款與投資賦予目標感。
 
-![Goals](images/goal_ultra.png)
+![Goals](https://raw.githubusercontent.com/wiki/lind23132111-coder/PyKigoFinanceDashboard/images/goal_ultra.png)
 
-![Goals input detail](images/goal_detailed_ultra.png)
+![Goals input detail](https://raw.githubusercontent.com/wiki/lind23132111-coder/PyKigoFinanceDashboard/images/goal_detailed_ultra.png)
 
 - **設定目標及排序**: 您可以建立「近期大筆開銷」（如：國內旅遊）或「長期理財規劃」（如：退休金）。
   - **自訂順序**: 每張目標卡片右上角設有「向上/向下」箭頭，您可以根據喜好調整順序。系統會確保「近期開銷」固定顯示在「長期規劃」之前，但您可以在各自的區別內調整先後。
@@ -41,7 +41,7 @@
 ## 3. 投資策略與規劃 (Strategy & Planning)
 本頁面旨在協助您進行深度市場研究與投資紀律管理。
 
-![Strategy Desktop](images/strategy_ultra.png)
+![Strategy Desktop](https://raw.githubusercontent.com/wiki/lind23132111-coder/PyKigoFinanceDashboard/images/strategy_ultra.png)
 *電腦版：專業三欄式佈局，清單、圖表、筆記一目瞭然。*
 
 - **資產再平衡 (Portfolio Rebalancing)**：
@@ -65,7 +65,7 @@
 ## 4. 支出管理與 分帳結算 (V2.2)
 本頁面旨在簡化繁瑣的日常記帳與家庭成員對帳。
 
-![Expenses V2.2 Desktop](images/expenses_ultra.png)
+![Expenses V2.2 Desktop](https://raw.githubusercontent.com/wiki/lind23132111-coder/PyKigoFinanceDashboard/images/expenses_ultra.png)
 *V2.2 全新配置：靈活的時間過濾與強化的行動端體驗。*
 
 
@@ -77,22 +77,22 @@
   - **排版優化**: 為了確保在小螢幕上也能流暢操作，我們簡化了過濾器的文字標籤，並移除了冗餘的裝飾性資訊。
 
 - **AI 智慧匯入中心**:
-  ![AI Input](images/expenses_input_ultra.png)
-  ![Smart Input](images/expenses_smartinput_ultra.png)
+  ![AI Input](https://raw.githubusercontent.com/wiki/lind23132111-coder/PyKigoFinanceDashboard/images/expenses_input_ultra.png)
+  ![Smart Input](https://raw.githubusercontent.com/wiki/lind23132111-coder/PyKigoFinanceDashboard/images/expenses_smartinput_ultra.png)
   - **支援多格式**: 點擊「AI 智慧匯入」，可貼上電子載具文字、上傳 PDF 帳單或直接輸入內容。
   - **高效 2x2 排版**: AI Inbox 中的「支付人」與「對象」選擇器採用 2x2 矩陣排列，解決文字重疊問題，操作更直覺。
   - **多階段進度回饋**: 匯入時提供「分析中」、「儲存中」、「同步中」狀態。即使 AI 服務暫時繁忙，系統也會提供明確的錯誤提示與等待建議，不再讓畫面無反應。
   - **Token 優化去重**: 結合後台智慧去重技術，自動比對「日期、金額、商店」，防止重複匯入已存在的帳目。
 
 - **工作區域化管理 (Transaction Workspace)**:
-  ![All Expenses Modal](images/expenses_v2.2_modal_desktop.png)
+  ![All Expenses Modal](https://raw.githubusercontent.com/wiki/lind23132111-coder/PyKigoFinanceDashboard/images/expenses_v2.2_modal_desktop.png)
   - **管理交易明細**: 點擊下方的紫色按鈕進入全螢幕管理中心。
   - **預設批次編輯**: 開啟視窗後內部預設即為「批次編輯模式」，無需手動切換，方便您直接進行大量調整。
   - **隔離視角**: 管理中心會自動清除主頁面的時間過濾，預設顯示所有帳目。
   - **自動勾選 (Auto-Select)**: 在「批次模式」下，只要您修改任何項目的類別或專案，系統會**自動幫您勾選該項目**，大幅減少重複點擊。
 
 - **分帳淨額結算模組**:
-  ![Split Settlement](images/expenses_AA_ultra.png)
+  ![Split Settlement](https://raw.githubusercontent.com/wiki/lind23132111-coder/PyKigoFinanceDashboard/images/expenses_AA_ultra.png)
   - **墊付追蹤**: 顯示目前 PY 與 Kigo 的總墊付金額。系統採用「淨負債」邏輯，直接計算出誰應支付給誰。
   - **歸屬彈性**: 支援「Both」選項，適用於由共同資產直接支付且不列入分帳的情境。
   - **系統穩定性與掛起保護 (V2.2.9)**: 為了解決在極端網路或數據情況下的頁面掛起問題，我們為載入過程加入了 **10 秒安全超時**。若資料庫響應延遲，系統會自動跳過載入動畫，確保您始終能進入儀表板進行手動操作。
@@ -101,9 +101,9 @@
 ## 5. 定期資產結算 (Quarterly Wizard)
 每次結算時（如：季度或月份），請前往此頁面。
 
-![Wizard](images/wizard_ultra.png)
+![Wizard](https://raw.githubusercontent.com/wiki/lind23132111-coder/PyKigoFinanceDashboard/images/wizard_ultra.png)
 
-![Wizard input detailed](images/wizard_detailed_ultra.png)
+![Wizard input detailed](https://raw.githubusercontent.com/wiki/lind23132111-coder/PyKigoFinanceDashboard/images/wizard_detailed_ultra.png)
 
 - **確認投資股數**: 系統會自動帶入上一次的結算數量，並比對最新市場報價，您只需確認是否有買進/賣出即可。
     - **智慧代號搜尋**: 支援美股代號與台股代碼（如輸入 `0050` 會自動找尋 `0050.TW`）。若搜尋 API 暫時緩慢，系統會提供「熱門股票推薦」供您快速選取。
@@ -120,7 +120,7 @@
 - **快照時間顯示**: 系統會精確顯示該份報表產出的「快照時間」。即使資產是在隔月才完成補登，您也能透過此資訊確認數據的真實對帳時點。
 - **即時數據對其**: 選取特定期數後，下方的四張總理卡片（總資產、PY/Kigo 佔比）以及「重點資產追蹤明細」會立即同步更新，顯示當時的資產殘餘價值與股數。
 
-![Report](images/report_ultra.png)
+![Report](https://raw.githubusercontent.com/wiki/lind23132111-coder/PyKigoFinanceDashboard/images/report_ultra.png)
 
 ## 7. 行動版介面優化 (Mobile Optimization)
 為了讓您在手機上也能流暢更新資產，我們針對行動裝置進行了深度優化：

@@ -1,6 +1,6 @@
 # PyKigo Finance Dashboard - Design Document
 
-🌐 **Language / 語言**: **繁體中文** | [English](Design-Document_en.md)
+🌐 **Language / 語言**: **繁體中文** | [English](Design-Document_en)
 
 本文件詳細說明了 PyKigo Finance Dashboard 的系統架構、技術設計決策與資料模型。
 
@@ -8,10 +8,10 @@
 
 專案採用現代化、非同步且數據驅動的架構，旨在處理多幣別資產與繁瑣的市場數據。
 
-![Architecture Concept](images/architecture_concept_visual_1772792969606.png)
+![Architecture Concept](https://raw.githubusercontent.com/wiki/lind23132111-coder/PyKigoFinanceDashboard/images/architecture_concept_visual_1772792969606.png)
 _架構概念圖：核心星狀結構與資料流。_
 
-![Dashboard Ultra](images/dashboard_ultra.png)
+![Dashboard Ultra](https://raw.githubusercontent.com/wiki/lind23132111-coder/PyKigoFinanceDashboard/images/dashboard_ultra.png)
 _註：本圖為實際 UI 介面展示 (使用模擬數據)。_
 
 ### 技術棧 (Tech Stack)

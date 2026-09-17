@@ -1,6 +1,6 @@
 # PyKigo Finance Dashboard Project Work Log
 
-🌐 **Language / 語言**: **繁體中文** | [English](Project-Work-Log_en.md)
+🌐 **Language / 語言**: **繁體中文** | [English](Project-Work-Log_en)
 
 本誌錄記載了本專案從開發初期至今的關鍵里程碑、實作內容及開發心得。
 

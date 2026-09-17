@@ -1,6 +1,6 @@
 # PyKigo Finance Dashboard - Technical Design Document
 
-🌐 **Language / 語言**: [繁體中文](Design-Document.md) | **English**
+🌐 **Language / 語言**: [繁體中文](Design-Document) | **English**
 
 This document details the system architecture, technical design decisions, database models, and algorithms of the PyKigo Finance Dashboard.
 
@@ -10,7 +10,7 @@ This document details the system architecture, technical design decisions, datab
 
 The application adopts a modern, asynchronous, data-driven architecture optimized for multi-currency portfolio management and financial analytics.
 
-![Architecture Concept](images/architecture_concept_visual_1772792969606.png)
+![Architecture Concept](https://raw.githubusercontent.com/wiki/lind23132111-coder/PyKigoFinanceDashboard/images/architecture_concept_visual_1772792969606.png)
 
 ### Tech Stack Specifications
 - **Frontend Framework**: Next.js 16 (App Router, Turbopack) for hybrid Server Side Rendering (SSR) and reactive Client Side Components.
