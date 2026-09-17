@@ -1,5 +1,7 @@
 # PyKigo Finance Dashboard - Design Document
 
+🌐 **Language / 語言**: **繁體中文** | [English](Design-Document_en.md)
+
 本文件詳細說明了 PyKigo Finance Dashboard 的系統架構、技術設計決策與資料模型。
 
 ## 1. 系統架構概念

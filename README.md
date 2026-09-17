@@ -1,5 +1,7 @@
 # PyKigo Finance Dashboard
 
+🌐 **Language / 語言**: **繁體中文** | [English](README_en.md)
+
 一個為家庭量身打造的財務戰情室，旨在提供多維度的資產解析與即時 AI 財務洞察。
 
 ## 🌟 主要功能

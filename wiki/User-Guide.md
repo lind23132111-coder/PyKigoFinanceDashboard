@@ -1,5 +1,7 @@
 # PyKigo Finance Dashboard - 使用者操作指南
 
+🌐 **Language / 語言**: **繁體中文** | [English](User-Guide_en.md)
+
 歡迎使用您的專屬財務戰情室！本指南將協助您快速上手各項核心功能。
 
 ## 0. 安全存取 (Site Security)
