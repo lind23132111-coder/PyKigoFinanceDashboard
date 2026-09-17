@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { getWizardInitData, searchTicker, checkDuplicateTicker } from "@/app/actions/wizard";
 import type { TickerSuggestion } from "@/app/actions/wizard";
 import { toggleAssetActive, addNewAsset } from "@/app/actions/goals";
+import { useLanguage } from "@/context/LanguageContext";
 
 type Asset = {
     id: string;
@@ -38,6 +39,7 @@ const getOwnerColor = (owner: string) => {
 };
 
 export default function QuarterlyWizard() {
+    const { t } = useLanguage();
     const [activeTab, setActiveTab] = useState("All");
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
@@ -342,10 +344,10 @@ export default function QuarterlyWizard() {
             <div className="bg-gradient-to-br from-slate-800 to-brand-600 rounded-2xl md:rounded-3xl p-6 md:p-8 text-white shadow-lg relative overflow-hidden">
                 <div className="relative z-10">
                     <h1 className="text-2xl md:text-3xl font-black tracking-tight mb-2 flex items-center gap-2 md:gap-3">
-                        <span className="text-3xl md:text-4xl">📝</span> {currentPeriod} 資產結算
+                        <span className="text-3xl md:text-4xl">📝</span> {currentPeriod} {t('wizard.title')}
                     </h1>
                     <p className="text-brand-100 font-medium opacity-90 text-sm md:text-base">
-                        上一次結算：{lastPeriod} {monthsSinceLast !== null ? `(相隔 ${monthsSinceLast} 個月)` : ''}
+                        {t('wizard.lastSettlement')} {lastPeriod} {monthsSinceLast !== null ? t('wizard.monthsAgo', { months: String(monthsSinceLast) }) : ''}
                     </p>
                 </div>
 
@@ -373,7 +375,7 @@ export default function QuarterlyWizard() {
                                     : "text-slate-500 hover:bg-slate-100 hover:text-slate-800"
                                     }`}
                             >
-                                {tab === 'All' ? '全部資產' : tab}
+                                {tab === 'All' ? t('wizard.filterAll') : tab}
                             </button>
                         ))}
                     </div>
@@ -382,10 +384,10 @@ export default function QuarterlyWizard() {
                     <div className="space-y-4">
                         <div className="flex items-center justify-between mb-6">
                             <div className="flex items-center gap-3">
-                                <h2 className="text-xl font-bold text-slate-800">1. 投資部位 / 現金帳戶總覽</h2>
+                                <h2 className="text-xl font-bold text-slate-800">{t('wizard.section1Title')}</h2>
                                 <span className="bg-emerald-50 text-emerald-600 text-xs px-3 py-1 rounded-full font-bold hidden md:flex items-center gap-1 border border-emerald-100">
                                     <CheckCircle2 className="w-3 h-3" />
-                                    可隨時新增或移除資產
+                                    {t('wizard.section1Badge')}
                                 </span>
                             </div>
                             <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto pb-2 sm:pb-0">
@@ -394,21 +396,21 @@ export default function QuarterlyWizard() {
                                     className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 md:px-4 py-2.5 md:py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-bold text-xs md:text-sm transition-colors whitespace-nowrap"
                                 >
                                     <ArchiveRestore className="w-4 h-4" />
-                                    <span>還原隱藏</span>
+                                    <span>{t('wizard.restoreBtn')}</span>
                                 </button>
                                 <button
                                     onClick={() => setIsAddModalOpen(true)}
                                     className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 md:px-4 py-2.5 md:py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg font-bold text-xs md:text-sm transition-colors shadow-sm whitespace-nowrap"
                                 >
                                     <Plus className="w-4 h-4" />
-                                    新增帳戶
+                                    {t('wizard.addAccountBtn')}
                                 </button>
                             </div>
                         </div>
 
                         {filteredStocks.length === 0 ? (
                             <div className="p-8 text-center text-slate-500 font-medium bg-slate-50 rounded-2xl border border-slate-100 border-dashed">
-                                {activeTab} 沒有需要確認的投資部位。
+                                {activeTab} {t('wizard.noStocksConfirm')}
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -445,7 +447,7 @@ export default function QuarterlyWizard() {
                                                                 placeholder="0"
                                                                 className="bg-white border border-slate-200 rounded-md px-2 py-1 w-24 text-brand-600 font-black text-lg outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
                                                             />
-                                                            <span className="text-xl font-black text-brand-600">股</span>
+                                                            <span className="text-xl font-black text-brand-600">{t('wizard.sharesUnit')}</span>
                                                         </div>
                                                         <span className="text-sm font-medium text-slate-400">@ ${stock.price?.toFixed(2) || '0.00'} {stock.currency}</span>
                                                     </div>
@@ -465,16 +467,16 @@ export default function QuarterlyWizard() {
                     {/* Section 2: Manual Cash Input */}
                     <div className="space-y-4 pt-4 border-t border-slate-100">
                         <div className="flex items-center gap-3 mb-6">
-                            <h2 className="text-xl font-bold text-slate-800">2. 更新銀行餘額</h2>
+                            <h2 className="text-xl font-bold text-slate-800">{t('wizard.section2Title')}</h2>
                             <span className="bg-amber-50 text-amber-600 text-xs px-3 py-1 rounded-full font-bold flex items-center gap-1 border border-amber-100">
                                 <Wallet className="w-3 h-3" />
-                                請填入今日網銀餘額
+                                {t('wizard.section2Badge')}
                             </span>
                         </div>
 
                         {filteredCash.length === 0 ? (
                             <div className="p-8 text-center text-slate-500 font-medium bg-slate-50 rounded-2xl border border-slate-100 border-dashed">
-                                {activeTab} 沒有需要填寫的現金帳戶。
+                                {activeTab} {t('wizard.noCashConfirm')}
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -497,7 +499,7 @@ export default function QuarterlyWizard() {
                                                 </button>
                                             </div>
                                             <div className="text-sm font-medium text-slate-400 mt-1">
-                                                輸入結算當下的帳戶總額
+                                                {t('wizard.section2Badge')}
                                             </div>
                                         </div>
 
@@ -539,11 +541,11 @@ export default function QuarterlyWizard() {
                                 }`}
                         >
                             {saving ? (
-                                <><div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> 儲存中...</>
+                                <><div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> {t('wizard.savingBtn')}</>
                             ) : saved ? (
-                                <><CheckCircle2 className="w-5 h-5" /> 已成功綁定!</>
+                                <><CheckCircle2 className="w-5 h-5" /> {t('wizard.saveSuccessBtn')}</>
                             ) : (
-                                <>✨ 儲存 {currentPeriod} 結算並查看增長報告</>
+                                <>{t('wizard.saveAndReportBtn', { period: currentPeriod })}</>
                             )}
                         </button>
                     </div>
@@ -554,7 +556,7 @@ export default function QuarterlyWizard() {
                             <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl">
                                 <div className="p-6 border-b border-slate-100 flex justify-between items-center">
                                     <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                                        <Plus className="w-5 h-5 text-brand-500" /> 新增資產帳戶
+                                        <Plus className="w-5 h-5 text-brand-500" /> {t('wizard.addModalTitle')}
                                     </h3>
                                     <button onClick={() => setIsAddModalOpen(false)} className="text-slate-400 hover:text-slate-600 p-2 bg-slate-50 rounded-full">
                                         <X className="w-4 h-4" />
@@ -563,11 +565,11 @@ export default function QuarterlyWizard() {
 
                                 <form onSubmit={handleAddAssetSubmit} className="p-6 space-y-5 bg-slate-50/50">
                                     <div>
-                                        <label className="block text-sm font-bold text-slate-700 mb-1">資產名稱</label>
+                                        <label className="block text-sm font-bold text-slate-700 mb-1">{t('wizard.assetTitleLabel')}</label>
                                         <input
                                             required
                                             type="text"
-                                            placeholder="ex: 台新 Richart / 富邦證券"
+                                            placeholder={t('wizard.assetTitlePlaceholder')}
                                             value={newAsset.title}
                                             onChange={e => setNewAsset(prev => ({ ...prev, title: e.target.value }))}
                                             className="w-full rounded-xl border-slate-200 shadow-sm focus:border-brand-500 focus:ring-brand-500 bg-white px-4 py-2.5 outline-none border transition-all"
@@ -576,7 +578,7 @@ export default function QuarterlyWizard() {
 
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-sm font-bold text-slate-700 mb-1">所有者</label>
+                                            <label className="block text-sm font-bold text-slate-700 mb-1">{t('wizard.ownerLabel')}</label>
                                             <select
                                                 value={newAsset.owner}
                                                 onChange={e => setNewAsset(prev => ({ ...prev, owner: e.target.value }))}
@@ -588,22 +590,22 @@ export default function QuarterlyWizard() {
                                             </select>
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold text-slate-700 mb-1">資產類型</label>
+                                            <label className="block text-sm font-bold text-slate-700 mb-1">{t('wizard.typeLabel')}</label>
                                             <select
                                                 value={newAsset.asset_type}
                                                 onChange={e => setNewAsset(prev => ({ ...prev, asset_type: e.target.value }))}
                                                 className="w-full rounded-xl border-slate-200 shadow-sm focus:border-brand-500 focus:ring-brand-500 bg-white px-4 py-2.5 outline-none border transition-all font-medium"
                                             >
-                                                <option value="cash">現金活存</option>
-                                                <option value="fixed_deposit">定存</option>
-                                                <option value="stock">股票 / ETF</option>
+                                                <option value="cash">{t('wizard.typeCash')}</option>
+                                                <option value="fixed_deposit">{t('wizard.typeFixedDeposit')}</option>
+                                                <option value="stock">{t('wizard.typeStock')}</option>
                                             </select>
                                         </div>
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-sm font-bold text-slate-700 mb-1">幣別</label>
+                                            <label className="block text-sm font-bold text-slate-700 mb-1">{t('wizard.currencyLabel')}</label>
                                             <select
                                                 value={newAsset.currency}
                                                 onChange={e => setNewAsset(prev => ({ ...prev, currency: e.target.value }))}
@@ -616,11 +618,11 @@ export default function QuarterlyWizard() {
                                         </div>
                                         {(newAsset.asset_type === 'stock' || newAsset.asset_type === 'rsu') && (
                                             <div className="relative">
-                                                <label className="block text-sm font-bold text-slate-700 mb-1">股票代號 (Ticker)</label>
+                                                <label className="block text-sm font-bold text-slate-700 mb-1">{t('wizard.tickerLabel')}</label>
                                                 <div className="relative">
                                                     <input
                                                         type="text"
-                                                        placeholder="搜尋代號或公司名..."
+                                                        placeholder={t('wizard.tickerPlaceholder')}
                                                         value={tickerQuery}
                                                         onChange={e => {
                                                             setTickerQuery(e.target.value);
@@ -695,13 +697,13 @@ export default function QuarterlyWizard() {
                                             onClick={() => setIsAddModalOpen(false)}
                                             className="flex-1 py-3 px-4 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-50 transition-colors shadow-sm"
                                         >
-                                            取消
+                                            {t('goals.cancelBtn')}
                                         </button>
                                         <button
                                             type="submit"
                                             className="flex-1 py-3 px-4 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-700 transition-colors shadow-sm shadow-slate-200"
                                         >
-                                            確定新增
+                                            {t('wizard.confirmAddBtn')}
                                         </button>
                                     </div>
                                 </form>
@@ -715,7 +717,7 @@ export default function QuarterlyWizard() {
                             <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
                                 <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-white z-10">
                                     <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                                        <ArchiveRestore className="w-5 h-5 text-indigo-500" /> 管理已隱藏 / 停用的資產
+                                        <ArchiveRestore className="w-5 h-5 text-indigo-500" /> {t('wizard.restoreModalTitle')}
                                     </h3>
                                     <button onClick={() => setIsRestoreModalOpen(false)} className="text-slate-400 hover:text-slate-600 p-2 bg-slate-50 rounded-full transition-colors">
                                         <X className="w-4 h-4" />
@@ -725,7 +727,7 @@ export default function QuarterlyWizard() {
                                 <div className="p-6 overflow-y-auto bg-slate-50/50 flex-grow">
                                     {hiddenAssets.length === 0 ? (
                                         <div className="text-center py-10 text-slate-500 font-medium bg-white rounded-2xl border border-slate-200 border-dashed">
-                                            目前沒有被隱藏的資產。
+                                            {t('wizard.noHiddenAssets')}
                                         </div>
                                     ) : (
                                         <div className="space-y-3">
@@ -747,7 +749,7 @@ export default function QuarterlyWizard() {
                                                         className="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-lg font-bold text-sm transition-colors"
                                                     >
                                                         <RefreshCcw className="w-4 h-4" />
-                                                        重新啟用
+                                                        {t('wizard.restoreBtn')}
                                                     </button>
                                                 </div>
                                             ))}

@@ -4,8 +4,10 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Lock, ArrowRight, ShieldCheck, Eye, EyeOff } from 'lucide-react'
 import { login } from '@/app/actions/auth'
+import { useLanguage } from '@/context/LanguageContext'
 
 export default function LoginPage() {
+    const { t } = useLanguage()
     const [password, setPassword] = useState('')
     const [error, setError] = useState<string | null>(null)
     const [loading, setLoading] = useState(false)
@@ -23,10 +25,10 @@ export default function LoginPage() {
                 router.push('/')
                 router.refresh()
             } else {
-                setError(result.error || '密碼錯誤')
+                setError(result.error || t('login.incorrectPass'))
             }
         } catch (err) {
-            setError('發生錯誤，請稍後再試。')
+            setError(t('login.errorOccurred'))
         } finally {
             setLoading(false)
         }
@@ -46,18 +48,18 @@ export default function LoginPage() {
                         <Lock className="w-8 h-8 text-white" />
                     </div>
                     <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight mb-3">
-                        RuiPYKigo Finance
+                        {t('login.title')}
                     </h1>
                     <p className="text-slate-500 text-sm font-medium flex items-center gap-1.5">
                         <ShieldCheck className="w-4 h-4 text-teal-500" />
-                        家庭財務管理系統 - 安全存取
+                        {t('login.subtitle')}
                     </p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="space-y-2">
                         <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">
-                            輸入存取密碼
+                            {t('login.passwordLabel')}
                         </label>
                         <div className="relative group">
                             <input
@@ -77,7 +79,6 @@ export default function LoginPage() {
                                 type="button"
                                 onClick={() => setShowPassword(!showPassword)}
                                 className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-2 rounded-lg transition-colors"
-                                title={showPassword ? '隱藏密碼' : '顯示密碼'}
                             >
                                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                             </button>
@@ -106,7 +107,7 @@ export default function LoginPage() {
                             <div className="w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin" />
                         ) : (
                             <>
-                                進入 Dashboard <ArrowRight className="w-5 h-5" />
+                                {t('login.enterBtn')} <ArrowRight className="w-5 h-5" />
                             </>
                         )}
                     </button>
@@ -114,7 +115,7 @@ export default function LoginPage() {
 
                 <div className="mt-10 pt-8 border-t border-slate-50 text-center">
                     <p className="text-xs text-slate-400 font-medium">
-                        &copy; 2026 PY & KIGO Family Dashboard. All rights reserved.
+                        {t('login.copyright')}
                     </p>
                 </div>
             </div>

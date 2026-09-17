@@ -2,6 +2,7 @@
 
 import React from "react";
 import { TrendChartItem } from "@/types/dashboard";
+import { useLanguage } from "@/context/LanguageContext";
 
 interface TrendChartProps {
     trendData: TrendChartItem[];
@@ -16,13 +17,14 @@ export const TrendChart: React.FC<TrendChartProps> = ({
     setActiveSnapshotId,
     hasFilters
 }) => {
+    const { t } = useLanguage();
     const maxAsset = trendData.reduce((max, current) => Math.max(max, current.fullAssets || 0), 0);
     const chartMax = Math.max(maxAsset * 1.2, 100);
 
     return (
         <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-col h-full">
             <h3 className="text-sm font-bold text-slate-600 mb-6 text-center flex items-center justify-center gap-2">
-                📈 總資產成長趨勢 (等值 NTD)
+                📈 {t('dashboard.trendChartTitle')}
             </h3>
             <div className="h-[250px] w-full flex flex-col items-center justify-end relative">
                 <div className="flex w-full justify-around items-end h-[150px] px-8 border-b border-slate-200 pb-0 gap-2">
@@ -40,10 +42,10 @@ export const TrendChart: React.FC<TrendChartProps> = ({
                             >
                                 <div className="absolute -top-8 flex flex-col items-center">
                                     {showStack && item.filteredAssets < item.fullAssets && (
-                                        <span className="text-[10px] text-slate-400 font-bold leading-none mb-0.5">{item.fullAssets}萬</span>
+                                        <span className="text-[10px] text-slate-400 font-bold leading-none mb-0.5">{item.fullAssets}{t('dashboard.trendChartUnit')}</span>
                                     )}
                                     <span className={`text-xs font-black z-10 ${isSelected ? 'text-brand-600' : 'text-slate-600 opacity-60 group-hover:opacity-100 transition-all'}`}>
-                                        {item.filteredAssets}萬
+                                        {item.filteredAssets}{t('dashboard.trendChartUnit')}
                                     </span>
                                 </div>
 

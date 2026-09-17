@@ -5,6 +5,7 @@ import { BarChart3, XCircle } from "lucide-react";
 import { getLatestDashboardData } from "@/app/actions/dashboard";
 import { generateLiveAISummary } from "@/app/actions/ai";
 import { DashboardData } from "@/types/dashboard";
+import { useLanguage } from "@/context/LanguageContext";
 
 // Sub-components
 import { AIInsightSection } from "@/components/dashboard/AIInsightSection";
@@ -12,13 +13,18 @@ import { TrendChart } from "@/components/dashboard/TrendChart";
 import { AggregationPieCharts } from "@/components/dashboard/AggregationPieCharts";
 
 export default function Dashboard() {
+    const { t, lang } = useLanguage();
     const [mounted, setMounted] = useState(false);
-    const [latestSummary, setLatestSummary] = useState<string>("正在載入最新的財務數據中...");
+    const [latestSummary, setLatestSummary] = useState<string>("");
     const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
     const [feedbackText, setFeedbackText] = useState("");
     const [isRegenerating, setIsRegenerating] = useState(false);
     const [activeSnapshotId, setActiveSnapshotId] = useState<string | null>(null);
     const [activeFilters, setActiveFilters] = useState<{ currency?: string, type?: string, owner?: string }>({});
+
+    useEffect(() => {
+        setLatestSummary(t('dashboard.aiInsightDefaultLoading'));
+    }, [lang]);
 
     useEffect(() => {
         setMounted(true);
@@ -30,38 +36,38 @@ export default function Dashboard() {
                 if (data.latestSnapshot) {
                     setActiveSnapshotId(data.latestSnapshot.id);
 
-                    // If summary exists in snapshot, use it immediately (UX optimization)
-                    if (data.latestSnapshot.ai_summary) {
+                    // If summary exists in snapshot and language is ZH, use it immediately (UX optimization)
+                    if (data.latestSnapshot.ai_summary && lang !== 'en' && process.env.NEXT_PUBLIC_DEMO_MODE !== 'true') {
                         setLatestSummary(data.latestSnapshot.ai_summary);
                         return;
                     }
                 }
 
-                setLatestSummary("✨ 正在為您產生即時 AI 財務洞察中...");
-                const liveSummary = await generateLiveAISummary(data);
+                setLatestSummary(t('dashboard.aiInsightGenerating'));
+                const liveSummary = await generateLiveAISummary(data, undefined, lang);
                 setLatestSummary(liveSummary);
             } catch (error) {
                 console.error("Failed to load dashboard data", error);
-                setLatestSummary("⚠️ 無法載入財務數據。");
+                setLatestSummary(t('dashboard.aiInsightError'));
             }
         };
 
         loadDashboard();
-    }, []);
+    }, [lang]);
 
     const handleRegenerate = async () => {
         if (!dashboardData || !feedbackText.trim() || isRegenerating) return;
 
         setIsRegenerating(true);
-        setLatestSummary("✨ 正在依據您的回饋重新產生洞察中...");
+        setLatestSummary(t('dashboard.aiInsightRegenerating'));
 
         try {
-            const newSummary = await generateLiveAISummary(dashboardData, feedbackText.trim());
+            const newSummary = await generateLiveAISummary(dashboardData, feedbackText.trim(), lang);
             setLatestSummary(newSummary);
             setFeedbackText("");
         } catch (error) {
             console.error("Failed to regenerate summary", error);
-            setLatestSummary("⚠️ 重新產生失敗，請稍後再試。");
+            setLatestSummary(t('dashboard.aiInsightRegenerateError'));
         } finally {
             setIsRegenerating(false);
         }
@@ -160,9 +166,9 @@ export default function Dashboard() {
             <div>
                 <h1 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2">
                     <BarChart3 className="w-6 h-6 text-brand-600" />
-                    家庭財務戰情室 (Financial Dashboard)
+                    {t('dashboard.title')} <span className="text-brand-600 text-lg">{t('dashboard.titleEnSuffix')}</span>
                 </h1>
-                <p className="text-slate-500 mt-1 text-sm font-medium">包含自動化財務洞察與多維度資產解析</p>
+                <p className="text-slate-500 mt-1 text-sm font-medium">{t('dashboard.subtitle')}</p>
             </div>
 
             {/* AI Insights Section */}
@@ -179,16 +185,16 @@ export default function Dashboard() {
                 <div className="sticky top-16 z-30 flex items-center gap-3 bg-brand-50/95 backdrop-blur-sm text-brand-700 px-4 py-3 rounded-xl border border-brand-200 text-sm font-medium animate-in fade-in shadow-sm md:static md:z-auto md:bg-brand-50 md:backdrop-none">
                     <span className="flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-brand-500 animate-pulse"></span>
-                        <span className="hidden xs:inline">依點擊互動篩選中：</span>
-                        <span className="xs:hidden">篩選中:</span>
+                        <span className="hidden xs:inline">{t('dashboard.filterBannerActive')}</span>
+                        <span className="xs:hidden">{t('dashboard.filterBannerActiveMobile')}</span>
                     </span>
                     <div className="flex gap-2 overflow-x-auto no-scrollbar">
-                        {activeFilters.currency && <span className="bg-white px-2 py-1 rounded shadow-sm whitespace-nowrap">幣別: {activeFilters.currency}</span>}
-                        {activeFilters.type && <span className="bg-white px-2 py-1 rounded shadow-sm whitespace-nowrap">資產: {activeFilters.type === 'fixed_deposit' ? '定存' : activeFilters.type}</span>}
-                        {activeFilters.owner && <span className="bg-white px-2 py-1 rounded shadow-sm whitespace-nowrap">成員: {activeFilters.owner}</span>}
+                        {activeFilters.currency && <span className="bg-white px-2 py-1 rounded shadow-sm whitespace-nowrap">{t('dashboard.currencyLabel')}: {activeFilters.currency}</span>}
+                        {activeFilters.type && <span className="bg-white px-2 py-1 rounded shadow-sm whitespace-nowrap">{t('dashboard.assetTypeLabel')}: {activeFilters.type === 'fixed_deposit' ? t('dashboard.fixedDepositLabel') : activeFilters.type}</span>}
+                        {activeFilters.owner && <span className="bg-white px-2 py-1 rounded shadow-sm whitespace-nowrap">{t('dashboard.memberLabel')}: {activeFilters.owner}</span>}
                     </div>
                     <button onClick={() => setActiveFilters({})} className="ml-auto flex items-center gap-1 bg-white hover:bg-slate-100 px-3 py-1 rounded shadow-sm text-slate-600 transition-colors shrink-0">
-                        <XCircle className="w-4 h-4" /> 清除
+                        <XCircle className="w-4 h-4" /> {t('dashboard.clearFilter')}
                     </button>
                 </div>
             )}

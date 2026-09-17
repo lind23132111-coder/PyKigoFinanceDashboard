@@ -4,8 +4,10 @@ import { useState, useEffect, useCallback } from "react";
 import { RefreshCcw, Building, CheckCircle2, Clock, Calendar } from "lucide-react";
 import { getReportData } from "@/app/actions/dashboard";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function ReportPage() {
+    const { t } = useLanguage();
     const [activeTab, setActiveTab] = useState("All");
     const [reportData, setReportData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
@@ -47,7 +49,7 @@ export default function ReportPage() {
     }
 
     if (!reportData) {
-        return <div className="p-8 text-center text-slate-500 font-bold">尚未建立任何資產快照紀錄</div>;
+        return <div className="p-8 text-center text-slate-500 font-bold">{t('report.noSnapshotYet')}</div>;
     }
 
     const { summaryCards, assetItems, liveMarketData, periodName, createdAt, availableSnapshots } = reportData;
@@ -79,15 +81,15 @@ export default function ReportPage() {
             {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                 <div>
-                    <h1 className="text-4xl font-black text-slate-900 tracking-tight">家庭資產總覽 <span className="text-blue-600">(NTD)</span></h1>
+                    <h1 className="text-4xl font-black text-slate-900 tracking-tight">{t('report.title')} <span className="text-blue-600">{t('report.titleSuffix')}</span></h1>
                     <div className="flex flex-col gap-1 mt-2">
                         <p className="text-slate-400 text-sm font-bold uppercase tracking-widest flex items-center gap-2">
                             <Calendar className="w-4 h-4" />
-                            資料期數：{periodName}
+                            {t('report.periodNameLabel')}{periodName}
                         </p>
                         <p className="text-slate-400 text-xs font-medium flex items-center gap-2">
                             <Clock className="w-3.5 h-3.5" />
-                            快照時間：{formatDate(createdAt)}
+                            {t('report.snapshotTimeLabel')}{formatDate(createdAt)}
                         </p>
                     </div>
                 </div>
@@ -95,7 +97,7 @@ export default function ReportPage() {
                 <div className="flex flex-wrap items-center gap-3">
                     {/* Snapshot Selector UI */}
                     <div className="flex items-center gap-2 bg-slate-100/50 p-2 rounded-[1.25rem] border border-slate-200 shadow-sm backdrop-blur-sm">
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter ml-2">切換期數:</span>
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter ml-2">{t('report.switchPeriod')}</span>
                         <select
                             value={selectedSnapshotId}
                             onChange={(e) => handleSnapshotChange(e.target.value)}
@@ -142,7 +144,7 @@ export default function ReportPage() {
                     <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm">
                         <h3 className="font-bold flex items-center gap-2 text-slate-800 mb-6 border-b border-slate-100 pb-4">
                             <Building className="w-5 h-5 text-blue-600" />
-                            Live Market Sync
+                            {t('report.liveMarketSyncTitle')}
                         </h3>
 
                         <div className="space-y-4">
@@ -158,7 +160,7 @@ export default function ReportPage() {
 
                         <div className="mt-8 text-xs text-slate-500 flex items-center gap-1.5 bg-blue-50/50 p-3 rounded-2xl border border-blue-100">
                             <CheckCircle2 className="w-4 h-4 text-blue-500 flex-shrink-0" />
-                            系統匯率與收盤價已同步
+                            {t('report.syncStatusSuccess')}
                         </div>
                     </div>
                 </div>
@@ -170,7 +172,7 @@ export default function ReportPage() {
                     )}
                     {/* Table Header & Tabs */}
                     <div className="p-6 md:px-8 border-b border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-slate-50/30">
-                        <h2 className="text-xl font-bold text-slate-800">重點資產追蹤明細</h2>
+                        <h2 className="text-xl font-bold text-slate-800">{t('report.tableTitle')}</h2>
 
                         <div className="flex items-center gap-2 bg-slate-100/80 p-1 rounded-2xl">
                             <button
@@ -180,7 +182,7 @@ export default function ReportPage() {
                                     activeTab === "All" ? "bg-white text-slate-900 shadow-sm scale-105" : "text-slate-500 hover:text-slate-700"
                                 )}
                             >
-                                全部 (All)
+                                {t('report.tabAll')}
                             </button>
                             <button
                                 onClick={() => setActiveTab("Cash")}
@@ -189,7 +191,7 @@ export default function ReportPage() {
                                     activeTab === "Cash" ? "bg-white text-slate-900 shadow-sm scale-105" : "text-slate-500 hover:text-slate-700"
                                 )}
                             >
-                                現金存款
+                                {t('report.tabCash')}
                             </button>
                             <button
                                 onClick={() => setActiveTab("Stocks")}
@@ -198,7 +200,7 @@ export default function ReportPage() {
                                     activeTab === "Stocks" ? "bg-white text-slate-900 shadow-sm scale-105" : "text-slate-500 hover:text-slate-700"
                                 )}
                             >
-                                證券投資
+                                {t('report.tabStocks')}
                             </button>
                         </div>
                     </div>
@@ -208,18 +210,18 @@ export default function ReportPage() {
                         <table className="w-full text-left border-collapse">
                             <thead>
                                 <tr className="border-b border-slate-100 bg-slate-50/20">
-                                    <th className="py-5 px-6 md:px-8 text-[10px] font-black text-slate-400 whitespace-nowrap uppercase tracking-widest">歸屬 (PIC)</th>
-                                    <th className="py-5 px-6 md:px-8 text-[10px] font-black text-slate-400 whitespace-nowrap uppercase tracking-widest">類型</th>
-                                    <th className="py-5 px-6 md:px-8 text-[10px] font-black text-slate-400 whitespace-nowrap uppercase tracking-widest">帳戶/標的名稱</th>
-                                    <th className="py-5 px-6 md:px-8 text-[10px] font-black text-slate-400 whitespace-nowrap uppercase tracking-widest">原幣金額/數量</th>
-                                    <th className="py-5 px-6 md:px-8 text-[10px] font-black text-slate-400 whitespace-nowrap text-right uppercase tracking-widest">約當台幣 (NTD)</th>
+                                    <th className="py-5 px-6 md:px-8 text-[10px] font-black text-slate-400 whitespace-nowrap uppercase tracking-widest">{t('report.colOwner')}</th>
+                                    <th className="py-5 px-6 md:px-8 text-[10px] font-black text-slate-400 whitespace-nowrap uppercase tracking-widest">{t('report.colType')}</th>
+                                    <th className="py-5 px-6 md:px-8 text-[10px] font-black text-slate-400 whitespace-nowrap uppercase tracking-widest">{t('report.colName')}</th>
+                                    <th className="py-5 px-6 md:px-8 text-[10px] font-black text-slate-400 whitespace-nowrap uppercase tracking-widest">{t('report.colOriginalAmount')}</th>
+                                    <th className="py-5 px-6 md:px-8 text-[10px] font-black text-slate-400 whitespace-nowrap text-right uppercase tracking-widest">{t('report.colNtdAmount')}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-50">
                                 {filteredItems.length === 0 ? (
                                     <tr>
                                         <td colSpan={5} className="py-16 text-center text-slate-400 font-bold text-sm italic">
-                                            沒有符合條件的資產記錄
+                                            {t('report.noAssetRecords')}
                                         </td>
                                     </tr>
                                 ) : (

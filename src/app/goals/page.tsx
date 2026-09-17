@@ -3,8 +3,10 @@
 import { useState, useEffect } from "react";
 import { Plus, X, PiggyBank, Target, Trash2, Pencil, ChevronUp, ChevronDown } from "lucide-react";
 import { getGoalsWithProgress, createGoal, getActiveAssets, deleteGoal, updateGoal, updateGoalsOrder } from "@/app/actions/goals";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function GoalTracker() {
+    const { t } = useLanguage();
     const [goals, setGoals] = useState<any[]>([]);
     const [activeAssets, setActiveAssets] = useState<any[]>([]);
     const [mounted, setMounted] = useState(false);
@@ -43,7 +45,7 @@ export default function GoalTracker() {
             setIsSubmitting(true);
             const amount = Number(formData.target_amount);
             if (isNaN(amount) || amount <= 0) {
-                alert("請輸入有效的目標金額！");
+                alert(t('goals.validAmountMsg'));
                 return;
             }
 
@@ -75,20 +77,20 @@ export default function GoalTracker() {
 
         } catch (error) {
             console.error(error);
-            alert("新增失敗，請稍後再試！");
+            alert(t('goals.addErrorMsg'));
         } finally {
             setIsSubmitting(false);
         }
     };
 
     const handleDeleteGoal = async (goalId: string, goalName: string) => {
-        if (!confirm(`確定要刪除目標「${goalName}」嗎？此操作無法復原。`)) return;
+        if (!confirm(t('goals.deleteConfirmMsg', { name: goalName }))) return;
         try {
             await deleteGoal(goalId);
             await fetchGoalsAndAssets();
         } catch (error) {
             console.error(error);
-            alert("刪除失敗，請稍後再試！");
+            alert(t('goals.deleteErrorMsg'));
         }
     };
 
@@ -166,9 +168,9 @@ export default function GoalTracker() {
     };
 
     const getStatusStyle = (status: string) => {
-        if (status === 'achieved') return { text: "達標", color: "text-emerald-500", dot: "bg-emerald-500", progress: "bg-teal-500" };
-        if (status === 'warning') return { text: "落後/警示", color: "text-amber-500", dot: "bg-amber-400", progress: "bg-amber-400" };
-        return { text: "穩定累積中", color: "text-blue-600", dot: "bg-blue-600", progress: "bg-blue-500" };
+        if (status === 'achieved') return { text: t('goals.statusAchieved'), color: "text-emerald-500", dot: "bg-emerald-500", progress: "bg-teal-500" };
+        if (status === 'warning') return { text: t('goals.statusWarning'), color: "text-amber-500", dot: "bg-amber-400", progress: "bg-amber-400" };
+        return { text: t('goals.statusOnTrack'), color: "text-blue-600", dot: "bg-blue-600", progress: "bg-blue-500" };
     };
 
     const renderGoalCard = (goal: any) => {
@@ -197,7 +199,7 @@ export default function GoalTracker() {
                             </button>
                         </div>
                         <span className="text-xs font-semibold text-slate-400 bg-slate-100 px-3 py-1 rounded-md">
-                            目標日: {goal.target_date || '未設定'}
+                            {t('goals.targetDateLabel')}: {goal.target_date || t('goals.notSetLabel')}
                         </span>
                         <button
                             onClick={() => handleEditClick(goal)}
@@ -229,7 +231,7 @@ export default function GoalTracker() {
                 {/* Metrics */}
                 <div className="flex justify-between items-end mb-4">
                     <p className="text-sm font-medium text-slate-600">
-                        已分配: {formatTWD(goal.current_funding)} / 目標: {formatTWD(goal.target_amount)} TWD
+                        {t('goals.allocatedLabel')}: {formatTWD(goal.current_funding)} / {t('goals.targetLabel')}: {formatTWD(goal.target_amount)} TWD
                     </p>
                     <div className={`flex items-center gap-1.5 text-sm font-bold ${style.color}`}>
                         {style.text} ({goal.progress.toFixed(1)}%)
@@ -240,8 +242,8 @@ export default function GoalTracker() {
                 {/* Source info */}
                 <p className="text-xs font-medium text-slate-400">
                     {goal.goal_asset_mapping?.length > 0
-                        ? `已綁定 ${goal.goal_asset_mapping.length} 個資產帳戶來源`
-                        : '尚未綁定任何資產'}
+                        ? t('goals.boundAssetsCount', { count: goal.goal_asset_mapping.length })
+                        : t('goals.noBoundAssets')}
                 </p>
             </div>
         );
@@ -250,7 +252,11 @@ export default function GoalTracker() {
     return (
         <div className="max-w-6xl mx-auto space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
 
-            <div className="flex justify-end">
+            <div className="flex justify-between items-center">
+                <h1 className="text-3xl font-black text-slate-800 tracking-tight flex items-center gap-2">
+                    <Target className="w-8 h-8 text-teal-500" />
+                    {t('goals.title')}
+                </h1>
                 <button
                     onClick={() => {
                         setEditingGoalId(null);
@@ -259,7 +265,7 @@ export default function GoalTracker() {
                     }}
                     className="flex items-center gap-1.5 px-5 py-2.5 bg-teal-500 hover:bg-teal-600 text-white rounded-xl font-bold transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5">
                     <Plus className="w-4 h-4" />
-                    新增目標
+                    {t('goals.addGoalBtn')}
                 </button>
             </div>
 
@@ -270,14 +276,14 @@ export default function GoalTracker() {
                         <PiggyBank className="w-5 h-5" />
                     </div>
                     <div>
-                        <h2 className="text-xl font-bold text-slate-800">即將到來的大筆開銷</h2>
-                        <p className="text-sm text-slate-500">1-3年內的短期目標，如旅遊、買車、婚禮等。</p>
+                        <h2 className="text-xl font-bold text-slate-800">{t('goals.upcomingExpensesTitle')}</h2>
+                        <p className="text-sm text-slate-500">{t('goals.upcomingExpensesSubtitle')}</p>
                     </div>
                 </div>
 
                 <div className="p-6 md:px-8 grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50/50">
                     {upcomingExpenses.length === 0 ? (
-                        <div className="col-span-full py-8 text-center text-slate-400 text-sm">尚未建立任何近期開銷目標。</div>
+                        <div className="col-span-full py-8 text-center text-slate-400 text-sm">{t('goals.noUpcomingGoals')}</div>
                     ) : upcomingExpenses.map(renderGoalCard)}
                 </div>
             </section>
@@ -289,14 +295,14 @@ export default function GoalTracker() {
                         <Target className="w-5 h-5" />
                     </div>
                     <div>
-                        <h2 className="text-xl font-bold text-slate-800">長期理財規劃</h2>
-                        <p className="text-sm text-slate-500">3年以上的長遠規劃，如退休金、買房頭期款等。</p>
+                        <h2 className="text-xl font-bold text-slate-800">{t('goals.longTermTitle')}</h2>
+                        <p className="text-sm text-slate-500">{t('goals.longTermSubtitle')}</p>
                     </div>
                 </div>
 
                 <div className="p-6 md:px-8 grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50/50">
                     {longTermGoals.length === 0 ? (
-                        <div className="col-span-full py-8 text-center text-slate-400 text-sm">尚未建立任何長期理財目標。</div>
+                        <div className="col-span-full py-8 text-center text-slate-400 text-sm">{t('goals.noLongTermGoals')}</div>
                     ) : longTermGoals.map(renderGoalCard)}
                 </div>
             </section>
@@ -307,7 +313,7 @@ export default function GoalTracker() {
                     <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-y-auto max-h-[90vh] animate-in zoom-in-95 duration-200">
                         <div className="sticky top-0 bg-white flex justify-between items-center p-6 border-b border-slate-100 z-10">
                             <h3 className="text-lg font-bold text-slate-800">
-                                {editingGoalId ? '編輯財務目標' : '新增財務目標'}
+                                {editingGoalId ? t('goals.editGoalTitle') : t('goals.newGoalTitle')}
                             </h3>
                             <button
                                 onClick={() => {
@@ -324,7 +330,7 @@ export default function GoalTracker() {
 
                             {/* Category Selection */}
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-3">目標類型 <span className="text-red-500">*</span></label>
+                                <label className="block text-sm font-medium text-slate-700 mb-3">{t('goals.categoryLabel')} <span className="text-red-500">*</span></label>
                                 <div className="grid grid-cols-2 gap-3">
                                     <label className={`
                                         cursor-pointer flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all
@@ -335,7 +341,7 @@ export default function GoalTracker() {
                                             onChange={() => setFormData({ ...formData, category: 'upcoming_expense' })}
                                         />
                                         <PiggyBank className="w-6 h-6 mb-2" />
-                                        <span className="font-bold text-sm">大筆開銷 (短期)</span>
+                                        <span className="font-bold text-sm">{t('goals.shortTermExpenseCat')}</span>
                                     </label>
 
                                     <label className={`
@@ -347,19 +353,19 @@ export default function GoalTracker() {
                                             onChange={() => setFormData({ ...formData, category: 'long_term' })}
                                         />
                                         <Target className="w-6 h-6 mb-2" />
-                                        <span className="font-bold text-sm">理財規劃 (長期)</span>
+                                        <span className="font-bold text-sm">{t('goals.longTermPlanCat')}</span>
                                     </label>
                                 </div>
                             </div>
 
                             <div className="space-y-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">目標名稱 <span className="text-red-500">*</span></label>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">{t('goals.goalNameLabel')} <span className="text-red-500">*</span></label>
                                     <input
                                         type="text"
                                         required
                                         className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-teal-400 focus:border-teal-400 outline-none transition-all placeholder:text-slate-400"
-                                        placeholder="例如：Japandi 新家裝潢、退休金"
+                                        placeholder={t('goals.goalNamePlaceholder')}
                                         value={formData.name}
                                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                     />
@@ -367,20 +373,20 @@ export default function GoalTracker() {
 
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-sm font-medium text-slate-700 mb-1">目標金額 (TWD) <span className="text-red-500">*</span></label>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">{t('goals.goalAmountLabel')} <span className="text-red-500">*</span></label>
                                         <input
                                             type="number"
                                             required
                                             min="1"
                                             className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-teal-400 focus:border-teal-400 outline-none transition-all placeholder:text-slate-400"
-                                            placeholder="例如：500000"
+                                            placeholder={t('goals.goalAmountPlaceholder')}
                                             value={formData.target_amount}
                                             onChange={(e) => setFormData({ ...formData, target_amount: e.target.value })}
                                         />
                                     </div>
 
                                     <div>
-                                        <label className="block text-sm font-medium text-slate-700 mb-1">預計達成日期 (選填)</label>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">{t('goals.targetDateInputLabel')}</label>
                                         <input
                                             type="date"
                                             className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-teal-400 focus:border-teal-400 outline-none transition-all text-slate-700"
@@ -393,12 +399,12 @@ export default function GoalTracker() {
 
                             {/* Asset Selection */}
                             <div className="pt-2 border-t border-slate-100">
-                                <label className="block text-sm font-medium text-slate-700 mb-2">綁定資產帳戶以追蹤進度 (選填)</label>
-                                <p className="text-xs text-slate-500 mb-3">可以靈活選擇多個股票或現金帳戶，這些帳戶的現值總和將視為該目標的當前進度。</p>
+                                <label className="block text-sm font-medium text-slate-700 mb-2">{t('goals.bindAssetsLabel')}</label>
+                                <p className="text-xs text-slate-500 mb-3">{t('goals.bindAssetsDesc')}</p>
 
                                 <div className="max-h-40 overflow-y-auto border border-slate-200 rounded-lg bg-slate-50 p-2 space-y-1">
                                     {activeAssets.length === 0 ? (
-                                        <div className="text-xs text-slate-400 text-center py-4">無可用資產。</div>
+                                        <div className="text-xs text-slate-400 text-center py-4">{t('goals.noAssetsAvailable')}</div>
                                     ) : (
                                         activeAssets.map(asset => {
                                             const isSelected = formData.asset_ids.includes(asset.id);
@@ -423,13 +429,13 @@ export default function GoalTracker() {
                                                             asset.owner === 'Kigo' ? 'bg-amber-100 text-amber-700' :
                                                                 'bg-indigo-100 text-indigo-700'
                                                             }`}>
-                                                            {asset.owner === 'Both' ? '共同' : asset.owner}
+                                                            {asset.owner === 'Both' ? t('goals.bothLabel') : asset.owner}
                                                         </span>
                                                         <span className="text-[10px] px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded-md font-bold">
                                                             {asset.currency}
                                                         </span>
                                                         <span className="text-[10px] px-1.5 py-0.5 text-slate-400 bg-slate-50 border border-slate-100 rounded-md">
-                                                            {asset.asset_type === 'stock' || asset.asset_type === 'rsu' ? '股票' : '現金'}
+                                                            {asset.asset_type === 'stock' || asset.asset_type === 'rsu' ? t('goals.stockAssetType') : t('goals.cashAssetType')}
                                                         </span>
                                                     </div>
                                                 </label>
@@ -450,7 +456,7 @@ export default function GoalTracker() {
                                     className="px-4 py-2 text-slate-600 font-medium hover:bg-slate-100 rounded-lg transition-colors"
                                     disabled={isSubmitting}
                                 >
-                                    取消
+                                    {t('goals.cancelBtn')}
                                 </button>
                                 <button
                                     type="submit"
@@ -460,7 +466,7 @@ export default function GoalTracker() {
                                     {isSubmitting ? (
                                         <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                                     ) : (
-                                        editingGoalId ? "儲存修改" : "建立目標"
+                                        editingGoalId ? t('goals.saveBtn') : t('goals.createBtn')
                                     )}
                                 </button>
                             </div>

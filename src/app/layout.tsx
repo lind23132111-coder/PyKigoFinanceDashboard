@@ -4,6 +4,7 @@ import "./globals.css";
 import Navbar from "@/components/Navbar";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { LanguageProvider } from "@/context/LanguageContext";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -20,10 +21,12 @@ export default function RootLayout({
     return (
         <html lang="en">
             <body className={`${inter.className} min-h-screen bg-slate-50 pt-20`}>
-                <Navbar />
-                <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                    {children}
-                </main>
+                <LanguageProvider>
+                    <Navbar />
+                    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                        {children}
+                    </main>
+                </LanguageProvider>
                 <Analytics />
                 <SpeedInsights />
             </body>

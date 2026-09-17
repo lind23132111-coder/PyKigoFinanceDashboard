@@ -5,6 +5,7 @@ import {
     PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend
 } from "recharts";
 import { PieChartItem } from "@/types/dashboard";
+import { useLanguage } from "@/context/LanguageContext";
 
 interface AggregationPieChartsProps {
     currencyData: PieChartItem[];
@@ -81,11 +82,12 @@ export const AggregationPieCharts: React.FC<AggregationPieChartsProps> = ({
     activeFilters,
     toggleFilter
 }) => {
+    const { t } = useLanguage();
     return (
         <>
-            {renderPie(currencyData, 'currency', activeFilters.currency, toggleFilter, "幣別比例 (Currency Exposure)", "💱")}
-            {renderPie(allocationData, 'type', activeFilters.type, toggleFilter, "資產配置 (Asset Class)", "🏛️")}
-            {renderPie(ownershipData, 'owner', activeFilters.owner, toggleFilter, "成員佔比 (Ownership)", "🧑🏼‍🤝‍🧑🏻")}
+            {renderPie(currencyData, 'currency', activeFilters.currency, toggleFilter, t('dashboard.currencyDist'), "💱")}
+            {renderPie(allocationData, 'type', activeFilters.type, toggleFilter, t('dashboard.assetDist'), "🏛️")}
+            {renderPie(ownershipData, 'owner', activeFilters.owner, toggleFilter, t('dashboard.ownerDist'), "🧑🏼‍🤝‍🧑🏻")}
         </>
     );
 };

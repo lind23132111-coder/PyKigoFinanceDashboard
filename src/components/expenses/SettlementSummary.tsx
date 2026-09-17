@@ -14,6 +14,7 @@ import {
     Layers
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/context/LanguageContext";
 
 /**
  * Settlement Summary Card
@@ -27,6 +28,7 @@ export const SettlementSummary = memo(function SettlementSummary({
     onOpenSettlement: () => void,
     onOpenHistory: () => void
 }) {
+    const { t } = useLanguage();
     if (!settlement) return null;
 
     return (
@@ -96,7 +98,7 @@ export const SettlementSummary = memo(function SettlementSummary({
                         style={{ height: '56px' }}
                     >
                         <CheckCircle className="w-5 h-5 text-indigo-600 transition-transform group-hover/btn:scale-110" />
-                        執行結算作業
+                        {t('expenses.settlementSummaryTitle')}
                     </button>
                 </div>
             </div>

@@ -31,8 +31,10 @@ import {
 } from "@/components/expenses/ExpenseGroups";
 import { StatCard } from "@/components/expenses/StatCard";
 import { ExpenseCategoryChart } from "@/components/expenses/ExpenseCategoryChart";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function ExpensesPage() {
+    const { t } = useLanguage();
     const {
         expenses,
         unreviewed,
@@ -135,7 +137,7 @@ export default function ExpensesPage() {
             <div className="flex items-center justify-center min-h-screen bg-white">
                 <div className="flex flex-col items-center gap-4">
                     <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
-                    <p className="text-sm font-black text-indigo-900/40 uppercase tracking-widest">初始化數據中...</p>
+                    <p className="text-sm font-black text-indigo-900/40 uppercase tracking-widest">{t('expenses.initDataLoading')}</p>
                 </div>
             </div>
         );
@@ -154,10 +156,10 @@ export default function ExpensesPage() {
                             <Zap className="w-6 h-6" />
                         </div>
                         <h1 className="text-4xl md:text-5xl font-black text-gray-900 tracking-tighter">
-                            Expense <span className="text-indigo-600">管理中心</span>
+                            {t('expenses.title')} <span className="text-indigo-600">{t('expenses.titleSuffix')}</span>
                         </h1>
                     </div>
-                    <p className="text-sm font-bold text-gray-400 uppercase tracking-widest pl-1">Smart Financial Tracking & Settlement</p>
+                    <p className="text-sm font-bold text-gray-400 uppercase tracking-widest pl-1">{t('expenses.subtitle')}</p>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-3 md:gap-4">
@@ -166,14 +168,14 @@ export default function ExpensesPage() {
                         className="flex items-center gap-2 md:gap-2.5 px-4 md:px-6 py-3 md:py-4 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl md:rounded-[1.5rem] font-black text-xs md:text-sm transition-all shadow-xl shadow-amber-100 border border-amber-400 active:scale-95 group flex-1 md:flex-none"
                     >
                         <Zap className="w-4 h-4 text-amber-200 group-hover:rotate-12 transition-transform" />
-                        AI 智慧匯入
+                        {t('expenses.aiImportBtn')}
                     </button>
                     <button
                         onClick={() => setShowModal(true)}
                         className="flex items-center gap-2 md:gap-2.5 px-6 md:px-8 py-3 md:py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl md:rounded-[1.5rem] font-black text-xs md:text-sm transition-all shadow-xl shadow-indigo-100 border border-indigo-500 active:scale-95 group flex-1 md:flex-none"
                     >
                         <Plus className="w-4 h-4 md:w-5 md:h-5 group-hover:rotate-90 transition-transform" />
-                        手動記帳
+                        {t('expenses.manualEntryBtn')}
                     </button>
                 </div>
             </div>
@@ -191,13 +193,13 @@ export default function ExpensesPage() {
                                     active={activeTab === 'all'}
                                     onClick={() => setActiveTab('all')}
                                     icon={<LayoutGrid className="w-4 h-4" />}
-                                    label="全部"
+                                    label={t('expenses.tabAll')}
                                 />
                                 <TabButton
                                     active={activeTab === 'general'}
                                     onClick={() => setActiveTab('general')}
                                     icon={<Users2 className="w-4 h-4" />}
-                                    label="日常"
+                                    label={t('expenses.tabGeneral')}
                                 />
                                 {goals.map(goal => (
                                     <TabButton
@@ -215,10 +217,10 @@ export default function ExpensesPage() {
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                             {/* Paid For Filter - Always Visible */}
                             <div className="bg-white/40 p-2 rounded-2xl border border-gray-100 shadow-sm backdrop-blur-sm flex items-center gap-2">
-                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-2">對象</span>
+                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-2">{t('expenses.beneficiaryLabel')}</span>
                                 <div className="flex items-center gap-1 bg-gray-100/50 p-1 rounded-xl">
                                     {[
-                                        { id: 'Both', label: '全部' },
+                                        { id: 'Both', label: t('expenses.tabAll') },
                                         { id: 'PY', label: 'PY' },
                                         { id: 'Kigo', label: 'Kigo' }
                                     ].map(beneficiary => (
@@ -241,9 +243,9 @@ export default function ExpensesPage() {
                                 <div className="flex flex-col md:flex-row md:items-center justify-between bg-white/40 p-3 rounded-[2rem] border border-gray-100 shadow-sm backdrop-blur-sm gap-4 animate-in fade-in slide-in-from-top-2 flex-1">
                                     <div className="flex items-center gap-2 bg-gray-100/50 p-1 rounded-2xl">
                                         {[
-                                            { id: 'month', label: '月' },
-                                            { id: 'quarter', label: '季' },
-                                            { id: 'year', label: '年' }
+                                            { id: 'month', label: t('expenses.filterMonth') },
+                                            { id: 'quarter', label: t('expenses.filterQuarter') },
+                                            { id: 'year', label: t('expenses.filterYear') }
                                         ].map(mode => (
                                             <button
                                                 key={mode.id}
@@ -301,7 +303,7 @@ export default function ExpensesPage() {
                                                         onChange={(e) => setSelectedYear(e.target.value)}
                                                         className="bg-transparent border-none text-sm font-black text-slate-900 outline-none cursor-pointer leading-tight"
                                                     >
-                                                        {[2024, 2025, 2026].map(y => <option key={y} value={y.toString()}>{y} 年度</option>)}
+                                                        {[2024, 2025, 2026].map(y => <option key={y} value={y.toString()}>{y}</option>)}
                                                     </select>
                                                 </div>
                                             )}
@@ -317,18 +319,18 @@ export default function ExpensesPage() {
                             <>
                                 <StatCard
                                     icon={<TrendingUp className="w-6 h-6" />}
-                                    label={`${filterMode === 'month' ? '本月' : filterMode === 'quarter' ? '本季' : '本年'}累積支出`}
+                                    label={t('expenses.accumulatedExpense')}
                                     value={`NT$ ${currentMonthExpenses.toLocaleString()}`}
-                                    subtext={`期間：${startDate} 至 ${endDate}`}
+                                    subtext={`${startDate} ~ ${endDate}`}
                                     color="indigo"
                                     change={stats?.comparison !== undefined ? `${stats.comparison > 0 ? '+' : ''}${stats.comparison}%` : undefined}
                                     loading={isLoading}
                                 />
                                 <StatCard
                                     icon={<BarChart3 className="w-6 h-6" />}
-                                    label={`${filterMode === 'month' ? '日均' : filterMode === 'quarter' ? '季日均' : '年日均'}支出估算`}
+                                    label={t('expenses.avgDailyExpense')}
                                     value={`NT$ ${Math.round(avgDaily).toLocaleString()}`}
-                                    subtext={`基於本期間 ${daysCount} 天支出的平均值`}
+                                    subtext={t('expenses.avgDailySubtext', { days: daysCount })}
                                     color="amber"
                                     loading={isLoading}
                                 />
@@ -339,9 +341,9 @@ export default function ExpensesPage() {
                             <div className="md:col-span-2">
                                 <StatCard
                                     icon={<Target className="w-6 h-6" />}
-                                    label={`${activeGoal?.name || '目標'} 達成進度`}
+                                    label={`${activeGoal?.name || 'Goal'} ${t('expenses.goalProgress')}`}
                                     value={`${Math.round(goalProgress)}% (${goalProjectExpenses.toLocaleString()} / ${activeGoal.target_amount?.toLocaleString()})`}
-                                    subtext={`距離目標還差 NT$ ${Math.max(0, (activeGoal.target_amount || 0) - goalProjectExpenses).toLocaleString()}`}
+                                    subtext={`NT$ ${Math.max(0, (activeGoal.target_amount || 0) - goalProjectExpenses).toLocaleString()}`}
                                     progress={goalProgress}
                                     project
                                     loading={isLoading}
@@ -355,17 +357,17 @@ export default function ExpensesPage() {
                                             <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
                                                 <BarChart3 className="w-5 h-5" />
                                             </div>
-                                            <h3 className="font-black text-lg text-slate-900 tracking-tight">支出類別分佈</h3>
+                                            <h3 className="font-black text-lg text-slate-900 tracking-tight">{t('expenses.expenseDistTitle')}</h3>
                                         </div>
                                         <div className="space-y-6">
                                             <div className="flex flex-col">
-                                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{filterMode === 'month' ? '單月' : filterMode === 'quarter' ? '單季' : '年度'}日常生活支出</span>
+                                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{t('expenses.dailyExpensesTotal')}</span>
                                                 <div className="text-3xl font-black text-slate-900 tracking-tighter">
                                                     NT$ {expenses.filter(e => !e.goal_id).reduce((sum, e) => sum + (Number(e.amount) || 0), 0).toLocaleString()}
                                                 </div>
                                             </div>
                                             <p className="text-xs font-medium text-slate-400 leading-relaxed">
-                                                展示此{filterMode === 'month' ? '月份' : filterMode === 'quarter' ? '季度' : '年度'}各類別的支出比例，協助您掌握預算流向。您可以切換上方{filterMode === 'month' ? '月、季、年' : '切換條件'}查看不同時期的消費習慣。
+                                                {t('expenses.expenseDistSubtext')}
                                             </p>
                                         </div>
                                     </div>
@@ -402,10 +404,10 @@ export default function ExpensesPage() {
                             Transaction Management
                         </div>
                         <h3 className="text-4xl md:text-5xl font-black text-white tracking-tighter leading-tight">
-                            管理您的所有 <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-indigo-200">收支細目</span>
+                            {t('expenses.manageDetailsBtn')}
                         </h3>
                         <p className="text-gray-400 font-medium text-lg mt-6 leading-relaxed">
-                            進入專屬管理中心進行批次編輯、手動確認 AI 匯入項目，以及查看完整的歷史收支紀錄。
+                            {t('expenses.manageDetailsSubtext')}
                         </p>
                     </div>
 
@@ -413,7 +415,7 @@ export default function ExpensesPage() {
                         onClick={() => setShowAllExpensesModal(true)}
                         className="flex-shrink-0 flex items-center gap-4 px-10 py-6 bg-white hover:bg-indigo-50 text-slate-900 rounded-[2rem] font-black text-lg transition-all shadow-2xl shadow-indigo-500/20 active:scale-95 group"
                     >
-                        管理交易明細
+                        {t('expenses.manageDetailsBtn')}
                         <div className="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center group-hover:translate-x-1 transition-transform">
                             <ChevronRight className="w-5 h-5" />
                         </div>
